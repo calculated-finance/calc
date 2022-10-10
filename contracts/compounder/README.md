@@ -1,100 +1,42 @@
-# CosmWasm Starter Pack
+# Compounder
 
-This is a template to build smart contracts in Rust to run inside a
-[Cosmos SDK](https://github.com/cosmos/cosmos-sdk) module on all chains that enable it.
-To understand the framework better, please read the overview in the
-[cosmwasm repo](https://github.com/CosmWasm/cosmwasm/blob/master/README.md),
-and dig into the [cosmwasm docs](https://www.cosmwasm.com).
-This assumes you understand the theory and just want to get coding.
+## Questions
+- which assets can be staked? (answer: ukuji)
 
-## Creating a new repo from template
+- assuming multiple assets can be staked, how do users stake multiple different assets with the same validator?
 
-Assuming you have a recent version of rust and cargo (v1.58.1+) installed
-(via [rustup](https://rustup.rs/)),
-then the following should get you a new repo to start a contract:
+- assuming rewards are given in multiple denoms, how are rewards withdrawn
 
-Install [cargo-generate](https://github.com/ashleygwilliams/cargo-generate) and cargo-run-script.
-Unless you did that before, run this line now:
+- do validator addresses need to be validated? (would it be safe to let this address be passed in OR do we need to go down the same route as pairs)
+    - if you pass an incorrect address you get the message: failed to execute message; message index: 0: dispatch: submessages: validator does not exist
 
-```sh
-cargo install cargo-generate --features vendored-openssl
-cargo install cargo-run-script
-```
+- what is the flow of staking events
+    - lets capture this and right it in notion
+        - send delegation message with amount
+        - receive new_shares based on your delegation
 
-Now, use it to create your new contract.
-Go to the folder in which you want to place it and run:
+- what is the flow of auto compounding
+    - contract sends coins to validator
+    - on some interval it withdraws rewards and then stakes the rewards with that validator
 
+- look at the ways in which an undelegate can fail
+    - if maximum amount of undelegations is exceeded on the validator (7 per delegator - validator pair)
 
-**Latest**
+- how to claim asssets after unbonding
+    - assets sent back to child contract
+    - user should be able to query balance on child contract and withdraw all assets
 
-```sh
-cargo generate --git https://github.com/CosmWasm/cw-template.git --name PROJECT_NAME
-````
+## Technical challenges
+- our contract can at most have 7 pending undelegate messages on any validator
+    - we could look at creating a new contract for every user, but then each user has its own rewards pool and
 
-For cloning minimal code repo:
+## Interaction Requirements
+- deposit funds to be staked
+- withdraw funds
+- get all balances
+- a user can stake with multiple validators
 
-```sh
-cargo generate --git https://github.com/CosmWasm/cw-template.git --name PROJECT_NAME -d minimal=true
-```
+## Integration Use Case
+- user DCA's into some asset X
+- everytime a swap is made send the resulting assets to the compounder
 
-**Older Version**
-
-Pass version as branch flag:
-
-```sh
-cargo generate --git https://github.com/CosmWasm/cw-template.git --branch <version> --name PROJECT_NAME
-````
-
-Example:
-
-```sh
-cargo generate --git https://github.com/CosmWasm/cw-template.git --branch 0.16 --name PROJECT_NAME
-```
-
-You will now have a new folder called `PROJECT_NAME` (I hope you changed that to something else)
-containing a simple working contract and build system that you can customize.
-
-## Create a Repo
-
-After generating, you have a initialized local git repo, but no commits, and no remote.
-Go to a server (eg. github) and create a new upstream repo (called `YOUR-GIT-URL` below).
-Then run the following:
-
-```sh
-# this is needed to create a valid Cargo.lock file (see below)
-cargo check
-git branch -M main
-git add .
-git commit -m 'Initial Commit'
-git remote add origin YOUR-GIT-URL
-git push -u origin main
-```
-
-## CI Support
-
-We have template configurations for both [GitHub Actions](.github/workflows/Basic.yml)
-and [Circle CI](.circleci/config.yml) in the generated project, so you can
-get up and running with CI right away.
-
-One note is that the CI runs all `cargo` commands
-with `--locked` to ensure it uses the exact same versions as you have locally. This also means
-you must have an up-to-date `Cargo.lock` file, which is not auto-generated.
-The first time you set up the project (or after adding any dep), you should ensure the
-`Cargo.lock` file is updated, so the CI will test properly. This can be done simply by
-running `cargo check` or `cargo unit-test`.
-
-## Using your project
-
-Once you have your custom repo, you should check out [Developing](./Developing.md) to explain
-more on how to run tests and develop code. Or go through the
-[online tutorial](https://docs.cosmwasm.com/) to get a better feel
-of how to develop.
-
-[Publishing](./Publishing.md) contains useful information on how to publish your contract
-to the world, once you are ready to deploy it on a running blockchain. And
-[Importing](./Importing.md) contains information about pulling in other contracts or crates
-that have been published.
-
-Please replace this README file with information about your specific project. You can keep
-the `Developing.md` and `Publishing.md` files as useful referenced, but please set some
-proper description in the README.

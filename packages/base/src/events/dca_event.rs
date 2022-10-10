@@ -47,10 +47,7 @@ impl EventBuilder<DCAEventInfo> {
         self
     }
 
-    pub fn sequence_id(
-        mut self,
-        sequence_number: u16,
-    ) -> EventBuilder<DCAEventInfo> {
+    pub fn sequence_id(mut self, sequence_number: u16) -> EventBuilder<DCAEventInfo> {
         self.sequence_number = sequence_number;
         self
     }

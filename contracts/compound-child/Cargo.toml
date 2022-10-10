@@ -1,5 +1,5 @@
 [package]
-name = "compounder"
+name = "compound-child"
 version = "0.1.0"
 authors = ["aidan <aidan@calculated.fi>"]
 edition = "2021"
@@ -31,7 +31,6 @@ cw2 = "0.15.1"
 schemars = "0.8.10"
 serde = { version = "1.0.145", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.31" }
-compound-child = { path = "../compound-child"}
 
 [dev-dependencies]
 cw-multi-test = "0.15.1"

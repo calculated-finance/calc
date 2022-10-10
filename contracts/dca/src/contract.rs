@@ -50,7 +50,6 @@ const CANCEL_TRIGGER_WITHDRAW_ORDER_REPLY_ID: u64 = 5;
 
 #[entry_point]
 pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
-
     VAULTS.clear(deps.storage);
     TIME_TRIGGERS.clear(deps.storage);
     TIME_TRIGGER_CONFIGURATIONS_BY_VAULT_ID.clear(deps.storage);
