@@ -8,15 +8,15 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{Cache, CACHE, CONTRACTS_BY_ADDRESS, CONTRACT_CODE_ID};
+use crate::msg::{CompoundersResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::state::{Cache, CACHE, COMPOUNDER_CONTRACTS_BY_ADDRESS, COMPOUNDER_CONTRACT_CODE_ID};
 use crate::validation_helpers::{assert_denom_is_kuji, assert_exactly_one_asset};
 
 use compounder::msg::{
     ExecuteMsg as CompounderExecuteMsg, InstantiateMsg as CompounderInstantiateMsg,
 };
 
-const CONTRACT_NAME: &str = "crates.io:compound-manager";
+const CONTRACT_NAME: &str = "crates.io:compounder-manager";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const AFTER_CREATE_COMPOUNDER_CONTRACT: u64 = 1;
@@ -46,9 +46,9 @@ pub fn execute(
             validator_address,
         } => delegate(deps, env, info, delegator_address, validator_address),
         ExecuteMsg::Undelegate {
-            delegator_address,
-            validator_address,
-            amount,
+            delegator_address: _,
+            validator_address: _,
+            amount: _,
         } => unimplemented!(),
         ExecuteMsg::SetCompounderCodeId { code_id } => set_compounder_code_id(deps, code_id),
     }
@@ -66,7 +66,7 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
 }
 
 fn set_compounder_code_id(deps: DepsMut, code_id: Uint64) -> Result<Response, ContractError> {
-    CONTRACT_CODE_ID.save(deps.storage, &code_id.u64())?;
+    COMPOUNDER_CONTRACT_CODE_ID.save(deps.storage, &code_id.u64())?;
     Ok(Response::new().add_attribute("method", "set_code_id"))
 }
 
@@ -81,7 +81,7 @@ fn delegate(
     assert_denom_is_kuji(info.funds.clone())?;
 
     let validated_address = deps.api.addr_validate(&delegator_address.as_str())?;
-    let compounder_contract = CONTRACTS_BY_ADDRESS.load(deps.storage, validated_address);
+    let compounder_contract = COMPOUNDER_CONTRACTS_BY_ADDRESS.load(deps.storage, validated_address);
 
     let msg = match compounder_contract {
         Ok(contract_address) => SubMsg::reply_always(
@@ -93,7 +93,7 @@ fn delegate(
             AFTER_DEPOSIT_TO_COMPOUNDER,
         ),
         Err(_) => {
-            let code_id = CONTRACT_CODE_ID.load(deps.storage)?;
+            let code_id = COMPOUNDER_CONTRACT_CODE_ID.load(deps.storage)?;
             SubMsg::reply_always(
                 create_compounder_contract(
                     code_id,
@@ -137,16 +137,13 @@ fn after_deposit_to_compounder(deps: DepsMut, reply: Reply) -> Result<Response, 
         cosmwasm_std::SubMsgResult::Ok(_) => {
             CACHE.remove(deps.storage);
 
-            Ok(Response::new()
-                .add_attribute("method", "after_deposit")
-                .add_attribute("status", "success"))
+            Ok(Response::new().add_attribute("method", "after_deposit_to_compounder"))
         }
         cosmwasm_std::SubMsgResult::Err(e) => {
             CACHE.remove(deps.storage);
 
             Ok(Response::new()
-                .add_attribute("method", "after_deposit")
-                .add_attribute("status", "fail")
+                .add_attribute("method", "after_deposit_to_compounder")
                 .add_attribute("error", e))
         }
     }
@@ -190,7 +187,11 @@ fn after_create_compounder_contract(
 
             let cache = CACHE.load(deps.storage)?;
 
-            CONTRACTS_BY_ADDRESS.save(deps.storage, cache.owner, &validated_address.clone())?;
+            COMPOUNDER_CONTRACTS_BY_ADDRESS.save(
+                deps.storage,
+                cache.owner,
+                &validated_address.clone(),
+            )?;
 
             let msg = SubMsg::reply_always(
                 deposit_to_compounder(
@@ -202,22 +203,32 @@ fn after_create_compounder_contract(
             );
 
             Ok(Response::new()
-                .add_attribute("method", "after_create_contract")
-                .add_attribute("status", "success")
+                .add_attribute("method", "after_create_compounder_contract")
                 .add_submessage(msg))
         }
         cosmwasm_std::SubMsgResult::Err(e) => {
             CACHE.remove(deps.storage);
 
             Ok(Response::new()
-                .add_attribute("method", "after_create_contract")
-                .add_attribute("status", "fail")
+                .add_attribute("method", "after_create_compounder_contract")
                 .add_attribute("error", e))
         }
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
-    unimplemented!()
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::GetCompounders {} => to_binary(&get_compounders(deps)?),
+        QueryMsg::GetBalances {} => unimplemented!(),
+    }
+}
+
+fn get_compounders(deps: Deps) -> StdResult<CompoundersResponse> {
+    let compounders: Vec<Addr> = COMPOUNDER_CONTRACTS_BY_ADDRESS
+        .range(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+        .map(|c| c.unwrap().1)
+        .collect();
+
+    Ok(CompoundersResponse { compounders })
 }

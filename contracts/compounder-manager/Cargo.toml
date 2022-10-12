@@ -1,5 +1,5 @@
 [package]
-name = "compound-manager"
+name = "compounder-manager"
 version = "0.1.0"
 authors = ["aidan <aidan@calculated.fi>"]
 edition = "2021"

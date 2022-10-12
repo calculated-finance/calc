@@ -22,6 +22,7 @@ pub enum ExecuteMsg {
         validator_address: Addr,
         amount: Option<Uint128>,
     },
+    Compound {}
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

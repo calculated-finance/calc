@@ -95,11 +95,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "compound-manager"
+name = "compounder"
 version = "0.1.0"
 dependencies = [
  "base",
- "compounder",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
@@ -112,10 +111,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "compounder"
+name = "compounder-manager"
 version = "0.1.0"
 dependencies = [
  "base",
+ "compounder",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",

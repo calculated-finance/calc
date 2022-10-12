@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Coin, Decimal, Uint128};
+use cosmwasm_std::{Addr, Coin, Decimal};
 use cw_storage_plus::{Item, Map};
 use serde::{Deserialize, Serialize};
 
@@ -17,7 +17,7 @@ pub struct Config {
 pub struct Delegation {
     pub validator_address: Addr,
     pub shares: Decimal,
-    pub amount: Uint128,
+    pub balance: Coin,
 }
 
 pub const CACHE: Item<Cache> = Item::new("cache_v1");
