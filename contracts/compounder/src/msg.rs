@@ -16,15 +16,19 @@ pub enum ExecuteMsg {
     },
     Undelegate {
         validator_address: Addr,
+        denom: String,
         amount: Option<Uint128>,
     },
     Withdraw {
-        validator_address: Addr,
-        amount: Option<Uint128>,
+        to_address: Addr,
     },
-    Compound {}
+    Compound {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum QueryMsg {}
+pub enum QueryMsg {
+    GetBalances {},
+    GetDelegations {},
+    GetUnbondingDelegations {},
+}

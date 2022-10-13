@@ -3,24 +3,26 @@ use base::helpers::message_helpers::{find_first_attribute_by_key, find_first_eve
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Addr, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, Response,
-    StdResult, SubMsg, Uint64,
+    StdResult, SubMsg, Uint128, Uint64, Delegation,
 };
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{CompoundersResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{Cache, CACHE, COMPOUNDER_CONTRACTS_BY_ADDRESS, COMPOUNDER_CONTRACT_CODE_ID};
-use crate::validation_helpers::{assert_denom_is_kuji, assert_exactly_one_asset};
+use crate::validation_helpers::assert_exactly_one_asset;
 
 use compounder::msg::{
     ExecuteMsg as CompounderExecuteMsg, InstantiateMsg as CompounderInstantiateMsg,
+    QueryMsg as CompounderQueryMsg,
 };
 
 const CONTRACT_NAME: &str = "crates.io:compounder-manager";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const AFTER_CREATE_COMPOUNDER_CONTRACT: u64 = 1;
-const AFTER_DEPOSIT_TO_COMPOUNDER: u64 = 2;
+const AFTER_DELEGATE_TO_COMPOUNDER: u64 = 2;
+const AFTER_UNDELEGATE_FROM_COMPOUNDER: u64 = 3;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -46,11 +48,16 @@ pub fn execute(
             validator_address,
         } => delegate(deps, env, info, delegator_address, validator_address),
         ExecuteMsg::Undelegate {
-            delegator_address: _,
-            validator_address: _,
-            amount: _,
-        } => unimplemented!(),
+            delegator_address,
+            validator_address,
+            denom,
+            amount,
+        } => undelegate(deps, delegator_address, validator_address, denom, amount),
         ExecuteMsg::SetCompounderCodeId { code_id } => set_compounder_code_id(deps, code_id),
+        ExecuteMsg::Withdraw {
+            delegator_address,
+            to_address,
+        } => withdraw(deps, delegator_address, to_address),
     }
 }
 
@@ -58,7 +65,8 @@ pub fn execute(
 pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
     match reply.id {
         AFTER_CREATE_COMPOUNDER_CONTRACT => after_create_compounder_contract(deps, reply),
-        AFTER_DEPOSIT_TO_COMPOUNDER => after_deposit_to_compounder(deps, reply),
+        AFTER_DELEGATE_TO_COMPOUNDER => after_delegate_to_compounder(deps, reply),
+        AFTER_UNDELEGATE_FROM_COMPOUNDER => after_undelegate_from_compounder(deps, reply),
         id => Err(ContractError::CustomError {
             val: format!("unknown reply id: {}", id),
         }),
@@ -78,30 +86,19 @@ fn delegate(
     validator_address: Addr,
 ) -> Result<Response, ContractError> {
     assert_exactly_one_asset(info.funds.clone())?;
-    assert_denom_is_kuji(info.funds.clone())?;
 
     let validated_address = deps.api.addr_validate(&delegator_address.as_str())?;
     let compounder_contract = COMPOUNDER_CONTRACTS_BY_ADDRESS.load(deps.storage, validated_address);
 
     let msg = match compounder_contract {
-        Ok(contract_address) => SubMsg::reply_always(
-            deposit_to_compounder(
-                contract_address,
-                validator_address.clone(),
-                info.funds[0].clone(),
-            )?,
-            AFTER_DEPOSIT_TO_COMPOUNDER,
+        Ok(contract_address) => delegate_to_compounder(
+            contract_address,
+            validator_address.clone(),
+            info.funds[0].clone(),
         ),
         Err(_) => {
             let code_id = COMPOUNDER_CONTRACT_CODE_ID.load(deps.storage)?;
-            SubMsg::reply_always(
-                create_compounder_contract(
-                    code_id,
-                    env.contract.address,
-                    delegator_address.clone(),
-                )?,
-                AFTER_CREATE_COMPOUNDER_CONTRACT,
-            )
+            create_compounder_contract(code_id, env.contract.address, delegator_address.clone())
         }
     };
 
@@ -116,51 +113,53 @@ fn delegate(
     Ok(Response::new().add_submessage(msg))
 }
 
-fn deposit_to_compounder(
-    contract_address: Addr,
-    validator_address: Addr,
-    funds: Coin,
-) -> StdResult<CosmosMsg> {
-    let deposit = CompounderExecuteMsg::Delegate {
+fn delegate_to_compounder(contract_address: Addr, validator_address: Addr, funds: Coin) -> SubMsg {
+    let delegate_msg = CompounderExecuteMsg::Delegate {
         validator_address: validator_address.clone(),
     };
 
-    Ok(CosmosMsg::Wasm(cosmwasm_std::WasmMsg::Execute {
-        contract_addr: contract_address.to_string(),
-        msg: to_binary(&deposit)?,
-        funds: vec![funds.clone()],
-    }))
+    SubMsg::reply_always(
+        CosmosMsg::Wasm(cosmwasm_std::WasmMsg::Execute {
+            contract_addr: contract_address.to_string(),
+            msg: to_binary(&delegate_msg).unwrap(),
+            funds: vec![funds.clone()],
+        }),
+        AFTER_DELEGATE_TO_COMPOUNDER,
+    )
 }
 
-fn after_deposit_to_compounder(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
+fn after_delegate_to_compounder(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
     match reply.result {
         cosmwasm_std::SubMsgResult::Ok(_) => {
             CACHE.remove(deps.storage);
 
-            Ok(Response::new().add_attribute("method", "after_deposit_to_compounder"))
+            Ok(Response::new().add_attribute("method", "after_delegate_to_compounder"))
         }
         cosmwasm_std::SubMsgResult::Err(e) => {
             CACHE.remove(deps.storage);
 
             Ok(Response::new()
-                .add_attribute("method", "after_deposit_to_compounder")
+                .add_attribute("method", "after_delegate_to_compounder")
                 .add_attribute("error", e))
         }
     }
 }
 
-fn create_compounder_contract(code_id: u64, admin: Addr, owner: Addr) -> StdResult<CosmosMsg> {
+fn create_compounder_contract(code_id: u64, admin: Addr, owner: Addr) -> SubMsg {
     let instantiate = CompounderInstantiateMsg {
         admin: admin.clone(),
     };
 
-    Ok(CosmosMsg::Wasm(cosmwasm_std::WasmMsg::Instantiate {
-        admin: Some(admin.to_string()),
-        code_id,
-        msg: to_binary(&instantiate)?,
-        funds: vec![],
-        label: format!("calc-compounder - {}", owner),
-    }))
+    SubMsg::reply_always(
+        CosmosMsg::Wasm(cosmwasm_std::WasmMsg::Instantiate {
+            admin: Some(admin.to_string()),
+            code_id,
+            msg: to_binary(&instantiate).unwrap(),
+            funds: vec![],
+            label: format!("calc-compounder - {}", owner),
+        }),
+        AFTER_CREATE_COMPOUNDER_CONTRACT,
+    )
 }
 
 fn after_create_compounder_contract(
@@ -193,13 +192,10 @@ fn after_create_compounder_contract(
                 &validated_address.clone(),
             )?;
 
-            let msg = SubMsg::reply_always(
-                deposit_to_compounder(
-                    validated_address,
-                    cache.validator_address.clone(),
-                    cache.funds.clone(),
-                )?,
-                AFTER_DEPOSIT_TO_COMPOUNDER,
+            let msg = delegate_to_compounder(
+                validated_address,
+                cache.validator_address.clone(),
+                cache.funds.clone(),
             );
 
             Ok(Response::new()
@@ -216,11 +212,93 @@ fn after_create_compounder_contract(
     }
 }
 
+fn undelegate(
+    deps: DepsMut,
+    delegator_address: Addr,
+    validator_address: Addr,
+    denom: String,
+    amount: Option<Uint128>,
+) -> Result<Response, ContractError> {
+    let compounder_contract = COMPOUNDER_CONTRACTS_BY_ADDRESS
+        .load(deps.storage, Addr::unchecked(delegator_address.clone()))?;
+
+    let undelegate_msg =
+        undelegate_from_compounder(compounder_contract, validator_address, denom, amount);
+
+    Ok(Response::new()
+        .add_attribute("method", "undelegate")
+        .add_submessage(undelegate_msg))
+}
+
+fn undelegate_from_compounder(
+    contract_address: Addr,
+    validator_address: Addr,
+    denom: String,
+    amount: Option<Uint128>,
+) -> SubMsg {
+    let undelegate_msg = CompounderExecuteMsg::Undelegate {
+        validator_address,
+        denom,
+        amount,
+    };
+    SubMsg::reply_always(
+        CosmosMsg::Wasm(cosmwasm_std::WasmMsg::Execute {
+            contract_addr: contract_address.to_string(),
+            msg: to_binary(&undelegate_msg).unwrap(),
+            funds: vec![],
+        }),
+        AFTER_UNDELEGATE_FROM_COMPOUNDER,
+    )
+}
+
+fn after_undelegate_from_compounder(
+    _deps: DepsMut,
+    reply: Reply,
+) -> Result<Response, ContractError> {
+    match reply.result {
+        cosmwasm_std::SubMsgResult::Ok(_) => {
+            Ok(Response::new().add_attribute("method", "after_undelegate_from_compounder"))
+        }
+        cosmwasm_std::SubMsgResult::Err(e) => Ok(Response::new()
+            .add_attribute("method", "after_undelegate_from_compounder")
+            .add_attribute("error", e)),
+    }
+}
+
+fn withdraw(
+    deps: DepsMut,
+    delegator_address: Addr,
+    to_address: Addr,
+) -> Result<Response, ContractError> {
+    let compounder_contract = COMPOUNDER_CONTRACTS_BY_ADDRESS
+        .load(deps.storage, Addr::unchecked(delegator_address.clone()))?;
+
+    let withdraw_msg = withdraw_from_compounder(compounder_contract, to_address);
+
+    Ok(Response::new()
+        .add_attribute("method", "withdraw")
+        .add_message(withdraw_msg))
+}
+
+fn withdraw_from_compounder(contract_address: Addr, to_address: Addr) -> CosmosMsg {
+    let withdraw_msg = CompounderExecuteMsg::Withdraw { to_address };
+
+    CosmosMsg::Wasm(cosmwasm_std::WasmMsg::Execute {
+        contract_addr: contract_address.to_string(),
+        msg: to_binary(&withdraw_msg).unwrap(),
+        funds: vec![],
+    })
+}
+
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetCompounders {} => to_binary(&get_compounders(deps)?),
-        QueryMsg::GetBalances {} => unimplemented!(),
+        QueryMsg::GetBalances { delegator_address } => {
+            to_binary(&get_balances(deps, delegator_address)?)
+        },
+        QueryMsg::GetDelegations { delegator_address } => to_binary(&get_delegations(deps, delegator_address)?),
+        QueryMsg::GetUnbondingDelegations {} => unimplemented!(),
     }
 }
 
@@ -231,4 +309,33 @@ fn get_compounders(deps: Deps) -> StdResult<CompoundersResponse> {
         .collect();
 
     Ok(CompoundersResponse { compounders })
+}
+
+fn get_delegations(deps: Deps, delegator_address: Addr) -> StdResult<Vec<Delegation>> {
+    let compounder_contract = COMPOUNDER_CONTRACTS_BY_ADDRESS
+        .load(deps.storage, Addr::unchecked(delegator_address.clone()))?;
+
+    let get_delegations_msg = CompounderQueryMsg::GetDelegations {};
+
+    let delegations: Vec<Delegation> = deps
+        .querier
+        .query_wasm_smart(compounder_contract, &get_delegations_msg)
+        .unwrap();
+
+    Ok(delegations)
+}
+
+
+fn get_balances(deps: Deps, delegator_address: Addr) -> StdResult<Vec<Coin>> {
+    let compounder_contract = COMPOUNDER_CONTRACTS_BY_ADDRESS
+        .load(deps.storage, Addr::unchecked(delegator_address.clone()))?;
+
+    let get_balances_msg = CompounderQueryMsg::GetBalances {};
+
+    let balances: Vec<Coin> = deps
+        .querier
+        .query_wasm_smart(compounder_contract, &get_balances_msg)
+        .unwrap();
+
+    Ok(balances)
 }

@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Coin, Decimal};
+use cosmwasm_std::{Addr, Coin};
 use cw_storage_plus::{Item, Map};
 use serde::{Deserialize, Serialize};
 
@@ -14,12 +14,11 @@ pub struct Config {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct Delegation {
+pub struct CompoundingDelegation {
     pub validator_address: Addr,
-    pub shares: Decimal,
     pub balance: Coin,
 }
 
 pub const CACHE: Item<Cache> = Item::new("cache_v1");
-pub const DELEGATIONS: Map<Addr, Delegation> = Map::new("delegations_v1");
+pub const DELEGATIONS: Map<Addr, CompoundingDelegation> = Map::new("compounding_delegations_v1");
 pub const CONFIG: Item<Config> = Item::new("config_v1");

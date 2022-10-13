@@ -3,8 +3,6 @@
 ## Questions
 - which assets can be staked? (answer: ukuji)
 
-- assuming multiple assets can be staked, how do users stake multiple different assets with the same validator?
-
 - assuming rewards are given in multiple denoms, how are rewards withdrawn
 
 - do validator addresses need to be validated? (would it be safe to let this address be passed in OR do we need to go down the same route as pairs)
@@ -26,6 +24,15 @@
     - assets sent back to child contract
     - user should be able to query balance on child contract and withdraw all assets
 
+- what does an undelegate message look like
+
+- can you query a list of pending undelegations?
+    - after undelegation, the validator updates the amount you undelegated
+    - using kujirad you can query unbonding-delegations and it will list all undelegations
+    - assuming there is no way to do this on chain, we can have a get balance and withdraw option for unbonding-delegations that have been returned
+
+- how should the user withdraw funds
+
 ## Technical challenges
 - our contract can at most have 7 pending undelegate messages on any validator
     - we could look at creating a new contract for every user, but then each user has its own rewards pool and
@@ -40,4 +47,3 @@
 ## Integration Use Case
 - user DCA's into some asset X
 - everytime a swap is made send the resulting assets to the compounder
-

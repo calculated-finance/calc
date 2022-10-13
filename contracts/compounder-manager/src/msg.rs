@@ -15,7 +15,12 @@ pub enum ExecuteMsg {
     Undelegate {
         delegator_address: Addr,
         validator_address: Addr,
+        denom: String,
         amount: Option<Uint128>,
+    },
+    Withdraw {
+        delegator_address: Addr,
+        to_address: Addr,
     },
     SetCompounderCodeId {
         code_id: Uint64,
@@ -26,7 +31,9 @@ pub enum ExecuteMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     GetCompounders {},
-    GetBalances {},
+    GetBalances { delegator_address: Addr },
+    GetDelegations { delegator_address: Addr },
+    GetUnbondingDelegations {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
