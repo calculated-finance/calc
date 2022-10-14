@@ -1,9 +1,10 @@
 use base::helpers::message_helpers::{find_first_attribute_by_key, find_first_event_by_type};
+// use cosmos_sdk_proto::cosmos::staking::v1beta1::{QueryValidatorUnbondingDelegationsRequest, QueryDelegatorUnbondingDelegationsResponse, QueryDelegatorUnbondingDelegationsRequest};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Binary, Coin, Delegation, Deps, DepsMut, DistributionMsg, Env,
-    MessageInfo, Reply, Response, StakingMsg, StdResult, SubMsg, Uint128,
+    MessageInfo, Reply, Response, StakingMsg, StdResult, SubMsg, Uint128, //QueryRequest,
 };
 use cw2::set_contract_version;
 
@@ -352,7 +353,7 @@ fn withdraw(deps: DepsMut, env: Env, to_address: Addr) -> Result<Response, Contr
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetBalances {} => to_binary(&get_balances(deps, env)?),
-        QueryMsg::GetUnbondingDelegations {} => unimplemented!(),
+        QueryMsg::GetUnbondingDelegations {} => to_binary(&get_unbonding_delegations(deps, env)?),
         QueryMsg::GetDelegations {} => to_binary(&get_delegations(deps, env)?),
     }
 }
@@ -373,6 +374,19 @@ fn get_delegations(deps: Deps, env: Env) -> StdResult<Vec<Delegation>> {
         .unwrap();
 
     Ok(delegations)
+}
+
+fn get_unbonding_delegations(_deps: Deps, _env: Env) -> StdResult<u64> {
+    
+    //QueryValidatorUnbondingDelegationsRequest
+    // let data = QueryDelegatorUnbondingDelegationsRequest {
+    //     delegator_addr: env.contract.address.to_string(),
+    //     pagination: None
+    // };
+
+    // let msg = QueryRequest::Stargate { path: format!("/cosmos/staking/v1beta1/delegators/{}/unbonding_delegations", env.contract.address), data: () }
+
+    unimplemented!()
 }
 
 #[cfg(test)]
