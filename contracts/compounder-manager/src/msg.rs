@@ -12,6 +12,10 @@ pub enum ExecuteMsg {
         delegator_address: Addr,
         validator_address: Addr,
     },
+    DelegateOnBehalf {
+        delegator_address: Addr,
+        validator_address: Addr
+    },
     Undelegate {
         delegator_address: Addr,
         validator_address: Addr,

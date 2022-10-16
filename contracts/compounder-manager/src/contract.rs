@@ -1,9 +1,17 @@
 use base::helpers::message_helpers::{find_first_attribute_by_key, find_first_event_by_type};
+use cosmos_sdk_proto::Any;
+use cosmos_sdk_proto::cosmos::authz::v1beta1::{GrantAuthorization, MsgGrant, Grant, GenericAuthorization, MsgExec};
+use cosmos_sdk_proto::cosmos::base::v1beta1::Coin as ProtoCoin;
+use cosmos_sdk_proto::cosmos::staking::v1beta1::stake_authorization::Policy;
+use cosmos_sdk_proto::cosmos::staking::v1beta1::{MsgDelegate, AuthorizationType, StakeAuthorization};
+use cosmos_sdk_proto::traits::Message;
+use prost_types::Timestamp;
+
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, Response,
-    StdResult, SubMsg, Uint128, Uint64, Delegation,
+    to_binary, Addr, Binary, Coin, CosmosMsg, Delegation, Deps, DepsMut, Env, MessageInfo, Reply,
+    Response, StdResult, SubMsg, Uint128, Uint64, WasmMsg,
 };
 use cw2::set_contract_version;
 
@@ -47,6 +55,7 @@ pub fn execute(
             delegator_address,
             validator_address,
         } => delegate(deps, env, info, delegator_address, validator_address),
+        ExecuteMsg::DelegateOnBehalf { delegator_address, validator_address } => delegate_on_behalf(deps, env, info, delegator_address, validator_address),
         ExecuteMsg::Undelegate {
             delegator_address,
             validator_address,
@@ -78,6 +87,122 @@ fn set_compounder_code_id(deps: DepsMut, code_id: Uint64) -> Result<Response, Co
     Ok(Response::new().add_attribute("method", "set_code_id"))
 }
 
+fn delegate_on_behalf(
+    _deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    delegator_address: Addr,
+    validator_address: Addr
+) -> Result<Response, ContractError> {
+    
+
+    // let mut grant_buffer = vec![];
+    // let mut staking_authorization_buffer = vec![];
+
+    // // GenericAuthorization {
+    // //     msg: "/cosmos.staking.v1beta1.MsgDelegate".to_string()
+    // // }
+    // // .encode(&mut generic_authorization_buffer)
+    // // .unwrap();
+
+    // StakeAuthorization {
+    //     authorization_type: AuthorizationType::Delegate.try_into().unwrap(),
+    //     max_tokens: None,
+    //     validators: Some(
+    //         Policy::AllowList(
+    //             cosmos_sdk_proto::cosmos::staking::v1beta1::stake_authorization::Validators { address: vec!["kujiravaloper1dgpzk55f7jg0s40act0salwewmzeprgqh2c2hh".to_string()] }
+    //         )
+    //     )
+    // }
+    // .encode(&mut staking_authorization_buffer)
+    // .unwrap();
+
+    // MsgGrant {
+    //     granter: info.sender.to_string(),
+    //     grantee: _env.contract.address.to_string(),
+    //     grant: Some(
+    //         Grant { 
+    //             authorization: Some(
+    //                 Any {
+    //                     type_url: "/cosmos.staking.v1beta1.StakeAuthorization".to_string(),
+    //                     value: staking_authorization_buffer
+    //                 }
+    //             ), 
+    //             expiration: Some(
+    //                 Timestamp { seconds: 1665795124, nanos: 0 }
+    //             )
+    //         }
+    //     )
+    // }
+    // .encode(&mut grant_buffer)
+    // .unwrap();
+
+    // let grant_msg = CosmosMsg::Stargate {
+    //     type_url: "/cosmos.authz.v1beta1.MsgGrant".to_string(),
+    //     value: Binary::from(grant_buffer),
+    // };
+
+    // {
+    //     "@type": "/cosmos.authz.v1beta1.MsgGrant",
+    //     "granter": "kujira16q6jpx7ns0ugwghqay73uxd5aq30du3uqgxf0d",
+    //     "grantee": "kujira18g945dfs4jp8zfu428zfkjz0r4sasnxnsnye5m6dznvmgrlcecpsyrwp7c",
+    //     "grant": {
+    //       "authorization": {
+    //         "@type": "/cosmos.staking.v1beta1.StakeAuthorization",
+    //         "max_tokens": null,
+    //         "allow_list": {
+    //           "address": [
+    //             "kujiravaloper1dgpzk55f7jg0s40act0salwewmzeprgqh2c2hh"
+    //           ]
+    //         },
+    //         "authorization_type": "AUTHORIZATION_TYPE_DELEGATE"
+    //       },
+    //       "expiration": "2023-10-15T01:21:37Z"
+    //     }
+    // }
+
+    let mut buf = vec![];
+
+
+    // try with this address then contract address
+
+    MsgDelegate {
+        delegator_address: delegator_address.to_string(), // this needs to be the person you are trying to delegate for
+        validator_address: validator_address.into_string(),
+        amount: Some(ProtoCoin {
+            denom: "ukuji".to_string(),
+            amount: info.funds[0].amount.to_string(),
+        }),
+    }
+    .encode(&mut buf)
+    .unwrap();
+
+    let mut exec_buf = vec![];
+
+    MsgExec {
+        grantee: _env.contract.address.to_string(),
+        msgs: vec![
+            Any {
+                type_url: "/cosmos.staking.v1beta1.MsgDelegate".to_string(), 
+                value: buf 
+            }
+        ]
+    }
+    .encode(&mut exec_buf)
+    .unwrap();
+
+    let exec_binary = Binary::from(exec_buf);
+
+    let msg = CosmosMsg::Stargate { 
+        type_url: "/cosmos.authz.v1beta1.MsgExec".to_string(), 
+        value: exec_binary
+    };
+
+    Ok(
+        Response::new().add_message(msg)
+    )
+}
+
 fn delegate(
     deps: DepsMut,
     env: Env,
@@ -107,6 +232,8 @@ fn delegate(
         funds: info.funds[0].clone(),
         validator_address,
     };
+
+    WasmMsg::Execute { contract_addr: (), msg: (), funds: () }
 
     CACHE.save(deps.storage, &cache)?;
 
@@ -296,8 +423,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetCompounders {} => to_binary(&get_compounders(deps)?),
         QueryMsg::GetBalances { delegator_address } => {
             to_binary(&get_balances(deps, delegator_address)?)
-        },
-        QueryMsg::GetDelegations { delegator_address } => to_binary(&get_delegations(deps, delegator_address)?),
+        }
+        QueryMsg::GetDelegations { delegator_address } => {
+            to_binary(&get_delegations(deps, delegator_address)?)
+        }
         QueryMsg::GetUnbondingDelegations {} => unimplemented!(),
     }
 }
@@ -324,7 +453,6 @@ fn get_delegations(deps: Deps, delegator_address: Addr) -> StdResult<Vec<Delegat
 
     Ok(delegations)
 }
-
 
 fn get_balances(deps: Deps, delegator_address: Addr) -> StdResult<Vec<Coin>> {
     let compounder_contract = COMPOUNDER_CONTRACTS_BY_ADDRESS
