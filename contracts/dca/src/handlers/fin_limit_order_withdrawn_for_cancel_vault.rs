@@ -33,8 +33,8 @@ pub fn fin_limit_order_withdrawn_for_cancel_vault(
                 amount: vec![filled_amount.clone()],
             };
 
-            trigger_store().remove(deps.storage, vault.id.u128())?;
-            vault_store().remove(deps.storage, vault.id.u128())?;
+            trigger_store().remove(deps.storage, vault.id.into())?;
+            vault_store().remove(deps.storage, vault.id.into())?;
 
             LIMIT_ORDER_CACHE.remove(deps.storage);
             CACHE.remove(deps.storage);

@@ -1,13 +1,15 @@
 use crate::contract::FIN_LIMIT_ORDER_SUBMITTED_ID;
 use crate::error::ContractError;
-use crate::state::{save_event, save_trigger, vault_store, Cache, Config, CACHE, CONFIG, PAIRS};
+use crate::state::{
+    create_event, create_trigger, vault_store, Cache, Config, CACHE, CONFIG, PAIRS,
+};
 use crate::validation_helpers::{
     assert_denom_matches_pair_denom, assert_exactly_one_asset,
     assert_swap_amount_is_less_than_or_equal_to_balance, assert_target_start_time_is_in_future,
 };
 use crate::vault::Vault;
 use base::events::event::{EventBuilder, EventData};
-use base::triggers::trigger::{TimeInterval, Trigger, TriggerConfiguration};
+use base::triggers::trigger::{TimeInterval, TriggerBuilder, TriggerConfiguration, TriggerStatus};
 use base::vaults::vault::{PositionType, VaultStatus};
 use cosmwasm_std::Decimal256;
 #[cfg(not(feature = "library"))]
@@ -51,9 +53,9 @@ pub fn create_vault(
         time_interval: time_interval.clone(),
     };
 
-    vault_store().save(deps.storage, vault.id.u128(), &vault)?;
+    vault_store().save(deps.storage, vault.id.into(), &vault)?;
 
-    save_event(
+    create_event(
         deps.storage,
         EventBuilder::new(vault.id, env.block.clone(), EventData::DCAVaultCreated),
     )?;
@@ -84,16 +86,17 @@ fn create_time_trigger(
 
     assert_target_start_time_is_in_future(env.block.time, target_time)?;
 
-    save_trigger(
+    create_trigger(
         deps.storage,
-        Trigger {
+        TriggerBuilder {
             vault_id: vault.id,
+            status: TriggerStatus::Active,
             configuration: TriggerConfiguration::Time { target_time },
         },
     )?;
 
     Ok(Response::new()
-        .add_attribute("method", "create_vault_with_time_trigger")
+        .add_attribute("method", "create_vault")
         .add_attribute("owner", vault.owner.to_string())
         .add_attribute("vault_id", vault.id))
 }
@@ -103,11 +106,15 @@ fn create_fin_limit_order_trigger(
     vault: Vault,
     target_price: Decimal256,
 ) -> Result<Response, ContractError> {
-    save_trigger(
+    create_trigger(
         deps.storage,
-        Trigger {
+        TriggerBuilder {
             vault_id: vault.id,
-            configuration: TriggerConfiguration::FINLimitOrder { order_idx: None },
+            status: TriggerStatus::Active,
+            configuration: TriggerConfiguration::FINLimitOrder {
+                order_idx: None,
+                target_price: target_price.clone(),
+            },
         },
     )?;
 

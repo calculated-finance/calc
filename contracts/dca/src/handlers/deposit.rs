@@ -1,5 +1,5 @@
 use crate::error::ContractError;
-use crate::state::{save_event, vault_store};
+use crate::state::{create_event, vault_store};
 use crate::validation_helpers::{assert_denom_matches_pair_denom, assert_exactly_one_asset};
 use crate::vault::Vault;
 use base::events::event::{EventBuilder, EventData};
@@ -50,7 +50,7 @@ pub fn deposit(
         },
     )?;
 
-    save_event(
+    create_event(
         deps.storage,
         EventBuilder::new(
             vault.id,

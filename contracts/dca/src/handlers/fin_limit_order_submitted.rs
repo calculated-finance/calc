@@ -21,16 +21,17 @@ pub fn fin_limit_order_submitted(deps: DepsMut, reply: Reply) -> Result<Response
 
             trigger_store().update(
                 deps.storage,
-                cache.vault_id.u128(),
+                cache.vault_id.into(),
                 |trigger| match trigger {
                     Some(mut trigger) => {
                         trigger.configuration = TriggerConfiguration::FINLimitOrder {
                             order_idx: Some(order_idx),
+                            target_price: *trigger.configuration.as_fin_limit_order().unwrap().0,
                         };
                         Ok(trigger)
                     }
                     None => Err(ContractError::CustomError {
-                        val: "FIN Limit order trigger not found".to_string(),
+                        val: "FIN limit order trigger not found".to_string(),
                     }),
                 },
             )?;

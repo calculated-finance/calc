@@ -1,10 +1,12 @@
 use crate::constants::ONE_HUNDRED;
 use crate::error::ContractError;
-use crate::state::{save_event, save_trigger, vault_store, CACHE, CONFIG, LIMIT_ORDER_CACHE};
+use crate::state::{
+    create_event, create_trigger, trigger_store, vault_store, CACHE, CONFIG, LIMIT_ORDER_CACHE,
+};
 use crate::vault::Vault;
 use base::events::event::{EventBuilder, EventData};
 use base::helpers::time_helpers::get_next_target_time;
-use base::triggers::trigger::{Trigger, TriggerConfiguration};
+use base::triggers::trigger::{TriggerBuilder, TriggerConfiguration, TriggerStatus};
 use base::vaults::vault::VaultStatus;
 use cosmwasm_std::Env;
 #[cfg(not(feature = "library"))]
@@ -21,10 +23,28 @@ pub fn fin_limit_order_withdrawn_for_execute_vault(
 
     match reply.result {
         cosmwasm_std::SubMsgResult::Ok(_) => {
-            save_trigger(
+            trigger_store().update(
                 deps.storage,
-                Trigger {
+                limit_order_cache.trigger_id.into(),
+                |trigger| match trigger {
+                    Some(mut trigger) => {
+                        trigger.status = TriggerStatus::Executed;
+                        Ok(trigger)
+                    }
+                    None => Err(ContractError::CustomError {
+                        val: format!(
+                            "could not find trigger with id {:?}",
+                            limit_order_cache.trigger_id
+                        ),
+                    }),
+                },
+            )?;
+
+            create_trigger(
+                deps.storage,
+                TriggerBuilder {
                     vault_id: vault.id,
+                    status: TriggerStatus::Active,
                     configuration: TriggerConfiguration::Time {
                         target_time: get_next_target_time(
                             env.block.time,
@@ -70,12 +90,12 @@ pub fn fin_limit_order_withdrawn_for_execute_vault(
                 (coin_received_from_limit_order
                     .amount
                     .checked_multiply_ratio(config.fee_percent, ONE_HUNDRED)?)
-                .u128(),
+                .into(),
                 &coin_received_from_limit_order.denom,
             );
 
             let funds_to_redistribute = Coin::new(
-                (coin_received_from_limit_order.amount - execution_fee.amount).u128(),
+                (coin_received_from_limit_order.amount - execution_fee.amount).into(),
                 &coin_received_from_limit_order.denom,
             );
 
@@ -89,7 +109,7 @@ pub fn fin_limit_order_withdrawn_for_execute_vault(
                 amount: vec![execution_fee.clone()],
             };
 
-            save_event(
+            create_event(
                 deps.storage,
                 EventBuilder::new(
                     vault.id,

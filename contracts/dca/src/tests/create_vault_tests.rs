@@ -53,7 +53,7 @@ fn with_fin_limit_order_trigger_should_update_address_balances() {
                 target_price: Some(Decimal256::from_str("1.0").unwrap()),
                 target_start_time_utc_seconds: None,
             },
-            &vec![Coin::new(vault_deposit.u128(), DENOM_UKUJI.to_string())],
+            &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI.to_string())],
         )
         .unwrap();
 
@@ -116,7 +116,7 @@ fn with_fin_limit_order_trigger_should_create_vault() {
                 target_price: Some(Decimal256::from_str("1.0").unwrap()),
                 target_start_time_utc_seconds: None,
             },
-            &vec![Coin::new(vault_deposit.u128(), String::from(DENOM_UKUJI))],
+            &vec![Coin::new(vault_deposit.into(), String::from(DENOM_UKUJI))],
         )
         .unwrap();
 
@@ -138,7 +138,7 @@ fn with_fin_limit_order_trigger_should_create_vault() {
             owner: user_address.clone(),
             created_at: mock.app.block_info().time,
             status: VaultStatus::Active,
-            balance: Coin::new(vault_deposit.u128(), DENOM_UKUJI.to_string()),
+            balance: Coin::new(vault_deposit.into(), DENOM_UKUJI.to_string()),
             position_type: PositionType::Enter,
             time_interval: TimeInterval::Hourly,
             slippage_tolerance: None,
@@ -162,7 +162,7 @@ fn with_price_trigger_with_existing_vault_should_create_vault() {
         .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
         .with_vault_with_filled_fin_limit_price_trigger(
             &user_address,
-            Coin::new(vault_deposit.u128(), DENOM_UKUJI),
+            Coin::new(vault_deposit.into(), DENOM_UKUJI),
             swap_amount,
             "fin",
         );
@@ -181,7 +181,7 @@ fn with_price_trigger_with_existing_vault_should_create_vault() {
                 target_price: Some(Decimal256::from_str("1.0").unwrap()),
                 target_start_time_utc_seconds: None,
             },
-            &vec![Coin::new(vault_deposit.u128(), DENOM_UKUJI)],
+            &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
         .unwrap();
 
@@ -206,7 +206,7 @@ fn with_price_trigger_with_existing_vault_should_create_vault() {
             position_type: PositionType::Enter,
             time_interval: TimeInterval::Hourly,
             slippage_tolerance: None,
-            balance: Coin::new(vault_deposit.u128(), DENOM_UKUJI),
+            balance: Coin::new(vault_deposit.into(), DENOM_UKUJI),
             swap_amount,
             pair: Pair {
                 address: mock.fin_contract_address.clone(),
@@ -241,7 +241,7 @@ fn with_price_trigger_should_publish_vault_created_event() {
                 target_start_time_utc_seconds: None,
                 target_price: Some(Decimal256::from_str("1.0").unwrap()),
             },
-            &vec![Coin::new(vault_deposit.u128(), DENOM_UKUJI)],
+            &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
         .unwrap();
 
@@ -264,7 +264,7 @@ fn with_fin_limit_order_trigger_twice_for_user_should_succeed() {
         .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
         .with_vault_with_filled_fin_limit_price_trigger(
             &user_address,
-            Coin::new(vault_deposit.u128(), DENOM_UKUJI),
+            Coin::new(vault_deposit.into(), DENOM_UKUJI),
             swap_amount,
             "fin",
         );
@@ -303,7 +303,7 @@ fn with_fin_limit_order_trigger_twice_for_user_should_succeed() {
                 target_price: Some(Decimal256::from_str("1.0").unwrap()),
                 target_start_time_utc_seconds: None,
             },
-            &vec![Coin::new(vault_deposit.u128(), DENOM_UKUJI.to_string())],
+            &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI.to_string())],
         )
         .unwrap();
 
@@ -390,7 +390,7 @@ fn with_time_trigger_should_update_address_balances() {
                 target_start_time_utc_seconds: Some(Uint64::from(target_start_time.seconds())),
                 target_price: None,
             },
-            &vec![Coin::new(vault_deposit.u128(), DENOM_UKUJI)],
+            &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
         .unwrap();
 
@@ -438,7 +438,7 @@ fn with_time_trigger_should_create_vault() {
                 target_start_time_utc_seconds: Some(Uint64::from(target_start_time.seconds())),
                 target_price: None,
             },
-            &vec![Coin::new(vault_deposit.u128(), DENOM_UKUJI)],
+            &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
         .unwrap();
 
@@ -459,7 +459,7 @@ fn with_time_trigger_should_create_vault() {
             status: VaultStatus::Active,
             position_type: PositionType::Enter,
             time_interval: TimeInterval::Hourly,
-            balance: Coin::new(vault_deposit.u128(), DENOM_UKUJI.to_string()),
+            balance: Coin::new(vault_deposit.into(), DENOM_UKUJI.to_string()),
             slippage_tolerance: None,
             swap_amount,
             pair: Pair {
@@ -481,7 +481,7 @@ fn with_time_trigger_with_existing_vault_should_create_vault() {
         .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
         .with_vault_with_time_trigger(
             &user_address,
-            Coin::new(vault_deposit.u128(), DENOM_UKUJI),
+            Coin::new(vault_deposit.into(), DENOM_UKUJI),
             swap_amount,
             "time",
         );
@@ -502,7 +502,7 @@ fn with_time_trigger_with_existing_vault_should_create_vault() {
                 target_start_time_utc_seconds: Some(Uint64::from(target_start_time.seconds())),
                 target_price: None,
             },
-            &vec![Coin::new(vault_deposit.u128(), DENOM_UKUJI)],
+            &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
         .unwrap();
 
@@ -527,7 +527,7 @@ fn with_time_trigger_with_existing_vault_should_create_vault() {
             position_type: PositionType::Enter,
             slippage_tolerance: None,
             time_interval: TimeInterval::Hourly,
-            balance: Coin::new(vault_deposit.u128(), DENOM_UKUJI.to_string()),
+            balance: Coin::new(vault_deposit.into(), DENOM_UKUJI.to_string()),
             swap_amount,
             pair: Pair {
                 address: mock.fin_contract_address.clone(),
@@ -563,7 +563,7 @@ fn with_time_trigger_should_publish_vault_created_event() {
                 target_start_time_utc_seconds: None,
                 target_price: None,
             },
-            &vec![Coin::new(vault_deposit.u128(), DENOM_UKUJI)],
+            &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
         .unwrap();
 
@@ -601,7 +601,7 @@ fn with_time_trigger_with_no_target_time_should_succeed() {
                 target_start_time_utc_seconds: None,
                 target_price: None,
             },
-            &vec![Coin::new(vault_deposit.u128(), DENOM_UKUJI)],
+            &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
         .unwrap();
 
@@ -669,7 +669,7 @@ fn with_time_trigger_with_target_time_in_the_past_should_fail() {
                 )),
                 target_price: None,
             },
-            &vec![Coin::new(vault_deposit.u128(), DENOM_UKUJI)],
+            &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
         .unwrap_err();
 
@@ -707,7 +707,7 @@ fn with_price_and_time_trigger_should_fail() {
                 )),
                 target_price: Some(Decimal256::from_str("1.0").unwrap()),
             },
-            &vec![Coin::new(vault_deposit.u128(), DENOM_UKUJI)],
+            &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
         .unwrap_err();
 
@@ -777,8 +777,8 @@ fn with_multiple_assets_should_fail() {
                 target_price: None,
             },
             &vec![
-                Coin::new(vault_deposit.u128(), DENOM_UTEST),
-                Coin::new(vault_deposit.u128(), DENOM_UKUJI),
+                Coin::new(vault_deposit.into(), DENOM_UTEST),
+                Coin::new(vault_deposit.into(), DENOM_UKUJI),
             ],
         )
         .unwrap_err();
@@ -815,7 +815,7 @@ fn with_non_existent_pair_address_should_fail() {
                 target_start_time_utc_seconds: None,
                 target_price: None,
             },
-            &vec![Coin::new(vault_deposit.u128(), DENOM_UKUJI)],
+            &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
         .unwrap_err();
 

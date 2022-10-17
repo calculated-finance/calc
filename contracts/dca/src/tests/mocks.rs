@@ -170,7 +170,7 @@ impl MockApp {
             .send_tokens(
                 Addr::unchecked(ADMIN),
                 address.clone(),
-                &[Coin::new(amount.u128(), denom.to_string())],
+                &[Coin::new(amount.into(), denom.to_string())],
             )
             .unwrap();
 
@@ -251,7 +251,7 @@ impl MockApp {
             .send_tokens(
                 self.fin_contract_address.clone(),
                 Addr::unchecked(ADMIN),
-                &[Coin::new(swap_amount.u128(), DENOM_UKUJI)],
+                &[Coin::new(swap_amount.into(), DENOM_UKUJI)],
             )
             .unwrap();
 
@@ -260,7 +260,7 @@ impl MockApp {
             .send_tokens(
                 Addr::unchecked(ADMIN),
                 self.fin_contract_address.clone(),
-                &[Coin::new(swap_amount.u128(), DENOM_UTEST)],
+                &[Coin::new(swap_amount.into(), DENOM_UTEST)],
             )
             .unwrap();
 
@@ -444,7 +444,7 @@ fn withdraw_filled_order_handler(
         for _ in order_ids {
             response = response.add_message(BankMsg::Send {
                 to_address: info.sender.to_string(),
-                amount: vec![Coin::new(ONE.u128(), DENOM_UTEST.to_string())],
+                amount: vec![Coin::new(ONE.into(), DENOM_UTEST.to_string())],
             })
         }
     }

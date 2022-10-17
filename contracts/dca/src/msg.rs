@@ -99,7 +99,7 @@ pub struct TriggerIdsResponse {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct VaultResponse {
     pub vault: Vault,
-    pub trigger: Option<Trigger>,
+    pub triggers: Vec<Trigger>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

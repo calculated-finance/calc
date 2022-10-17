@@ -1,6 +1,6 @@
 use crate::constants::ONE_HUNDRED;
 use crate::error::ContractError;
-use crate::state::{save_event, trigger_store, vault_store, CACHE, CONFIG};
+use crate::state::{create_event, trigger_store, vault_store, CACHE, CONFIG, TIME_TRIGGER_CACHE};
 use crate::vault::Vault;
 use base::events::event::{EventBuilder, EventData, ExecutionSkippedReason};
 use base::helpers::message_helpers::{find_first_attribute_by_key, find_first_event_by_type};
@@ -17,9 +17,10 @@ pub fn fin_swap_completed(
     reply: Reply,
 ) -> Result<Response, ContractError> {
     let cache = CACHE.load(deps.storage)?;
-    let vault = vault_store().load(deps.storage, cache.vault_id.u128())?;
+    let time_trigger_cache = TIME_TRIGGER_CACHE.load(deps.storage)?;
+    let vault = vault_store().load(deps.storage, cache.vault_id.into())?;
     let trigger_store = trigger_store();
-    let trigger = trigger_store.load(deps.storage, vault.id.u128())?;
+    let trigger = trigger_store.load(deps.storage, time_trigger_cache.trigger_id.into())?;
 
     let mut attributes: Vec<Attribute> = Vec::new();
     let mut messages: Vec<CosmosMsg> = Vec::new();
@@ -78,12 +79,12 @@ pub fn fin_swap_completed(
                 (coin_received
                     .amount
                     .checked_multiply_ratio(config.fee_percent, ONE_HUNDRED)?)
-                .u128(),
+                .into(),
                 &coin_received.denom,
             );
 
             let funds_to_redistribute = Coin::new(
-                (coin_received.amount - execution_fee.amount).u128(),
+                (coin_received.amount - execution_fee.amount).into(),
                 &coin_received.denom,
             );
 
@@ -128,24 +129,22 @@ pub fn fin_swap_completed(
                     let next_trigger_time =
                         get_next_target_time(env.block.time, target_time, vault.time_interval);
 
-                    trigger_store.update(
-                        deps.storage,
-                        trigger.vault_id.into(),
-                        |existing_trigger| match existing_trigger {
+                    trigger_store.update(deps.storage, trigger.id.into(), |existing_trigger| {
+                        match existing_trigger {
                             Some(trigger) => {
                                 target_time = next_trigger_time;
                                 Ok(trigger)
                             }
                             None => Err(ContractError::CustomError {
-                                val: format!("could not trigger with id: {}", trigger.vault_id),
+                                val: format!("could not trigger with id: {}", trigger.id),
                             }),
-                        },
-                    )?;
+                        }
+                    })?;
                 }
                 _ => panic!("should be a time based trigger"),
             }
 
-            save_event(
+            create_event(
                 deps.storage,
                 EventBuilder::new(
                     vault.id,
@@ -161,7 +160,7 @@ pub fn fin_swap_completed(
             attributes.push(Attribute::new("status", "success"));
         }
         cosmwasm_std::SubMsgResult::Err(e) => {
-            save_event(
+            create_event(
                 deps.storage,
                 EventBuilder::new(
                     vault.id,
@@ -185,22 +184,17 @@ pub fn fin_swap_completed(
                     let next_trigger_time =
                         get_next_target_time(env.block.time, target_time, vault.time_interval);
 
-                    trigger_store.update(
-                        deps.storage,
-                        trigger.vault_id.into(),
-                        |existing_trigger| match existing_trigger {
+                    trigger_store.update(deps.storage, trigger.id.into(), |existing_trigger| {
+                        match existing_trigger {
                             Some(trigger) => {
                                 target_time = next_trigger_time;
                                 Ok(trigger)
                             }
                             None => Err(ContractError::CustomError {
-                                val: format!(
-                                    "could not find trigger with id: {}",
-                                    trigger.vault_id
-                                ),
+                                val: format!("could not find trigger with id: {}", trigger.id),
                             }),
-                        },
-                    )?;
+                        }
+                    })?;
                 }
                 _ => panic!("should be a time based trigger"),
             }
