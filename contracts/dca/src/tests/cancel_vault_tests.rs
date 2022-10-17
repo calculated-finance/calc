@@ -48,7 +48,7 @@ fn when_vault_has_unfulfilled_fin_limit_order_trigger_should_succeed() {
         .execute_contract(
             Addr::unchecked(ADMIN),
             mock.dca_contract_address.clone(),
-            &ExecuteMsg::CancelVaultByAddressAndId {
+            &ExecuteMsg::CancelVault {
                 address: user_address.to_string(),
                 vault_id: mock.vault_ids.get("fin").unwrap().to_owned(),
             },
@@ -140,7 +140,7 @@ fn when_vault_has_partially_filled_price_trigger_should_succeed() {
         .execute_contract(
             Addr::unchecked(ADMIN),
             mock.dca_contract_address.clone(),
-            &ExecuteMsg::CancelVaultByAddressAndId {
+            &ExecuteMsg::CancelVault {
                 address: user_address.to_string(),
                 vault_id,
             },
@@ -226,7 +226,7 @@ fn when_vault_has_time_trigger_should_succeed() {
         .execute_contract(
             Addr::unchecked(ADMIN),
             mock.dca_contract_address.clone(),
-            &ExecuteMsg::CancelVaultByAddressAndId {
+            &ExecuteMsg::CancelVault {
                 address: user_address.to_string(),
                 vault_id,
             },

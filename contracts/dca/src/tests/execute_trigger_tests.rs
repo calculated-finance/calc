@@ -59,7 +59,7 @@ fn fin_limit_order_trigger_should_succeed() {
         .wrap()
         .query_wasm_smart(
             &mock.dca_contract_address,
-            &&QueryMsg::GetVaultById { vault_id },
+            &&QueryMsg::GetVault { vault_id },
         )
         .unwrap();
 
@@ -68,7 +68,7 @@ fn fin_limit_order_trigger_should_succeed() {
             Addr::unchecked(ADMIN),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::ExecuteTrigger {
-                trigger_id: vault_response.vault.trigger_id.unwrap(),
+                trigger_id: vault_response.vault.id,
             },
             &[],
         )
@@ -97,9 +97,7 @@ fn fin_limit_order_trigger_should_succeed() {
             EventBuilder::new(
                 vault_id,
                 mock.app.block_info(),
-                EventData::DCAVaultExecutionTriggered {
-                    trigger_id: vault_response.vault.trigger_id.unwrap(),
-                },
+                EventData::DCAVaultExecutionTriggered,
             )
             .build(2),
             EventBuilder::new(
@@ -179,7 +177,7 @@ fn when_order_partially_filled_should_fail() {
         .wrap()
         .query_wasm_smart(
             &mock.dca_contract_address,
-            &&QueryMsg::GetVaultById {
+            &&QueryMsg::GetVault {
                 vault_id: mock.vault_ids.get("fin").unwrap().to_owned(),
             },
         )
@@ -191,7 +189,7 @@ fn when_order_partially_filled_should_fail() {
             Addr::unchecked(ADMIN),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::ExecuteTrigger {
-                trigger_id: vault_response.vault.trigger_id.unwrap(),
+                trigger_id: vault_response.vault.id,
             },
             &[],
         )
@@ -280,7 +278,7 @@ fn when_executions_result_in_empty_vault_should_succeed() {
         .wrap()
         .query_wasm_smart(
             &mock.dca_contract_address,
-            &&QueryMsg::GetVaultById {
+            &&QueryMsg::GetVault {
                 vault_id: mock.vault_ids.get("fin").unwrap().to_owned(),
             },
         )
@@ -291,18 +289,20 @@ fn when_executions_result_in_empty_vault_should_succeed() {
             Addr::unchecked(ADMIN),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::ExecuteTrigger {
-                trigger_id: vault_response.vault.trigger_id.unwrap(),
+                trigger_id: vault_response.vault.id,
             },
             &[],
         )
         .unwrap();
+
+    mock.elapse_time(3601);
 
     let vault_with_time_trigger_response: VaultResponse = mock
         .app
         .wrap()
         .query_wasm_smart(
             &mock.dca_contract_address,
-            &&QueryMsg::GetVaultById {
+            &&QueryMsg::GetVault {
                 vault_id: mock.vault_ids.get("fin").unwrap().to_owned(),
             },
         )
@@ -313,7 +313,7 @@ fn when_executions_result_in_empty_vault_should_succeed() {
             Addr::unchecked(ADMIN),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::ExecuteTrigger {
-                trigger_id: vault_with_time_trigger_response.vault.trigger_id.unwrap(),
+                trigger_id: vault_with_time_trigger_response.vault.id,
             },
             &[],
         )
@@ -431,9 +431,7 @@ fn after_target_time_should_succeed() {
             EventBuilder::new(
                 vault_id,
                 mock.app.block_info(),
-                EventData::DCAVaultExecutionTriggered {
-                    trigger_id: Uint128::new(1),
-                },
+                EventData::DCAVaultExecutionTriggered,
             )
             .build(2),
             EventBuilder::new(
