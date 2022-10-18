@@ -1,7 +1,7 @@
 use cosmwasm_std::{
     entry_point, DepsMut, Env, IbcBasicResponse,
     IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcPacketAckMsg,
-    IbcPacketReceiveMsg, IbcReceiveResponse, StdResult,
+    IbcPacketReceiveMsg, IbcReceiveResponse, StdResult, Ibc3ChannelOpenResponse,
 };
 
 use crate::ContractError;
@@ -12,9 +12,13 @@ pub fn ibc_channel_open(
     _deps: DepsMut,
     _env: Env,
     _msg: IbcChannelOpenMsg,
-) -> Result<(), ContractError> {
+) -> Result<Option<Ibc3ChannelOpenResponse>, ContractError> {
     //let channel = msg.channel();
-    Ok(())
+    Ok(
+        Some(
+            Ibc3ChannelOpenResponse { version: "v0.0.1".to_string() }
+        )
+    )
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
