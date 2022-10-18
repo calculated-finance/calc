@@ -8,7 +8,7 @@ use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 /*
 // version info for migration info
-const CONTRACT_NAME: &str = "crates.io:compounder";
+const CONTRACT_NAME: &str = "crates.io:ica-juno";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 */
 
@@ -19,7 +19,7 @@ pub fn instantiate(
     _info: MessageInfo,
     _msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    Ok(Response::default())
+    unimplemented!()
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -29,7 +29,7 @@ pub fn execute(
     _info: MessageInfo,
     _msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    Ok(Response::default())
+    unimplemented!()
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

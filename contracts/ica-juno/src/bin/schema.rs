@@ -1,6 +1,6 @@
 use cosmwasm_schema::write_api;
 
-use compounder::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use ica_juno::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 fn main() {
     write_api! {
