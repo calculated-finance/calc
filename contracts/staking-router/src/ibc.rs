@@ -5,7 +5,7 @@ use cosmwasm_std::{
     IbcPacketReceiveMsg, IbcReceiveResponse, StdResult, IbcPacketTimeoutMsg,
 };
 
-use crate::{handlers::receive_test::receive_test, ContractError};
+use crate::ContractError;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 /// enforces ordering and versioing constraints
@@ -44,17 +44,18 @@ pub fn ibc_channel_close(
 #[cfg_attr(not(feature = "library"), entry_point)]
 /// never should be called as the other side never sends packets
 pub fn ibc_packet_receive(
-    deps: DepsMut,
+    _deps: DepsMut,
     _env: Env,
     msg: IbcPacketReceiveMsg,
-) -> StdResult<IbcReceiveResponse> {
-    let packet = msg.packet;
-    let caller = packet.dest.channel_id;
-    let packet: CalcIBC = from_binary(&packet.data)?;
+) -> Result<IbcReceiveResponse, ContractError> {
+    let _packet = msg.packet;
+    // let caller = packet.dest.channel_id;
+    // let packet: CalcIBC = from_binary(&packet.data)?;
 
-    match packet {
-        CalcIBC::Test { value } => receive_test(deps, caller, value),
-    }
+    Ok(
+        IbcReceiveResponse::new()
+        .add_attribute("method", "ibc_packet_receive")
+    )
 }
 
 // this wont be called because we wont send any packets from the juno side for poc

@@ -7,6 +7,7 @@ use crate::error::ContractError;
 use crate::handlers::add_allowed_z_caller::add_allowed_z_caller;
 use crate::handlers::get_allowed_z_callers::get_allowed_z_callers;
 use crate::handlers::remove_allowed_z_caller::remove_allowed_z_caller;
+use crate::handlers::test_ibc::test_ibc;
 use crate::handlers::zdelegate::zdelegate;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, MigrateMsg};
 use crate::state::{Config, CONFIG};
@@ -78,7 +79,8 @@ pub fn execute(
         }
         ExecuteMsg::RemoveAllowedZCaller { allowed_z_caller } => {
             remove_allowed_z_caller(deps, info, allowed_z_caller)
-        }
+        },
+        ExecuteMsg::TestIBC { value, channel_id } => test_ibc(deps, env, value, channel_id)
     }
 }
 

@@ -1,8 +1,8 @@
+use base::ibc::msg::TestResponse;
 use cosmwasm_std::{DepsMut, IbcReceiveResponse, StdResult};
 
 use crate::{
     ibc_msg::StdAck,
-    msg::TestResponse,
     state::{State, STATE},
 };
 

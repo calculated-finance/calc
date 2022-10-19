@@ -1,5 +1,5 @@
-use crate::state::State;
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use crate::state::State;
 
 #[cw_serde]
 pub struct InstantiateMsg {}
@@ -12,14 +12,4 @@ pub enum ExecuteMsg {}
 pub enum QueryMsg {
     #[returns(State)]
     GetState {},
-}
-
-#[cw_serde]
-pub enum CalcIBC {
-    Test { value: String },
-}
-
-#[cw_serde]
-pub struct TestResponse {
-    pub value: String,
 }

@@ -27,6 +27,10 @@ pub enum ExecuteMsg {
     RemoveAllowedZCaller {
         allowed_z_caller: Addr,
     },
+    TestIBC {
+        value: String,
+        channel_id: String
+    }
 }
 
 #[cw_serde]

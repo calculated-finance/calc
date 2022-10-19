@@ -536,6 +536,7 @@ dependencies = [
 name = "ica-juno"
 version = "0.1.0"
 dependencies = [
+ "base",
  "cosmos-sdk-proto",
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -945,6 +946,7 @@ dependencies = [
 name = "staking-router"
 version = "0.1.0"
 dependencies = [
+ "base",
  "cosmos-sdk-proto",
  "cosmwasm-schema",
  "cosmwasm-std",
