@@ -3,7 +3,7 @@
 
 in order to communicate between contracts using ibc a channel must be created (4 way handshake) and port.
 
-port (receiver on blockchain): created when a contract is instantiated and is used to send communications to a specific contract. to find the port for your contract use ```kujirad query wasm contract <address>``` and look at the ibc_port_field
+port (receiver on blockchain): created when a contract is instantiated and is used to send communications to a specific contract. to find the port for your contract use ```kujirad query wasm contract <address>``` and look at the ibc_port_id field
 
 relayers are used to send packets from chain A to chain B. in order to do this in test, you can configure the ```hermes``` relayer to work between two chain (kujira & juno)
 

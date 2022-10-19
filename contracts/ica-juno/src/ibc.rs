@@ -1,10 +1,10 @@
 use cosmwasm_std::{
-    entry_point, DepsMut, Env, IbcBasicResponse,
+    entry_point, from_binary, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse,
     IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcPacketAckMsg,
-    IbcPacketReceiveMsg, IbcReceiveResponse, StdResult, Ibc3ChannelOpenResponse,
+    IbcPacketReceiveMsg, IbcReceiveResponse, StdResult, IbcPacketTimeoutMsg,
 };
 
-use crate::ContractError;
+use crate::{handlers::receive_test::receive_test, msg::CalcIBC, ContractError};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 /// enforces ordering and versioing constraints
@@ -14,11 +14,7 @@ pub fn ibc_channel_open(
     _msg: IbcChannelOpenMsg,
 ) -> Result<Option<Ibc3ChannelOpenResponse>, ContractError> {
     //let channel = msg.channel();
-    Ok(
-        Some(
-            Ibc3ChannelOpenResponse { version: "v0.0.1".to_string() }
-        )
-    )
+    Ok(None)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -30,7 +26,7 @@ pub fn ibc_channel_connect(
 ) -> StdResult<IbcBasicResponse> {
     // let channel = msg.channel();
     // let channel_id = &channel.endpoint.channel_id;
-    Ok(IbcBasicResponse::new())
+    Ok(IbcBasicResponse::new().add_attribute("method", "ibc_channel_connect"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -41,19 +37,26 @@ pub fn ibc_channel_close(
     _msg: IbcChannelCloseMsg,
 ) -> StdResult<IbcBasicResponse> {
     //let channel = msg.channel();
-    Ok(IbcBasicResponse::new())
+    Ok(IbcBasicResponse::new().add_attribute("method", "ibc_channel_close"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 /// never should be called as the other side never sends packets
 pub fn ibc_packet_receive(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
-    _packet: IbcPacketReceiveMsg,
+    msg: IbcPacketReceiveMsg,
 ) -> StdResult<IbcReceiveResponse> {
-    Ok(IbcReceiveResponse::new().set_ack(b"{}"))
+    let packet = msg.packet;
+    let caller = packet.dest.channel_id;
+    let packet: CalcIBC = from_binary(&packet.data)?;
+
+    match packet {
+        CalcIBC::Test { value } => receive_test(deps, caller, value),
+    }
 }
 
+// this wont be called because we wont send any packets from the juno side for poc
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn ibc_packet_ack(
     _deps: DepsMut,
@@ -65,4 +68,14 @@ pub fn ibc_packet_ack(
     // we need to parse the ack based on our request
 
     Ok(IbcBasicResponse::new())
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+/// we just ignore these now. shall we store some info?
+pub fn ibc_packet_timeout(
+    _deps: DepsMut,
+    _env: Env,
+    _msg: IbcPacketTimeoutMsg,
+) -> StdResult<IbcBasicResponse> {
+    Ok(IbcBasicResponse::new().add_attribute("action", "ibc_packet_timeout"))
 }
