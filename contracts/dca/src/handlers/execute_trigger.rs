@@ -1,7 +1,7 @@
 use crate::contract::{FIN_LIMIT_ORDER_WITHDRAWN_FOR_EXECUTE_VAULT_ID, FIN_SWAP_COMPLETED_ID};
 use crate::error::ContractError;
 use crate::state::{
-    create_event, trigger_store, vault_store, Cache, LimitOrderCache, TimeTriggerCache, CACHE,
+    create_event, get_trigger, vault_store, Cache, LimitOrderCache, TimeTriggerCache, CACHE,
     LIMIT_ORDER_CACHE, TIME_TRIGGER_CACHE,
 };
 use crate::vault::Vault;
@@ -21,7 +21,7 @@ pub fn execute_trigger(
     env: Env,
     trigger_id: Uint128,
 ) -> Result<Response, ContractError> {
-    let trigger = trigger_store().load(deps.storage, trigger_id.into())?;
+    let trigger = get_trigger(deps.storage, trigger_id.into())?;
     let vault = vault_store().load(deps.storage, trigger.vault_id.into())?;
 
     create_event(
@@ -41,7 +41,6 @@ pub fn execute_trigger(
             deps,
             vault.to_owned(),
             vault.pair.to_owned(),
-            trigger_id,
             order_idx.unwrap(),
         ),
     }
@@ -123,14 +122,12 @@ fn execute_fin_limit_order_trigger(
     deps: DepsMut,
     vault: Vault,
     pair: Pair,
-    trigger_id: Uint128,
     order_idx: Uint128,
 ) -> Result<Response, ContractError> {
     let (offer_amount, original_offer_amount, filled) =
         query_order_details(deps.querier, pair.address.clone(), order_idx);
 
     let limit_order_cache = LimitOrderCache {
-        trigger_id,
         offer_amount,
         original_offer_amount,
         filled,

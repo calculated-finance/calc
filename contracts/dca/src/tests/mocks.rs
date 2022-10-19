@@ -180,7 +180,7 @@ impl MockApp {
     pub fn with_vault_with_unfilled_fin_limit_price_trigger(
         mut self,
         owner: &Addr,
-        destinations: Vec<Destination>,
+        destinations: Option<Vec<Destination>>,
         balance: Coin,
         swap_amount: Uint128,
         label: &str,
@@ -218,7 +218,7 @@ impl MockApp {
     pub fn with_vault_with_filled_fin_limit_price_trigger(
         mut self,
         owner: &Addr,
-        destinations: Vec<Destination>,
+        destinations: Option<Vec<Destination>>,
         balance: Coin,
         swap_amount: Uint128,
         label: &str,
@@ -284,7 +284,7 @@ impl MockApp {
                 owner.clone(),
                 self.dca_contract_address.clone(),
                 &ExecuteMsg::CreateVault {
-                    destinations: vec![],
+                    destinations: None,
                     pair_address: self.fin_contract_address.to_string(),
                     position_type: PositionType::Enter,
                     slippage_tolerance: None,
@@ -335,7 +335,7 @@ impl MockApp {
     pub fn with_vault_with_time_trigger(
         mut self,
         owner: &Addr,
-        destinations: Vec<Destination>,
+        destinations: Option<Vec<Destination>>,
         balance: Coin,
         swap_amount: Uint128,
         label: &str,
@@ -380,7 +380,7 @@ impl MockApp {
         });
     }
 
-    pub fn get_vault_by_label(&self, label: &str) -> Vault {
+    pub fn get_vault_by_label(&self, label: &str, address: String) -> Vault {
         let vault_id = self.vault_ids.get(label).unwrap();
         let vault_response: VaultResponse = self
             .app
@@ -389,6 +389,7 @@ impl MockApp {
                 self.dca_contract_address.clone(),
                 &QueryMsg::GetVault {
                     vault_id: vault_id.to_owned(),
+                    address,
                 },
             )
             .unwrap();

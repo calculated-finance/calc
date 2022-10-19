@@ -9,7 +9,6 @@ use crate::msg::{
     EventsResponse, ExecuteMsg, InstantiateMsg, PairsResponse, QueryMsg, VaultResponse,
     VaultsResponse,
 };
-
 pub const INVALID_ADDRESS: &str = "";
 pub const VALID_ADDRESS_ONE: &str = "kujira16q6jpx7ns0ugwghqay73uxd5aq30du3uqgxf0d";
 pub const VALID_ADDRESS_TWO: &str = "kujira1cvlzqz80rp70xtmux9x69j4sr0rndh3yws2lfv";
@@ -372,7 +371,7 @@ fn cancel_vault_with_valid_inputs_should_succeed() {
     .unwrap();
 
     let create_vault_execute_message = ExecuteMsg::CreateVault {
-        destinations: vec![],
+        destinations: None,
         pair_address: String::from(VALID_ADDRESS_TWO),
         position_type: PositionType::Enter,
         slippage_tolerance: None,
@@ -447,7 +446,7 @@ fn get_active_vault_by_address_and_id_should_succeed() {
     .unwrap();
 
     let create_vault_execute_message = ExecuteMsg::CreateVault {
-        destinations: vec![],
+        destinations: None,
         pair_address: String::from(VALID_ADDRESS_TWO),
         position_type: PositionType::Enter,
         slippage_tolerance: None,
@@ -463,6 +462,7 @@ fn get_active_vault_by_address_and_id_should_succeed() {
     };
 
     let info_with_funds = mock_info(VALID_ADDRESS_THREE, &vec![coin]);
+
     let _create_vault_execute_message = execute(
         deps.as_mut(),
         env.clone(),
@@ -471,15 +471,13 @@ fn get_active_vault_by_address_and_id_should_succeed() {
     )
     .unwrap();
 
-    let get_active_vault_by_address_and_id_query_message = QueryMsg::GetVault {
+    let get_vault_query_message = QueryMsg::GetVault {
         vault_id: Uint128::new(1),
+        address: String::from(VALID_ADDRESS_THREE),
     };
-    let binary = query(
-        deps.as_ref(),
-        env,
-        get_active_vault_by_address_and_id_query_message,
-    )
-    .unwrap();
+
+    let binary = query(deps.as_ref(), env, get_vault_query_message).unwrap();
+
     let result: VaultResponse = from_binary(&binary).unwrap();
 
     assert_eq!(result.vault.owner.to_string(), VALID_ADDRESS_THREE);
@@ -518,7 +516,7 @@ fn get_all_active_vaults_by_address_should_succeed() {
     .unwrap();
 
     let create_vault_execute_message_one = ExecuteMsg::CreateVault {
-        destinations: vec![],
+        destinations: None,
         pair_address: String::from(VALID_ADDRESS_TWO),
         position_type: PositionType::Enter,
         slippage_tolerance: None,
@@ -543,7 +541,7 @@ fn get_all_active_vaults_by_address_should_succeed() {
     .unwrap();
 
     let create_vault_execute_message_two = ExecuteMsg::CreateVault {
-        destinations: vec![],
+        destinations: None,
         pair_address: String::from(VALID_ADDRESS_TWO),
         position_type: PositionType::Enter,
         slippage_tolerance: None,
@@ -614,7 +612,7 @@ fn get_all_events_by_vault_id_for_new_vault_should_succeed() {
     .unwrap();
 
     let create_vault_execute_message = ExecuteMsg::CreateVault {
-        destinations: vec![],
+        destinations: None,
         pair_address: String::from(VALID_ADDRESS_TWO),
         position_type: PositionType::Enter,
         slippage_tolerance: None,

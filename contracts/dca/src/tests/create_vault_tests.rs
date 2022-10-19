@@ -1,5 +1,5 @@
 use crate::constants::{ONE, ONE_THOUSAND, TEN};
-use crate::msg::{ExecuteMsg, QueryMsg, TriggersResponse, VaultResponse};
+use crate::msg::{ExecuteMsg, QueryMsg, TriggerIdsResponse, VaultResponse};
 use crate::tests::helpers::{
     assert_address_balances, assert_events_published, assert_vault_balance,
 };
@@ -45,7 +45,7 @@ fn with_fin_limit_order_trigger_should_update_address_balances() {
             Addr::unchecked(USER),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::CreateVault {
-                destinations: vec![],
+                destinations: None,
                 pair_address: mock.fin_contract_address.to_string(),
                 position_type: PositionType::Enter,
                 slippage_tolerance: None,
@@ -109,7 +109,7 @@ fn with_fin_limit_order_trigger_should_create_vault() {
             Addr::unchecked(USER),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::CreateVault {
-                destinations: vec![],
+                destinations: None,
                 pair_address: mock.fin_contract_address.to_string(),
                 position_type: PositionType::Enter,
                 slippage_tolerance: None,
@@ -130,7 +130,13 @@ fn with_fin_limit_order_trigger_should_create_vault() {
     let vault_response: VaultResponse = mock
         .app
         .wrap()
-        .query_wasm_smart(&mock.dca_contract_address, &QueryMsg::GetVault { vault_id })
+        .query_wasm_smart(
+            &mock.dca_contract_address,
+            &QueryMsg::GetVault {
+                vault_id,
+                address: user_address.to_string(),
+            },
+        )
         .unwrap();
 
     assert_eq!(
@@ -154,6 +160,7 @@ fn with_fin_limit_order_trigger_should_create_vault() {
                 base_denom: DENOM_UTEST.to_string(),
                 quote_denom: DENOM_UKUJI.to_string(),
             },
+            started_at: None
         }
     );
 }
@@ -168,7 +175,7 @@ fn with_price_trigger_with_existing_vault_should_create_vault() {
         .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
         .with_vault_with_filled_fin_limit_price_trigger(
             &user_address,
-            vec![],
+            None,
             Coin::new(vault_deposit.into(), DENOM_UKUJI),
             swap_amount,
             "fin",
@@ -180,7 +187,7 @@ fn with_price_trigger_with_existing_vault_should_create_vault() {
             Addr::unchecked(USER),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::CreateVault {
-                destinations: vec![],
+                destinations: None,
                 pair_address: mock.fin_contract_address.to_string(),
                 position_type: PositionType::Enter,
                 slippage_tolerance: None,
@@ -201,7 +208,13 @@ fn with_price_trigger_with_existing_vault_should_create_vault() {
     let vault_response: VaultResponse = mock
         .app
         .wrap()
-        .query_wasm_smart(&mock.dca_contract_address, &QueryMsg::GetVault { vault_id })
+        .query_wasm_smart(
+            &mock.dca_contract_address,
+            &QueryMsg::GetVault {
+                vault_id,
+                address: user_address.to_string(),
+            },
+        )
         .unwrap();
 
     assert_eq!(
@@ -225,6 +238,7 @@ fn with_price_trigger_with_existing_vault_should_create_vault() {
                 base_denom: DENOM_UTEST.to_string(),
                 quote_denom: DENOM_UKUJI.to_string(),
             },
+            started_at: None
         }
     );
 }
@@ -245,7 +259,7 @@ fn with_price_trigger_should_publish_vault_created_event() {
             Addr::unchecked(USER),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::CreateVault {
-                destinations: vec![],
+                destinations: None,
                 pair_address: mock.fin_contract_address.to_string(),
                 position_type: PositionType::Enter,
                 slippage_tolerance: None,
@@ -277,7 +291,7 @@ fn with_fin_limit_order_trigger_twice_for_user_should_succeed() {
         .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
         .with_vault_with_filled_fin_limit_price_trigger(
             &user_address,
-            vec![],
+            None,
             Coin::new(vault_deposit.into(), DENOM_UKUJI),
             swap_amount,
             "fin",
@@ -309,7 +323,7 @@ fn with_fin_limit_order_trigger_twice_for_user_should_succeed() {
             Addr::unchecked(USER),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::CreateVault {
-                destinations: vec![],
+                destinations: None,
                 pair_address: mock.fin_contract_address.to_string(),
                 position_type: PositionType::Enter,
                 slippage_tolerance: None,
@@ -360,7 +374,7 @@ fn with_fin_limit_order_trigger_twice_for_user_should_succeed() {
     assert_vault_balance(
         &mock,
         &mock.dca_contract_address,
-        &user_address,
+        user_address.to_string(),
         Uint128::new(1),
         vault_deposit,
     );
@@ -397,7 +411,7 @@ fn with_time_trigger_should_update_address_balances() {
             Addr::unchecked(USER),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::CreateVault {
-                destinations: vec![],
+                destinations: None,
                 pair_address: mock.fin_contract_address.to_string(),
                 position_type: PositionType::Enter,
                 slippage_tolerance: None,
@@ -446,7 +460,7 @@ fn with_time_trigger_should_create_vault() {
             Addr::unchecked(USER),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::CreateVault {
-                destinations: vec![],
+                destinations: None,
                 pair_address: mock.fin_contract_address.to_string(),
                 position_type: PositionType::Enter,
                 slippage_tolerance: None,
@@ -464,7 +478,13 @@ fn with_time_trigger_should_create_vault() {
     let vault_response: VaultResponse = mock
         .app
         .wrap()
-        .query_wasm_smart(&mock.dca_contract_address, &QueryMsg::GetVault { vault_id })
+        .query_wasm_smart(
+            &mock.dca_contract_address,
+            &QueryMsg::GetVault {
+                vault_id,
+                address: user_address.to_string(),
+            },
+        )
         .unwrap();
 
     assert_eq!(
@@ -488,6 +508,7 @@ fn with_time_trigger_should_create_vault() {
                 base_denom: DENOM_UTEST.to_string(),
                 quote_denom: DENOM_UKUJI.to_string(),
             },
+            started_at: None
         }
     );
 }
@@ -502,7 +523,7 @@ fn with_time_trigger_with_existing_vault_should_create_vault() {
         .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
         .with_vault_with_time_trigger(
             &user_address,
-            vec![],
+            None,
             Coin::new(vault_deposit.into(), DENOM_UKUJI),
             swap_amount,
             "time",
@@ -516,7 +537,7 @@ fn with_time_trigger_with_existing_vault_should_create_vault() {
             Addr::unchecked(USER),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::CreateVault {
-                destinations: vec![],
+                destinations: None,
                 pair_address: mock.fin_contract_address.to_string(),
                 position_type: PositionType::Enter,
                 slippage_tolerance: None,
@@ -537,7 +558,13 @@ fn with_time_trigger_with_existing_vault_should_create_vault() {
     let vault_response: VaultResponse = mock
         .app
         .wrap()
-        .query_wasm_smart(&mock.dca_contract_address, &QueryMsg::GetVault { vault_id })
+        .query_wasm_smart(
+            &mock.dca_contract_address,
+            &QueryMsg::GetVault {
+                vault_id,
+                address: user_address.to_string(),
+            },
+        )
         .unwrap();
 
     assert_eq!(
@@ -561,6 +588,7 @@ fn with_time_trigger_with_existing_vault_should_create_vault() {
                 base_denom: DENOM_UTEST.to_string(),
                 quote_denom: DENOM_UKUJI.to_string(),
             },
+            started_at: None
         }
     );
 }
@@ -582,7 +610,7 @@ fn with_time_trigger_should_publish_vault_created_event() {
             Addr::unchecked(USER),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::CreateVault {
-                destinations: vec![],
+                destinations: None,
                 pair_address: mock.fin_contract_address.to_string(),
                 position_type: PositionType::Enter,
                 slippage_tolerance: None,
@@ -621,7 +649,7 @@ fn with_time_trigger_with_no_target_time_should_succeed() {
             Addr::unchecked(USER),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::CreateVault {
-                destinations: vec![],
+                destinations: None,
                 pair_address: mock.fin_contract_address.to_string(),
                 position_type: PositionType::Enter,
                 slippage_tolerance: None,
@@ -650,24 +678,16 @@ fn with_time_trigger_with_no_target_time_should_succeed() {
         ],
     );
 
-    let get_all_time_triggers_response: TriggersResponse = mock
+    let get_all_time_triggers_response: TriggerIdsResponse = mock
         .app
         .wrap()
         .query_wasm_smart(
             &mock.dca_contract_address.clone(),
-            &QueryMsg::GetTimeTriggers {},
+            &QueryMsg::GetTimeTriggerIds {},
         )
         .unwrap();
 
-    assert_eq!(get_all_time_triggers_response.triggers.len(), 1);
-
-    let trigger = &get_all_time_triggers_response.triggers[0]
-        .configuration
-        .to_owned()
-        .into_time()
-        .unwrap();
-
-    assert_eq!(trigger.seconds(), mock.app.block_info().time.seconds());
+    assert_eq!(get_all_time_triggers_response.trigger_ids.len(), 1);
 }
 
 #[test]
@@ -696,7 +716,7 @@ fn with_mulitple_destinations_should_succeed() {
             Addr::unchecked(USER),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::CreateVault {
-                destinations: destinations.clone(),
+                destinations: Some(destinations.clone()),
                 pair_address: mock.fin_contract_address.to_string(),
                 position_type: PositionType::Enter,
                 slippage_tolerance: None,
@@ -714,7 +734,13 @@ fn with_mulitple_destinations_should_succeed() {
     let vault_response: VaultResponse = mock
         .app
         .wrap()
-        .query_wasm_smart(&mock.dca_contract_address, &QueryMsg::GetVault { vault_id })
+        .query_wasm_smart(
+            &mock.dca_contract_address,
+            &QueryMsg::GetVault {
+                vault_id,
+                address: user_address.to_string(),
+            },
+        )
         .unwrap();
 
     assert_eq!(
@@ -735,6 +761,7 @@ fn with_mulitple_destinations_should_succeed() {
                 base_denom: DENOM_UTEST.to_string(),
                 quote_denom: DENOM_UKUJI.to_string(),
             },
+            started_at: None
         }
     );
 }
@@ -757,7 +784,7 @@ fn with_time_trigger_with_target_time_in_the_past_should_fail() {
             Addr::unchecked(USER),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::CreateVault {
-                destinations: vec![],
+                destinations: None,
                 pair_address: mock.fin_contract_address.to_string(),
                 position_type: PositionType::Enter,
                 slippage_tolerance: None,
@@ -796,7 +823,7 @@ fn with_price_and_time_trigger_should_fail() {
             Addr::unchecked(USER),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::CreateVault {
-                destinations: vec![],
+                destinations: None,
                 pair_address: mock.fin_contract_address.to_string(),
                 position_type: PositionType::Enter,
                 slippage_tolerance: None,
@@ -834,7 +861,7 @@ fn with_no_assets_should_fail() {
             Addr::unchecked(USER),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::CreateVault {
-                destinations: vec![],
+                destinations: None,
                 pair_address: mock.fin_contract_address.to_string(),
                 position_type: PositionType::Enter,
                 slippage_tolerance: None,
@@ -869,7 +896,7 @@ fn with_multiple_assets_should_fail() {
             Addr::unchecked(USER),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::CreateVault {
-                destinations: vec![],
+                destinations: None,
                 pair_address: mock.fin_contract_address.to_string(),
                 position_type: PositionType::Enter,
                 slippage_tolerance: None,
@@ -909,7 +936,7 @@ fn with_non_existent_pair_address_should_fail() {
             Addr::unchecked(USER),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::CreateVault {
-                destinations: vec![],
+                destinations: None,
                 pair_address: "not-a-pair-address".to_string(),
                 position_type: PositionType::Enter,
                 slippage_tolerance: None,
@@ -946,10 +973,10 @@ fn with_destination_allocations_less_than_100_percent_should_fail() {
             Addr::unchecked(USER),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::CreateVault {
-                destinations: vec![Destination {
+                destinations: Some(vec![Destination {
                     address: Addr::unchecked(USER),
                     allocation: Decimal::percent(50),
-                }],
+                }]),
                 pair_address: mock.fin_contract_address.to_string(),
                 position_type: PositionType::Enter,
                 slippage_tolerance: None,
@@ -995,7 +1022,7 @@ fn with_more_than_10_destination_allocations_should_fail() {
             Addr::unchecked(USER),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::CreateVault {
-                destinations,
+                destinations: Some(destinations),
                 pair_address: mock.fin_contract_address.to_string(),
                 position_type: PositionType::Enter,
                 slippage_tolerance: None,

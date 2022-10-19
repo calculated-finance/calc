@@ -35,7 +35,7 @@ pub enum ExecuteMsg {
         address: String,
     },
     CreateVault {
-        destinations: Vec<Destination>,
+        destinations: Option<Vec<Destination>>,
         pair_address: String,
         position_type: PositionType,
         slippage_tolerance: Option<Decimal256>,
@@ -45,6 +45,7 @@ pub enum ExecuteMsg {
         target_price: Option<Decimal256>,
     },
     Deposit {
+        address: String,
         vault_id: Uint128,
     },
     CancelVault {
@@ -64,8 +65,12 @@ pub enum ExecuteMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     GetPairs {},
-    GetTimeTriggers {},
+    GetTimeTriggerIds {},
+    GetTriggerIdByFinLimitOrderIdx {
+        order_idx: Uint128,
+    },
     GetVault {
+        address: String,
         vault_id: Uint128,
     },
     GetVaultsByAddress {
@@ -87,8 +92,8 @@ pub struct PairsResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub struct TriggersResponse {
-    pub triggers: Vec<Trigger>,
+pub struct TriggerIdResponse {
+    pub trigger_id: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -100,7 +105,7 @@ pub struct TriggerIdsResponse {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct VaultResponse {
     pub vault: Vault,
-    pub triggers: Vec<Trigger>,
+    pub trigger: Trigger,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
