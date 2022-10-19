@@ -48,13 +48,19 @@ pub fn ibc_packet_receive(
     _env: Env,
     msg: IbcPacketReceiveMsg,
 ) -> Result<IbcReceiveResponse, ContractError> {
-    let _packet = msg.packet;
-    // let caller = packet.dest.channel_id;
-    // let packet: CalcIBC = from_binary(&packet.data)?;
+    let packet = msg.packet;
+    let caller = packet.dest.channel_id;
+    let packet: CalcIBC = from_binary(&packet.data)?;
+
+    let val = match packet {
+        CalcIBC::Test { value } => value
+    };
 
     Ok(
         IbcReceiveResponse::new()
         .add_attribute("method", "ibc_packet_receive")
+        .add_attribute("caller", caller)
+        .add_attribute("val", val)
     )
 }
 
