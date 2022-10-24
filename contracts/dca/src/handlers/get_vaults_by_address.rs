@@ -20,7 +20,7 @@ pub fn get_vaults_by_address(
         .sub_prefix(address)
         .range(
             deps.storage,
-            start_after.map(|s| Bound::exclusive((s, s))),
+            start_after.map(|vault_id| Bound::exclusive((vault_id, vault_id))),
             None,
             cosmwasm_std::Order::Ascending,
         )
