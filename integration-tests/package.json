@@ -1,0 +1,37 @@
+{
+  "name": "calc-localnet",
+  "version": "0.0.1",
+  "scripts": {
+    "dca": "ts-node ./scripts/instantiate-and-deploy-dca.ts ../artifacts/dca.wasm",
+    "staking-router": "ts-node ./scripts/instantiate-and-deploy-staking-router.ts ../artifacts/staking_router.wasm",
+    "start": "docker compose down && docker compose up -d && npm run dca && npm run staking-router"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@cosmjs/cosmwasm-stargate": "^0.28.13",
+    "@cosmjs/math": "^0.28.13",
+    "@cosmjs/proto-signing": "^0.28.13",
+    "@cosmjs/stargate": "^0.28.13",
+    "@types/chai-as-promised": "^7.1.5",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "^18.11.5",
+    "@types/ramda": "^0.28.18",
+    "@types/sinon": "^10.0.13",
+    "@typescript-eslint/eslint-plugin": "^5.36.1",
+    "@typescript-eslint/parser": "^5.36.1",
+    "chai": "^4.3.6",
+    "chai-as-promised": "^7.1.1",
+    "dayjs": "^1.11.5",
+    "dotenv": "^16.0.3",
+    "eslint": "^8.23.0",
+    "folder-hash": "^4.0.2",
+    "mocha": "^10.0.0",
+    "mocha-suppress-logs": "^0.3.1",
+    "ramda": "^0.28.0",
+    "sinon": "^14.0.0",
+    "ts-node": "^10.9.1",
+    "ts-sinon": "^2.0.2",
+    "typescript": "^4.8.2"
+  }
+}

@@ -1,3 +1,5 @@
 /target
 /artifacts
 .vscode/
+.env
+node_modules/

@@ -1,0 +1,12 @@
+version: '3'
+services:
+  node:
+    build:
+      context: .
+      args:
+        - arch=${ARCH:-x86_64}
+    command: ./setup_and_run_kujirad.sh kujira1y4k0re9q905nvvcvvmxug3sqtd9e7du4709d0t
+    ports:
+      - 1317:1317 # rest
+      - 26656:26656 # p2p
+      - 26657:26657 # rpc
