@@ -52,7 +52,7 @@ pub fn execute_trigger(
             assert_target_time_is_in_past(env.block.time, target_time)?;
 
             if vault.is_active() && vault.low_funds() {
-                vault_store().update(
+                update_vault(
                     deps.storage,
                     vault.id.into(),
                     |existing_vault| -> StdResult<Vault> {

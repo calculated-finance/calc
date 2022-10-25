@@ -69,6 +69,7 @@ pub struct VaultBuilder {
     pub swap_amount: Uint128,
     pub position_type: PositionType,
     pub slippage_tolerance: Option<Decimal256>,
+    pub price_threshold: Option<Decimal256>,
     pub time_interval: TimeInterval,
     pub started_at: Option<Timestamp>,
 }
@@ -85,6 +86,7 @@ impl VaultBuilder {
         swap_amount: Uint128,
         position_type: PositionType,
         slippage_tolerance: Option<Decimal256>,
+        price_threshold: Option<Decimal256>,
         time_interval: TimeInterval,
         started_at: Option<Timestamp>,
     ) -> VaultBuilder {
@@ -99,6 +101,7 @@ impl VaultBuilder {
             swap_amount,
             position_type,
             slippage_tolerance,
+            price_threshold,
             time_interval,
             started_at,
         }
@@ -117,6 +120,7 @@ impl VaultBuilder {
             swap_amount: self.swap_amount,
             position_type: self.position_type,
             slippage_tolerance: self.slippage_tolerance,
+            price_threshold: self.price_threshold,
             time_interval: self.time_interval,
             started_at: self.started_at,
         }
