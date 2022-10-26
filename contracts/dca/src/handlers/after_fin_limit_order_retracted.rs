@@ -44,8 +44,8 @@ pub fn after_fin_limit_order_retracted(
             // if the entire amount isnt retracted, order was partially filled need to send the partially filled assets to user
             if amount_retracted != limit_order_cache.original_offer_amount {
                 let retracted_balance = Coin {
-                    denom: vault.get_swap_denom().clone(),
-                    amount: vault.balance.amount - (vault.swap_amount - amount_retracted),
+                    denom: vault.get_swap().send_denom.clone(),
+                    amount: vault.balance.amount - (vault.get_swap().amount - amount_retracted),
                 };
 
                 // i dont think its possible for this to be zero
@@ -81,7 +81,7 @@ pub fn after_fin_limit_order_retracted(
                             Some(mut existing_vault) => {
                                 existing_vault.status = VaultStatus::Cancelled;
                                 existing_vault.balance =
-                                    Coin::new(0, existing_vault.get_swap_denom());
+                                    Coin::new(0, existing_vault.get_swap().send_denom);
                                 Ok(existing_vault)
                             }
                             None => Err(StdError::NotFound {

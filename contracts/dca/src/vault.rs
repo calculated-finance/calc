@@ -16,7 +16,7 @@ pub struct Vault {
     pub status: VaultStatus,
     pub balance: Coin,
     pub pair: Pair,
-    pub swap_amount: Uint128,
+    swap_amount: Uint128,
     pub position_type: PositionType,
     pub slippage_tolerance: Option<Decimal256>,
     pub price_threshold: Option<Decimal256>,
@@ -25,14 +25,23 @@ pub struct Vault {
 }
 
 impl Vault {
-    pub fn get_swap_denom(&self) -> String {
+    pub fn get_swap(&self) -> Swap {
+        Swap {
+            address: self.pair.address.clone(),
+            send_denom: self.get_swap_denom(),
+            receive_denom: self.get_receive_denom(),
+            amount: self.get_swap_amount().amount,
+        }
+    }
+
+    fn get_swap_denom(&self) -> String {
         if self.position_type.to_owned() == PositionType::Enter {
             return self.pair.quote_denom.clone();
         }
         self.pair.base_denom.clone()
     }
 
-    pub fn get_receive_denom(&self) -> String {
+    fn get_receive_denom(&self) -> String {
         if self.position_type.to_owned() == PositionType::Enter {
             return self.pair.base_denom.clone();
         }
@@ -79,38 +88,6 @@ pub struct VaultBuilder {
 }
 
 impl VaultBuilder {
-    pub fn new(
-        created_at: Timestamp,
-        owner: Addr,
-        label: Option<String>,
-        destinations: Vec<Destination>,
-        status: VaultStatus,
-        balance: Coin,
-        pair: Pair,
-        swap_amount: Uint128,
-        position_type: PositionType,
-        slippage_tolerance: Option<Decimal256>,
-        price_threshold: Option<Decimal256>,
-        time_interval: TimeInterval,
-        started_at: Option<Timestamp>,
-    ) -> VaultBuilder {
-        VaultBuilder {
-            created_at,
-            owner,
-            label,
-            destinations,
-            status,
-            balance,
-            pair,
-            swap_amount,
-            position_type,
-            slippage_tolerance,
-            price_threshold,
-            time_interval,
-            started_at,
-        }
-    }
-
     pub fn build(self, id: Uint128) -> Vault {
         Vault {
             id,
@@ -127,6 +104,56 @@ impl VaultBuilder {
             price_threshold: self.price_threshold,
             time_interval: self.time_interval,
             started_at: self.started_at,
+        }
+    }
+}
+
+#[cw_serde]
+pub struct Swap {
+    pub address: Addr,
+    pub send_denom: String,
+    pub receive_denom: String,
+    pub amount: Uint128,
+}
+
+#[cw_serde]
+pub struct VaultDTO {
+    pub id: Uint128,
+    pub created_at: Timestamp,
+    pub owner: Addr,
+    pub label: Option<String>,
+    pub destinations: Vec<Destination>,
+    pub status: VaultStatus,
+    pub balance: Coin,
+    pub pair: Pair,
+    pub swap_amount: Uint128,
+    pub swap: Swap,
+    pub position_type: PositionType,
+    pub slippage_tolerance: Option<Decimal256>,
+    pub price_threshold: Option<Decimal256>,
+    pub time_interval: TimeInterval,
+    pub started_at: Option<Timestamp>,
+}
+
+impl From<Vault> for VaultDTO {
+    fn from(vault: Vault) -> Self {
+        let swap = vault.get_swap();
+        VaultDTO {
+            id: vault.id,
+            created_at: vault.created_at,
+            owner: vault.owner.clone(),
+            label: vault.label.clone(),
+            destinations: vault.destinations.clone(),
+            status: vault.status.clone(),
+            balance: vault.balance.clone(),
+            pair: vault.pair.clone(),
+            position_type: vault.position_type.clone(),
+            slippage_tolerance: vault.slippage_tolerance,
+            swap_amount: swap.amount.clone(),
+            swap,
+            price_threshold: vault.price_threshold,
+            time_interval: vault.time_interval,
+            started_at: vault.started_at,
         }
     }
 }

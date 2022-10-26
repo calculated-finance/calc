@@ -40,11 +40,11 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
             let (coin_sent, coin_received) = match vault.position_type {
                 PositionType::Enter => {
                     let sent = Coin {
-                        denom: vault.get_swap_denom(),
+                        denom: vault.get_swap().send_denom,
                         amount: Uint128::from(quote_amount),
                     };
                     let received = Coin {
-                        denom: vault.get_receive_denom(),
+                        denom: vault.get_swap().receive_denom,
                         amount: Uint128::from(base_amount),
                     };
 
@@ -52,11 +52,11 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                 }
                 PositionType::Exit => {
                     let sent = Coin {
-                        denom: vault.get_swap_denom(),
+                        denom: vault.get_swap().send_denom,
                         amount: Uint128::from(base_amount),
                     };
                     let received = Coin {
-                        denom: vault.get_receive_denom(),
+                        denom: vault.get_swap().receive_denom,
                         amount: Uint128::from(quote_amount),
                     };
 
@@ -111,7 +111,7 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                                 msg: to_binary(&StakingRouterExecuteMsg::ZDelegate {
                                     delegator_address: vault.owner.clone(),
                                     validator_address: destination.address.clone(),
-                                    denom: vault.get_receive_denom(),
+                                    denom: vault.get_swap().receive_denom,
                                     amount,
                                 })
                                 .unwrap(),

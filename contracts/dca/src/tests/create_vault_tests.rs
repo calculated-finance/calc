@@ -6,7 +6,7 @@ use crate::tests::helpers::{
 use crate::tests::mocks::{
     fin_contract_unfilled_limit_order, MockApp, DENOM_UKUJI, DENOM_UTEST, USER,
 };
-use crate::vault::Vault;
+use crate::vault::{Swap, VaultDTO};
 use base::events::event::{EventBuilder, EventData};
 use base::helpers::message_helpers::get_flat_map_for_event_type;
 use base::pair::Pair;
@@ -147,7 +147,7 @@ fn with_fin_limit_order_trigger_should_create_vault() {
 
     assert_eq!(
         vault_response.vault,
-        Vault {
+        VaultDTO {
             price_threshold: None,
             label: Some("label".to_string()),
             id: Uint128::new(1),
@@ -162,8 +162,14 @@ fn with_fin_limit_order_trigger_should_create_vault() {
             balance: Coin::new(vault_deposit.into(), DENOM_UKUJI.to_string()),
             position_type: PositionType::Enter,
             time_interval: TimeInterval::Hourly,
-            slippage_tolerance: None,
             swap_amount,
+            swap: Swap {
+                address: mock.fin_contract_address.clone(),
+                send_denom: DENOM_UKUJI.to_string(),
+                receive_denom: DENOM_UTEST.to_string(),
+                amount: swap_amount,
+            },
+            slippage_tolerance: None,
             pair: Pair {
                 address: mock.fin_contract_address.clone(),
                 base_denom: DENOM_UTEST.to_string(),
@@ -294,7 +300,7 @@ fn with_price_trigger_with_existing_vault_should_create_vault() {
 
     assert_eq!(
         vault_response.vault,
-        Vault {
+        VaultDTO {
             price_threshold: None,
             label: Some("label".to_string()),
             id: Uint128::new(2),
@@ -309,8 +315,14 @@ fn with_price_trigger_with_existing_vault_should_create_vault() {
             position_type: PositionType::Enter,
             time_interval: TimeInterval::Hourly,
             slippage_tolerance: None,
-            balance: Coin::new(vault_deposit.into(), DENOM_UKUJI),
             swap_amount,
+            swap: Swap {
+                address: mock.fin_contract_address.clone(),
+                send_denom: DENOM_UKUJI.to_string(),
+                receive_denom: DENOM_UTEST.to_string(),
+                amount: swap_amount,
+            },
+            balance: Coin::new(vault_deposit.into(), DENOM_UKUJI),
             pair: Pair {
                 address: mock.fin_contract_address.clone(),
                 base_denom: DENOM_UTEST.to_string(),
@@ -579,7 +591,7 @@ fn with_time_trigger_should_create_vault() {
 
     assert_eq!(
         vault_response.vault,
-        Vault {
+        VaultDTO {
             price_threshold: None,
             label: Some("label".to_string()),
             id: Uint128::new(1),
@@ -594,8 +606,14 @@ fn with_time_trigger_should_create_vault() {
             position_type: PositionType::Enter,
             time_interval: TimeInterval::Hourly,
             balance: Coin::new(vault_deposit.into(), DENOM_UKUJI.to_string()),
-            slippage_tolerance: None,
             swap_amount,
+            swap: Swap {
+                address: mock.fin_contract_address.clone(),
+                send_denom: DENOM_UKUJI.to_string(),
+                receive_denom: DENOM_UTEST.to_string(),
+                amount: swap_amount,
+            },
+            slippage_tolerance: None,
             pair: Pair {
                 address: mock.fin_contract_address.clone(),
                 base_denom: DENOM_UTEST.to_string(),
@@ -666,7 +684,7 @@ fn with_time_trigger_with_existing_vault_should_create_vault() {
 
     assert_eq!(
         vault_response.vault,
-        Vault {
+        VaultDTO {
             price_threshold: None,
             label: Some("label".to_string()),
             id: Uint128::new(2),
@@ -680,9 +698,15 @@ fn with_time_trigger_with_existing_vault_should_create_vault() {
             status: VaultStatus::Scheduled,
             position_type: PositionType::Enter,
             slippage_tolerance: None,
+            swap_amount,
+            swap: Swap {
+                address: mock.fin_contract_address.clone(),
+                send_denom: DENOM_UKUJI.to_string(),
+                receive_denom: DENOM_UTEST.to_string(),
+                amount: swap_amount,
+            },
             time_interval: TimeInterval::Hourly,
             balance: Coin::new(vault_deposit.into(), DENOM_UKUJI.to_string()),
-            swap_amount,
             pair: Pair {
                 address: mock.fin_contract_address.clone(),
                 base_denom: DENOM_UTEST.to_string(),
@@ -855,7 +879,7 @@ fn with_mulitple_destinations_should_succeed() {
 
     assert_eq!(
         vault_response.vault,
-        Vault {
+        VaultDTO {
             price_threshold: None,
             label: Some("label".to_string()),
             id: Uint128::new(1),
@@ -865,9 +889,15 @@ fn with_mulitple_destinations_should_succeed() {
             status: VaultStatus::Scheduled,
             position_type: PositionType::Enter,
             time_interval: TimeInterval::Hourly,
+            swap_amount,
+            swap: Swap {
+                address: mock.fin_contract_address.clone(),
+                send_denom: DENOM_UKUJI.to_string(),
+                receive_denom: DENOM_UTEST.to_string(),
+                amount: swap_amount,
+            },
             balance: Coin::new(vault_deposit.into(), DENOM_UKUJI.to_string()),
             slippage_tolerance: None,
-            swap_amount,
             pair: Pair {
                 address: mock.fin_contract_address.clone(),
                 base_denom: DENOM_UTEST.to_string(),

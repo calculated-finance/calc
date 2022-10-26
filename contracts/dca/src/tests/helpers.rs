@@ -1,7 +1,7 @@
 use super::mocks::MockApp;
 use crate::{
     msg::{EventsResponse, QueryMsg, VaultResponse},
-    vault::Vault,
+    vault::VaultDTO,
 };
 use base::events::event::Event;
 use cosmwasm_std::{Addr, Uint128};
@@ -20,7 +20,12 @@ pub fn assert_address_balances(mock: &MockApp, address_balances: &[(&Addr, &str,
         })
 }
 
-pub fn assert_vault_eq(mock: &MockApp, address: Addr, vault_id: Uint128, expected_vault: Vault) {
+pub fn assert_vault_data_eq(
+    mock: &MockApp,
+    address: Addr,
+    vault_id: Uint128,
+    expected_vault: VaultDTO,
+) {
     let vault_response: VaultResponse = mock
         .app
         .wrap()

@@ -13,5 +13,7 @@ pub fn get_vaults_by_address(
 
     let vaults = fetch_vaults_by_address(deps.storage, address, start_after, limit)?;
 
-    Ok(VaultsResponse { vaults })
+    Ok(VaultsResponse {
+        vaults: vaults.into_iter().map(|v| v.into()).collect(),
+    })
 }

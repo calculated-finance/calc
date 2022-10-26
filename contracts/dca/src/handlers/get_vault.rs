@@ -7,11 +7,14 @@ pub fn get_vault(deps: Deps, address: Addr, vault_id: Uint128) -> StdResult<Vaul
 
     if vault.owner != address {
         return Err(StdError::NotFound {
-            kind: format!("vault for address: {} with id: {}", address, vault.id),
+            kind: format!("vault for address={} with id={}", address, vault.id),
         });
     }
 
     let trigger = get_trigger(deps.storage, vault.id).ok();
 
-    Ok(VaultResponse { vault, trigger })
+    Ok(VaultResponse {
+        vault: vault.into(),
+        trigger,
+    })
 }

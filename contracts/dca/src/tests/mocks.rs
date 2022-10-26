@@ -1,7 +1,7 @@
 use crate::constants::{ONE, ONE_THOUSAND};
 use crate::contract::reply;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, VaultResponse};
-use crate::vault::Vault;
+use crate::vault::VaultDTO;
 use base::helpers::message_helpers::get_flat_map_for_event_type;
 use base::triggers::trigger::TimeInterval;
 use base::vaults::vault::{Destination, PositionType};
@@ -395,7 +395,7 @@ impl MockApp {
         });
     }
 
-    pub fn get_vault_by_label(&self, label: &str, address: Addr) -> Vault {
+    pub fn get_vault_by_label(&self, label: &str, address: Addr) -> VaultDTO {
         let vault_id = self.vault_ids.get(label).unwrap();
         let vault_response: VaultResponse = self
             .app

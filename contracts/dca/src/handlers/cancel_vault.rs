@@ -66,7 +66,7 @@ fn cancel_time_trigger(deps: DepsMut, vault: Vault) -> Result<Response, Contract
             match existing_vault {
                 Some(mut existing_vault) => {
                     existing_vault.status = VaultStatus::Cancelled;
-                    existing_vault.balance = Coin::new(0, existing_vault.get_swap_denom());
+                    existing_vault.balance = Coin::new(0, existing_vault.get_swap().send_denom);
                     Ok(existing_vault)
                 }
                 None => Err(StdError::NotFound {

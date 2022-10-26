@@ -79,17 +79,17 @@ pub fn create_vault(
     }
 
     let vault_builder = VaultBuilder {
+        created_at: env.block.time,
         owner,
         label,
         destinations,
-        created_at: env.block.time,
         status: VaultStatus::Scheduled,
+        balance: info.funds[0].clone(),
         pair,
         swap_amount,
         position_type,
         slippage_tolerance,
         price_threshold,
-        balance: info.funds[0].clone(),
         time_interval: time_interval.clone(),
         started_at: None,
     };

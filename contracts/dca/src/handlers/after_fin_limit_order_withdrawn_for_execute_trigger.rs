@@ -72,7 +72,7 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
             )?;
 
             let coin_received = Coin {
-                denom: vault.get_receive_denom().clone(),
+                denom: vault.get_swap().receive_denom.clone(),
                 amount: limit_order_cache.filled,
             };
 
@@ -123,7 +123,7 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
                                 msg: to_binary(&StakingRouterExecuteMsg::ZDelegate {
                                     delegator_address: vault.owner.clone(),
                                     validator_address: destination.address.clone(),
-                                    denom: vault.get_receive_denom(),
+                                    denom: vault.get_swap().receive_denom,
                                     amount,
                                 })
                                 .unwrap(),
@@ -142,7 +142,7 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
                     env.block,
                     EventData::DCAVaultExecutionCompleted {
                         sent: Coin {
-                            denom: vault.get_swap_denom().clone(),
+                            denom: vault.get_swap().send_denom.clone(),
                             amount: limit_order_cache.original_offer_amount,
                         },
                         received: coin_received,

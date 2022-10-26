@@ -1,11 +1,10 @@
+use crate::vault::VaultDTO;
 use base::events::event::Event;
 use base::pair::Pair;
 use base::triggers::trigger::{TimeInterval, Trigger};
 use base::vaults::vault::{Destination, PositionType};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Decimal256, Uint128, Uint64};
-
-use crate::vault::Vault;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -112,13 +111,13 @@ pub struct TriggerIdsResponse {
 
 #[cw_serde]
 pub struct VaultResponse {
-    pub vault: Vault,
+    pub vault: VaultDTO,
     pub trigger: Option<Trigger>,
 }
 
 #[cw_serde]
 pub struct VaultsResponse {
-    pub vaults: Vec<Vault>,
+    pub vaults: Vec<VaultDTO>,
 }
 
 #[cw_serde]

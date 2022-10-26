@@ -21,7 +21,7 @@ pub fn after_fin_limit_order_withdrawn_for_cancel_vault(
 
             // send assets from partially filled order to owner
             let filled_amount = Coin {
-                denom: vault.get_receive_denom().clone(),
+                denom: vault.get_swap().receive_denom.clone(),
                 amount: limit_order_cache.filled,
             };
 
@@ -43,7 +43,8 @@ pub fn after_fin_limit_order_withdrawn_for_cancel_vault(
                     match existing_vault {
                         Some(mut existing_vault) => {
                             existing_vault.status = VaultStatus::Cancelled;
-                            existing_vault.balance = Coin::new(0, existing_vault.get_swap_denom());
+                            existing_vault.balance =
+                                Coin::new(0, existing_vault.get_swap().send_denom);
                             Ok(existing_vault)
                         }
                         None => Err(StdError::NotFound {
