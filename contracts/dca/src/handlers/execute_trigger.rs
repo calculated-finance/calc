@@ -31,7 +31,7 @@ pub fn execute_trigger(
         PositionType::Exit => query_quote_price(deps.querier, vault.pair.address.clone()),
     };
 
-    if vault.status == VaultStatus::Scheduled {
+    if vault.is_scheduled() {
         update_vault(deps.storage, vault.id, |stored_value| match stored_value {
             Some(mut existing_vault) => {
                 existing_vault.status = VaultStatus::Active;
