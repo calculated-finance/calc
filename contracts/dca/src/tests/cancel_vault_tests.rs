@@ -396,7 +396,7 @@ fn when_vault_has_partially_filled_price_trigger_should_cancel_vault() {
         )
         .unwrap();
 
-    assert_eq!(vault_response.vault.balance.amount, Uint128::zero());
+    assert_eq!(vault_response.vault.status, VaultStatus::Cancelled);
 }
 
 #[test]
