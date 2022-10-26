@@ -2,11 +2,11 @@ use crate::contract::AFTER_FIN_LIMIT_ORDER_SUBMITTED_REPLY_ID;
 use crate::error::ContractError;
 use crate::state::{create_event, save_trigger, save_vault, Cache, CACHE, PAIRS};
 use crate::validation_helpers::{
-    assert_address_is_valid, assert_denom_matches_pair_denom,
+    assert_address_is_valid, assert_denom_is_bond_denom, assert_denom_matches_pair_denom,
     assert_destination_allocations_add_up_to_one, assert_destination_send_addresses_are_valid,
     assert_destination_validator_addresses_are_valid, assert_destinations_limit_is_not_breached,
     assert_exactly_one_asset, assert_swap_amount_is_less_than_or_equal_to_balance,
-    assert_target_start_time_is_in_future, assert_denom_is_bond_denom,
+    assert_target_start_time_is_in_future,
 };
 use crate::vault::{Vault, VaultBuilder};
 use base::events::event::{EventBuilder, EventData};
@@ -62,12 +62,15 @@ pub fn create_vault(
 
     assert_denom_matches_pair_denom(pair.clone(), info.funds.clone(), position_type.clone())?;
 
-    if destinations.iter().find(|destination| destination.action == PostExecutionAction::ZDelegate).is_some()
+    if destinations
+        .iter()
+        .find(|destination| destination.action == PostExecutionAction::ZDelegate)
+        .is_some()
     {
         match position_type {
             PositionType::Enter => {
                 assert_denom_is_bond_denom(pair.base_denom.clone())?;
-            },
+            }
             PositionType::Exit => {
                 assert_denom_is_bond_denom(pair.quote_denom.clone())?;
             }
