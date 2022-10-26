@@ -1,15 +1,17 @@
 use crate::contract::AFTER_FIN_LIMIT_ORDER_RETRACTED_REPLY_ID;
 use crate::error::ContractError;
 use crate::state::{
-    create_event, delete_trigger, get_trigger, update_vault, Cache, LimitOrderCache, CACHE,
-    LIMIT_ORDER_CACHE,
+    create_event, delete_trigger, get_trigger, get_vault, update_vault, Cache, LimitOrderCache,
+    CACHE, LIMIT_ORDER_CACHE,
 };
-use crate::validation_helpers::assert_sender_is_admin_or_vault_owner;
+use crate::validation_helpers::{
+    assert_sender_is_admin_or_vault_owner, assert_vault_is_not_already_cancelled,
+};
 use crate::vault::Vault;
 use base::events::event::{EventBuilder, EventData};
 use base::triggers::trigger::TriggerConfiguration;
 use base::vaults::vault::VaultStatus;
-use cosmwasm_std::{Addr, Env, StdError, StdResult};
+use cosmwasm_std::{Addr, Coin, Env, StdError, StdResult};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{BankMsg, DepsMut, Response, Uint128};
 use fin_helpers::limit_orders::create_retract_order_sub_msg;
@@ -22,6 +24,10 @@ pub fn cancel_vault(
     vault_id: Uint128,
 ) -> Result<Response, ContractError> {
     deps.api.addr_validate(&address.to_string())?;
+    let vault = get_vault(deps.storage, vault_id)?;
+
+    assert_sender_is_admin_or_vault_owner(deps.storage, vault.owner.clone(), address.clone())?;
+    assert_vault_is_not_already_cancelled(vault)?;
 
     let updated_vault = update_vault(
         deps.storage,
@@ -30,6 +36,7 @@ pub fn cancel_vault(
             match existing_vault {
                 Some(mut existing_vault) => {
                     existing_vault.status = VaultStatus::Cancelled;
+                    existing_vault.balance = Coin::new(0, existing_vault.get_swap_denom());
                     Ok(existing_vault)
                 }
                 None => Err(StdError::NotFound {
@@ -38,8 +45,6 @@ pub fn cancel_vault(
             }
         },
     )?;
-
-    assert_sender_is_admin_or_vault_owner(deps.storage, updated_vault.owner.clone(), address)?;
 
     create_event(
         deps.storage,
