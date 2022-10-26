@@ -500,7 +500,7 @@ fn with_fin_limit_order_trigger_twice_for_user_should_succeed() {
     assert_events_published(
         &mock,
         vault_id,
-        &[EventBuilder::new(vault_id, mock.app.block_info(), EventData::DCAVaultCreated).build(2)],
+        &[EventBuilder::new(vault_id, mock.app.block_info(), EventData::DCAVaultCreated).build(3)],
     );
 
     assert_vault_balance(
