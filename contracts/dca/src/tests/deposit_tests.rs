@@ -12,7 +12,7 @@ use super::helpers::{assert_address_balances, assert_events_published, assert_va
 use super::mocks::DENOM_UTEST;
 
 #[test]
-fn into_vault_should_succeed() {
+fn when_vault_is_active_vault_should_succeed() {
     let user_address = Addr::unchecked(USER);
     let user_balance = ONE_HUNDRED;
     let swap_amount = ONE;
@@ -55,7 +55,7 @@ fn into_vault_should_succeed() {
 }
 
 #[test]
-fn into_vault_should_update_vault_balance() {
+fn when_vault_is_active_should_update_vault_balance() {
     let user_address = Addr::unchecked(USER);
     let user_balance = ONE_HUNDRED;
     let swap_amount = ONE;
@@ -96,7 +96,7 @@ fn into_vault_should_update_vault_balance() {
 }
 
 #[test]
-fn into_vault_should_create_event() {
+fn when_vault_is_active_should_create_event() {
     let user_address = Addr::unchecked(USER);
     let user_balance = ONE_HUNDRED;
     let swap_amount = ONE;
@@ -142,7 +142,7 @@ fn into_vault_should_create_event() {
 }
 
 #[test]
-fn into_cancelled_vault_should_fail() {
+fn when_vault_is_cancelled_should_fail() {
     let user_address = Addr::unchecked(USER);
     let user_balance = TEN;
     let swap_amount = ONE;
