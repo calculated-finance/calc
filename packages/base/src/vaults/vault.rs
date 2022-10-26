@@ -8,12 +8,11 @@ pub enum PositionType {
 }
 
 #[cw_serde]
-#[derive(Copy)]
 pub enum VaultStatus {
-    Scheduled = 0,
-    Active = 1,
-    Inactive = 2,
-    Cancelled = 3,
+    Scheduled,
+    Active,
+    Inactive,
+    Cancelled,
 }
 
 #[cw_serde]
