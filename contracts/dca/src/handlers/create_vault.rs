@@ -62,6 +62,7 @@ pub fn create_vault(
 
     assert_denom_matches_pair_denom(pair.clone(), info.funds.clone(), position_type.clone())?;
 
+    // if there is atleast one zdelegate action assert denom can be bonded
     if destinations
         .iter()
         .find(|destination| destination.action == PostExecutionAction::ZDelegate)
