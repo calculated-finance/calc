@@ -34,7 +34,7 @@ fn vault_store<'a>() -> IndexedMap<'a, u128, Vault, VaultIndexes<'a>> {
 pub fn save_vault(store: &mut dyn Storage, vault_builder: VaultBuilder) -> StdResult<Vault> {
     let vault = vault_builder.build(fetch_and_increment_counter(store, VAULT_COUNTER)?.into());
     vault_store().save(store, vault.id.into(), &vault)?;
-    Ok(vault)
+    Ok(vault)   
 }
 
 pub fn get_vault(store: &dyn Storage, vault_id: Uint128) -> StdResult<Vault> {
