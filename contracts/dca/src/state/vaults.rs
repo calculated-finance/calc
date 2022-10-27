@@ -37,7 +37,7 @@ pub fn save_vault(store: &mut dyn Storage, vault_builder: VaultBuilder) -> StdRe
     Ok(vault)
 }
 
-pub fn get_vault(store: &dyn Storage, vault_id: Uint128) -> StdResult<Vault> {
+pub fn get_vault(store: &dyn Storage, vault_id: Uint128) -> StdResult<Vault> {   
     vault_store().load(store, vault_id.into())
 }
 
