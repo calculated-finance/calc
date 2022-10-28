@@ -46,6 +46,20 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
                 },
             )?;
 
+            let coin_received = Coin {
+                denom: vault.get_receive_denom().clone(),
+                amount: limit_order_cache.filled,
+            };
+
+            let config = CONFIG.load(deps.storage)?;
+
+            let execution_fee = Coin::new(
+                checked_mul(coin_received.amount, config.fee_percent)?.into(),
+                &coin_received.denom,
+            );
+
+            let total_to_redistribute = coin_received.amount - execution_fee.amount;
+
             update_vault(
                 deps.storage,
                 vault.id.into(),
@@ -58,6 +72,14 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
                             if existing_vault.is_empty() {
                                 existing_vault.status = VaultStatus::Inactive
                             }
+
+                            existing_vault.swapped_amount = existing_vault
+                                .swapped_amount
+                                .checked_add(limit_order_cache.original_offer_amount)?;
+
+                            existing_vault.received_amount = existing_vault
+                                .received_amount
+                                .checked_add(total_to_redistribute)?;
 
                             Ok(existing_vault)
                         }
@@ -72,18 +94,6 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
                 },
             )?;
 
-            let coin_received = Coin {
-                denom: vault.get_receive_denom().clone(),
-                amount: limit_order_cache.filled,
-            };
-
-            let config = CONFIG.load(deps.storage)?;
-
-            let execution_fee = Coin::new(
-                checked_mul(coin_received.amount, config.fee_percent)?.into(),
-                &coin_received.denom,
-            );
-
             // never try to send 0 tokens
             if execution_fee.amount.gt(&Uint128::zero()) {
                 messages.push(CosmosMsg::Bank(BankMsg::Send {
@@ -91,8 +101,6 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
                     amount: vec![execution_fee.clone()],
                 }));
             }
-
-            let total_to_redistribute = coin_received.amount - execution_fee.amount;
 
             vault.destinations.iter().for_each(|destination| {
                 let amount = checked_mul(total_to_redistribute, destination.allocation)

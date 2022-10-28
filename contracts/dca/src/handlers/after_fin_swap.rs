@@ -129,6 +129,14 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                                 existing_vault.status = VaultStatus::Inactive;
                             }
 
+                            existing_vault.swapped_amount = existing_vault
+                                .swapped_amount
+                                .checked_add(coin_sent.amount)?;
+
+                            existing_vault.received_amount = existing_vault
+                                .received_amount
+                                .checked_add(total_to_redistribute)?;
+
                             Ok(existing_vault)
                         }
                         None => Err(StdError::NotFound {

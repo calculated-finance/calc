@@ -22,6 +22,8 @@ pub struct Vault {
     pub price_threshold: Option<Decimal256>,
     pub time_interval: TimeInterval,
     pub started_at: Option<Timestamp>,
+    pub swapped_amount: Uint128,
+    pub received_amount: Uint128,
 }
 
 impl Vault {
@@ -131,6 +133,8 @@ impl VaultBuilder {
             price_threshold: self.price_threshold,
             time_interval: self.time_interval,
             started_at: self.started_at,
+            received_amount: Uint128::zero(),
+            swapped_amount: Uint128::zero(),
         }
     }
 }

@@ -149,6 +149,54 @@ fn for_filled_fin_limit_order_trigger_should_update_vault_balance() {
 }
 
 #[test]
+fn for_filled_fin_limit_order_trigger_should_update_vault_stats() {
+    let user_address = Addr::unchecked(USER);
+    let user_balance = TEN;
+    let vault_deposit = TEN;
+    let swap_amount = ONE;
+    let mut mock = MockApp::new(fin_contract_filled_limit_order())
+        .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
+        .with_vault_with_filled_fin_limit_price_trigger(
+            &user_address,
+            None,
+            Coin::new(vault_deposit.into(), DENOM_UKUJI),
+            swap_amount,
+            "fin",
+        );
+
+    let vault_id = mock.vault_ids.get("fin").unwrap().to_owned();
+
+    mock.app
+        .execute_contract(
+            Addr::unchecked(ADMIN),
+            mock.dca_contract_address.clone(),
+            &ExecuteMsg::ExecuteTrigger {
+                trigger_id: vault_id,
+            },
+            &[],
+        )
+        .unwrap();
+
+    let vault_response: VaultResponse = mock
+        .app
+        .wrap()
+        .query_wasm_smart(
+            &mock.dca_contract_address,
+            &&QueryMsg::GetVault {
+                vault_id,
+                address: user_address.clone(),
+            },
+        )
+        .unwrap();
+
+    assert_eq!(vault_response.vault.swapped_amount, swap_amount);
+    assert_eq!(
+        vault_response.vault.received_amount,
+        swap_amount - checked_mul(swap_amount, mock.fee_percent).ok().unwrap()
+    );
+}
+
+#[test]
 fn for_filled_fin_limit_order_trigger_should_publish_events() {
     let user_address = Addr::unchecked(USER);
     let user_balance = TEN;
@@ -792,6 +840,56 @@ fn for_ready_time_trigger_should_update_vault_balance() {
         user_address,
         Uint128::new(1),
         TEN - ONE,
+    );
+}
+
+#[test]
+fn for_ready_time_trigger_should_update_vault_stats() {
+    let user_address = Addr::unchecked(USER);
+    let user_balance = TEN;
+    let vault_deposit = TEN;
+    let swap_amount = ONE;
+
+    let mut mock = MockApp::new(fin_contract_unfilled_limit_order())
+        .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
+        .with_vault_with_time_trigger(
+            &user_address,
+            None,
+            Coin::new(vault_deposit.into(), DENOM_UKUJI),
+            swap_amount,
+            "time",
+            None,
+        );
+
+    mock.elapse_time(10);
+
+    mock.app
+        .execute_contract(
+            Addr::unchecked(ADMIN),
+            mock.dca_contract_address.clone(),
+            &ExecuteMsg::ExecuteTrigger {
+                trigger_id: Uint128::new(1),
+            },
+            &[],
+        )
+        .unwrap();
+
+    let vault_response: VaultResponse = mock
+        .app
+        .wrap()
+        .query_wasm_smart(
+            &mock.dca_contract_address,
+            &&QueryMsg::GetVault {
+                vault_id: mock.vault_ids.get("time").unwrap().to_owned(),
+                address: user_address.clone(),
+            },
+        )
+        .unwrap();
+
+    assert_eq!(vault_response.vault.swapped_amount, swap_amount);
+    assert_eq!(
+        vault_response.vault.received_amount,
+        swap_amount - checked_mul(swap_amount, mock.fee_percent).ok().unwrap()
     );
 }
 
