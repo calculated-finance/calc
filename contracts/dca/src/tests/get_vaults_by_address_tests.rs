@@ -2,7 +2,7 @@ use crate::constants::{ONE, TEN};
 use crate::msg::{ExecuteMsg, QueryMsg, VaultsResponse};
 use crate::tests::mocks::{fin_contract_filled_limit_order, MockApp, ADMIN, DENOM_UKUJI, USER};
 use base::vaults::vault::VaultStatus;
-use cosmwasm_std::{Addr, Coin, Uint128};
+use cosmwasm_std::{Addr, Coin, StdError, Uint128};
 use cw_multi_test::Executor;
 
 #[test]
@@ -212,21 +212,18 @@ fn with_invalid_limit_should_fail() {
             "fin_1",
         );
 
-    let vaults_response = mock
-        .app
-        .wrap()
-        .query_wasm_smart::<VaultsResponse>(
-            &mock.dca_contract_address,
-            &QueryMsg::GetVaultsByAddress {
-                address: user_address.clone(),
-                status: None,
-                start_after: None,
-                limit: Some(1001),
-            },
-        )
-        .unwrap_err();
+    let vaults_response: Result<VaultsResponse, StdError> = mock.app.wrap().query_wasm_smart(
+        &mock.dca_contract_address,
+        &QueryMsg::GetVaultsByAddress {
+            address: user_address.clone(),
+            status: None,
+            start_after: None,
+            limit: Some(1001),
+        },
+    );
 
     assert!(vaults_response
+        .unwrap_err()
         .to_string()
         .contains("limit cannot be greater than 1000."))
 }
@@ -247,10 +244,10 @@ fn with_status_filter_should_return_no_vaults() {
             "fin_1",
         );
 
-    let vaults_response = mock
+    let vaults_response: VaultsResponse = mock
         .app
         .wrap()
-        .query_wasm_smart::<VaultsResponse>(
+        .query_wasm_smart(
             &mock.dca_contract_address,
             &QueryMsg::GetVaultsByAddress {
                 address: user_address.clone(),
@@ -280,10 +277,10 @@ fn with_status_filter_should_return_expected_vault() {
             "fin_1",
         );
 
-    let vaults_response = mock
+    let vaults_response: VaultsResponse = mock
         .app
         .wrap()
-        .query_wasm_smart::<VaultsResponse>(
+        .query_wasm_smart(
             &mock.dca_contract_address,
             &QueryMsg::GetVaultsByAddress {
                 address: user_address.clone(),
