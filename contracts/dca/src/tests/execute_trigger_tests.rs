@@ -189,11 +189,13 @@ fn for_filled_fin_limit_order_trigger_should_update_vault_stats() {
         )
         .unwrap();
 
-    assert_eq!(vault_response.vault.swapped_amount, swap_amount);
+    assert_eq!(vault_response.vault.swapped_amount.amount, swap_amount);
+    assert_eq!(vault_response.vault.swapped_amount.denom, DENOM_UKUJI);
     assert_eq!(
-        vault_response.vault.received_amount,
+        vault_response.vault.received_amount.amount,
         swap_amount - checked_mul(swap_amount, mock.fee_percent).ok().unwrap()
     );
+    assert_eq!(vault_response.vault.received_amount.denom, DENOM_UTEST);
 }
 
 #[test]
@@ -776,11 +778,13 @@ fn for_ready_time_trigger_should_update_vault_stats() {
         )
         .unwrap();
 
-    assert_eq!(vault_response.vault.swapped_amount, swap_amount);
+    assert_eq!(vault_response.vault.swapped_amount.amount, swap_amount);
+    assert_eq!(vault_response.vault.swapped_amount.denom, DENOM_UKUJI);
     assert_eq!(
-        vault_response.vault.received_amount,
+        vault_response.vault.received_amount.amount,
         swap_amount - checked_mul(swap_amount, mock.fee_percent).ok().unwrap()
     );
+    assert_eq!(vault_response.vault.received_amount.denom, DENOM_UTEST);
 }
 
 #[test]
@@ -1547,7 +1551,7 @@ fn until_vault_is_empty_should_update_vault_status() {
         .query_wasm_smart(
             &mock.dca_contract_address,
             &&QueryMsg::GetVault {
-                vault_id: mock.vault_ids.get("time").unwrap().to_owned(),
+                vault_id: mock.vault_ids.get("fin").unwrap().to_owned(),
                 address: user_address.clone(),
             },
         )
@@ -1623,17 +1627,19 @@ fn until_vault_is_empty_should_update_vault_stats() {
         .query_wasm_smart(
             &mock.dca_contract_address,
             &&QueryMsg::GetVault {
-                vault_id: mock.vault_ids.get("time").unwrap().to_owned(),
+                vault_id: mock.vault_ids.get("fin").unwrap().to_owned(),
                 address: user_address.clone(),
             },
         )
         .unwrap();
 
-    assert_eq!(vault_response.vault.swapped_amount, vault_deposit);
+    assert_eq!(vault_response.vault.swapped_amount.amount, vault_deposit);
+    assert_eq!(vault_response.vault.swapped_amount.denom, DENOM_UKUJI);
     assert_eq!(
-        vault_response.vault.received_amount,
+        vault_response.vault.received_amount.amount,
         vault_deposit_after_fee
     );
+    assert_eq!(vault_response.vault.received_amount.denom, DENOM_UTEST);
 }
 
 #[test]

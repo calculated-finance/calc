@@ -170,8 +170,8 @@ fn with_price_trigger_should_create_vault() {
                 quote_denom: DENOM_UKUJI.to_string(),
             },
             started_at: None,
-            swapped_amount: Uint128::zero(),
-            received_amount: Uint128::zero(),
+            swapped_amount: Coin::new(0, DENOM_UKUJI.to_string()),
+            received_amount: Coin::new(0, DENOM_UTEST.to_string()),
         }
     );
 }
@@ -408,8 +408,8 @@ fn with_price_trigger_with_existing_vault_should_create_vault() {
                 quote_denom: DENOM_UKUJI.to_string(),
             },
             started_at: None,
-            swapped_amount: Uint128::zero(),
-            received_amount: Uint128::zero(),
+            swapped_amount: Coin::new(0, DENOM_UKUJI.to_string()),
+            received_amount: Coin::new(0, DENOM_UTEST.to_string()),
         }
     );
 }
@@ -590,8 +590,8 @@ fn with_time_trigger_should_create_vault() {
                 quote_denom: DENOM_UKUJI.to_string(),
             },
             started_at: None,
-            swapped_amount: Uint128::zero(),
-            received_amount: Uint128::zero(),
+            swapped_amount: Coin::new(0, DENOM_UKUJI.to_string()),
+            received_amount: Coin::new(0, DENOM_UTEST.to_string()),
         }
     );
 }
@@ -834,8 +834,8 @@ fn with_time_trigger_with_existing_vault_should_create_vault() {
                 quote_denom: DENOM_UKUJI.to_string(),
             },
             started_at: None,
-            swapped_amount: Uint128::zero(),
-            received_amount: Uint128::zero(),
+            swapped_amount: Coin::new(0, DENOM_UKUJI.to_string()),
+            received_amount: Coin::new(0, DENOM_UTEST.to_string()),
         }
     );
 }
@@ -1021,8 +1021,8 @@ fn with_mulitple_destinations_should_succeed() {
                 quote_denom: DENOM_UKUJI.to_string(),
             },
             started_at: None,
-            swapped_amount: Uint128::zero(),
-            received_amount: Uint128::zero(),
+            swapped_amount: Coin::new(0, DENOM_UKUJI.to_string()),
+            received_amount: Coin::new(0, DENOM_UTEST.to_string()),
         }
     );
 }

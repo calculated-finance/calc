@@ -7,6 +7,7 @@ use crate::state::triggers::{delete_trigger, save_trigger};
 use crate::state::vaults::{get_vault, update_vault};
 use crate::vault::Vault;
 use base::events::event::{EventBuilder, EventData};
+use base::helpers::coin_helpers::add_to_coin;
 use base::helpers::math_helpers::checked_mul;
 use base::helpers::time_helpers::get_next_target_time;
 use base::triggers::trigger::{Trigger, TriggerConfiguration};
@@ -73,13 +74,13 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
                                 existing_vault.status = VaultStatus::Inactive
                             }
 
-                            existing_vault.swapped_amount = existing_vault
-                                .swapped_amount
-                                .checked_add(limit_order_cache.original_offer_amount)?;
+                            existing_vault.swapped_amount = add_to_coin(
+                                existing_vault.swapped_amount,
+                                limit_order_cache.original_offer_amount,
+                            )?;
 
-                            existing_vault.received_amount = existing_vault
-                                .received_amount
-                                .checked_add(total_to_redistribute)?;
+                            existing_vault.received_amount =
+                                add_to_coin(existing_vault.received_amount, total_to_redistribute)?;
 
                             Ok(existing_vault)
                         }
