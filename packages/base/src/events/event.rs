@@ -12,8 +12,8 @@ pub enum ExecutionSkippedReason {
     UnknownFailure,
 }
 
-impl From<String> for ExecutionSkippedReason {
-    fn from(e: String) -> Self {
+impl ExecutionSkippedReason {
+    pub fn from_fin_swap_error(e: String) -> Self {
         if e.contains(ERROR_SWAP_SLIPPAGE) {
             ExecutionSkippedReason::SlippageToleranceExceeded
         } else if e.contains(ERROR_SWAP_INSUFFICIENT_FUNDS) {

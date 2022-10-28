@@ -177,7 +177,7 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
             attributes.push(Attribute::new("status", "success"));
         }
         cosmwasm_std::SubMsgResult::Err(e) => {
-            let execution_skipped_reason = ExecutionSkippedReason::from(e);
+            let execution_skipped_reason = ExecutionSkippedReason::from_fin_swap_error(e);
 
             if execution_skipped_reason == ExecutionSkippedReason::InsufficientFunds {
                 update_vault(
