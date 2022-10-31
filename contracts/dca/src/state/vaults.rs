@@ -138,12 +138,13 @@ pub fn get_vaults_by_address(
         )
         .take(limit.unwrap_or(30) as usize)
         .map(|result| {
-            let (_, data) = result.expect("a vault stored by id");
+            let (_, data) =
+                result.expect(format!("a vault with id after {:?}", start_after).as_str());
             vault_from(
                 &data,
                 PAIRS
                     .load(store, data.pair_address.clone())
-                    .expect("a pair for pair address"),
+                    .expect(format!("a pair for pair address {:?}", data.pair_address).as_str()),
             )
         })
         .collect::<Vec<Vault>>())
