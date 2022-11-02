@@ -3,9 +3,7 @@ use crate::{
     constants::{ONE, TEN},
     msg::{ExecuteMsg, QueryMsg, TriggerIdResponse, VaultResponse},
 };
-use base::{
-    helpers::message_helpers::get_flat_map_for_event_type, triggers::trigger::TimeInterval,
-};
+use base::helpers::message_helpers::get_flat_map_for_event_type;
 use cosmwasm_std::{Addr, Coin, Decimal256, Uint128};
 use cw_multi_test::Executor;
 use std::str::FromStr;
@@ -36,7 +34,7 @@ fn should_fetch_existing_trigger_id_by_order_idx() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                time_interval: TimeInterval::Hourly,
+                schedule_expression: "0 0 * ? * *".to_string(),
                 target_price: Some(Decimal256::from_str("1.0").unwrap()),
                 target_start_time_utc_seconds: None,
             },

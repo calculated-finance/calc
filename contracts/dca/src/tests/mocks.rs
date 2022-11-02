@@ -3,7 +3,6 @@ use crate::contract::reply;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, VaultResponse};
 use crate::vault::Vault;
 use base::helpers::message_helpers::get_flat_map_for_event_type;
-use base::triggers::trigger::TimeInterval;
 use base::vaults::vault::Destination;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_schema::serde::Serialize;
@@ -198,9 +197,9 @@ impl MockApp {
                     position_type: None,
                     slippage_tolerance: None,
                     swap_amount,
-                    time_interval: TimeInterval::Hourly,
                     target_price: Some(Decimal256::from_str("1.0").unwrap()),
                     target_start_time_utc_seconds: None,
+                    schedule_expression: "0 0 * ? * *".to_string(),
                 },
                 &vec![balance],
             )
@@ -239,9 +238,9 @@ impl MockApp {
                     position_type: None,
                     slippage_tolerance: None,
                     swap_amount,
-                    time_interval: TimeInterval::Hourly,
                     target_price: Some(Decimal256::from_str("1.0").unwrap()),
                     target_start_time_utc_seconds: None,
+                    schedule_expression: "0 0 * ? * *".to_string(),
                 },
                 &vec![balance],
             )
@@ -297,9 +296,9 @@ impl MockApp {
                     position_type: None,
                     slippage_tolerance: None,
                     swap_amount,
-                    time_interval: TimeInterval::Hourly,
                     target_price: Some(Decimal256::from_str("1.0").unwrap()),
                     target_start_time_utc_seconds: None,
+                    schedule_expression: "0 0 * ? * *".to_string(),
                 },
                 &vec![balance],
             )
@@ -363,11 +362,11 @@ impl MockApp {
                     position_type: None,
                     slippage_tolerance: None,
                     swap_amount,
-                    time_interval: TimeInterval::Hourly,
                     target_start_time_utc_seconds: Some(Uint64::from(
                         self.app.block_info().time.plus_seconds(2).seconds(),
                     )),
                     target_price: None,
+                    schedule_expression: "0 0 * ? * *".to_string(),
                 },
                 &vec![balance],
             )

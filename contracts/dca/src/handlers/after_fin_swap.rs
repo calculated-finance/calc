@@ -152,17 +152,16 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                 .trigger
                 .expect(format!("trigger for vault id {:?}", vault.id).as_str())
             {
-                TriggerConfiguration::Time { target_time } => {
+                TriggerConfiguration::Time { .. } => {
                     save_trigger(
                         deps.storage,
                         Trigger {
                             vault_id: vault.id,
                             configuration: TriggerConfiguration::Time {
                                 target_time: get_next_target_time(
+                                    vault.schedule_expression,
                                     env.block.time,
-                                    target_time,
-                                    vault.time_interval,
-                                ),
+                                )?,
                             },
                         },
                     )?;
@@ -227,17 +226,16 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                 .trigger
                 .expect(format!("trigger for vault id {:?}", vault.id).as_str())
             {
-                TriggerConfiguration::Time { target_time } => {
+                TriggerConfiguration::Time { .. } => {
                     save_trigger(
                         deps.storage,
                         Trigger {
                             vault_id: vault.id,
                             configuration: TriggerConfiguration::Time {
                                 target_time: get_next_target_time(
+                                    vault.schedule_expression,
                                     env.block.time,
-                                    target_time,
-                                    vault.time_interval,
-                                ),
+                                )?,
                             },
                         },
                     )?;

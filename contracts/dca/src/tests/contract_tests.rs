@@ -1,8 +1,6 @@
-use std::str::FromStr;
-
-use base::triggers::trigger::TimeInterval;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{attr, from_binary, Addr, Coin, Decimal, Uint128, Uint64};
+use std::str::FromStr;
 
 use crate::contract::{execute, instantiate, query};
 use crate::msg::{
@@ -398,7 +396,7 @@ fn cancel_vault_with_valid_inputs_should_succeed() {
         position_type: None,
         slippage_tolerance: None,
         swap_amount: Uint128::new(30),
-        time_interval: TimeInterval::Daily,
+        schedule_expression: "0 0 0 ? * *".to_string(),
         target_start_time_utc_seconds: Some(Uint64::new(1762770365)),
         target_price: None,
         price_threshold: None,
@@ -479,7 +477,7 @@ fn get_active_vault_by_address_and_id_should_succeed() {
         position_type: None,
         slippage_tolerance: None,
         swap_amount: Uint128::new(30),
-        time_interval: TimeInterval::Daily,
+        schedule_expression: "0 0 0 ? * *".to_string(),
         target_start_time_utc_seconds: Some(Uint64::new(1662770365)),
         target_price: None,
         price_threshold: None,
@@ -555,7 +553,7 @@ fn get_all_active_vaults_by_address_should_succeed() {
         position_type: None,
         slippage_tolerance: None,
         swap_amount: Uint128::new(30),
-        time_interval: TimeInterval::Daily,
+        schedule_expression: "0 0 0 ? * *".to_string(),
         target_start_time_utc_seconds: Some(Uint64::new(1662770365)),
         target_price: None,
         price_threshold: None,
@@ -583,7 +581,7 @@ fn get_all_active_vaults_by_address_should_succeed() {
         position_type: None,
         slippage_tolerance: None,
         swap_amount: Uint128::new(30),
-        time_interval: TimeInterval::Daily,
+        schedule_expression: "0 0 0 ? * *".to_string(),
         target_start_time_utc_seconds: Some(Uint64::new(1662770365)),
         target_price: None,
         price_threshold: None,
@@ -663,7 +661,7 @@ fn get_all_events_by_vault_id_for_new_vault_should_succeed() {
         position_type: None,
         slippage_tolerance: None,
         swap_amount: Uint128::new(30),
-        time_interval: TimeInterval::Daily,
+        schedule_expression: "0 0 0 ? * *".to_string(),
         target_start_time_utc_seconds: Some(Uint64::new(1762770365)),
         target_price: None,
         price_threshold: None,

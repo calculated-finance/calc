@@ -1,6 +1,6 @@
 use base::{
     pair::Pair,
-    triggers::trigger::{TimeInterval, TriggerConfiguration},
+    triggers::trigger::TriggerConfiguration,
     vaults::vault::{Destination, PositionType, VaultStatus},
 };
 use cosmwasm_schema::cw_serde;
@@ -27,10 +27,10 @@ struct VaultDTO {
     pub position_type: Option<PositionType>,
     pub slippage_tolerance: Option<Decimal256>,
     pub price_threshold: Option<Decimal256>,
-    pub time_interval: TimeInterval,
     pub started_at: Option<Timestamp>,
     pub swapped_amount: Coin,
     pub received_amount: Coin,
+    pub schedule_expression: String,
 }
 
 impl From<Vault> for VaultDTO {
@@ -48,7 +48,7 @@ impl From<Vault> for VaultDTO {
             position_type: vault.position_type,
             slippage_tolerance: vault.slippage_tolerance,
             price_threshold: vault.price_threshold,
-            time_interval: vault.time_interval,
+            schedule_expression: vault.schedule_expression.clone(),
             started_at: vault.started_at,
             swapped_amount: vault.swapped_amount,
             received_amount: vault.received_amount,
@@ -70,7 +70,7 @@ fn vault_from(data: &VaultDTO, pair: Pair, trigger: Option<TriggerConfiguration>
         position_type: data.position_type.clone(),
         slippage_tolerance: data.slippage_tolerance,
         price_threshold: data.price_threshold,
-        time_interval: data.time_interval.clone(),
+        schedule_expression: data.schedule_expression.clone(),
         started_at: data.started_at,
         swapped_amount: data.swapped_amount.clone(),
         received_amount: data.received_amount.clone(),

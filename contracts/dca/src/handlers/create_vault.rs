@@ -14,7 +14,7 @@ use crate::validation_helpers::{
 };
 use crate::vault::{Vault, VaultBuilder};
 use base::events::event::{EventBuilder, EventData};
-use base::triggers::trigger::{TimeInterval, Trigger, TriggerConfiguration};
+use base::triggers::trigger::{Trigger, TriggerConfiguration};
 use base::vaults::vault::{Destination, PositionType, PostExecutionAction, VaultStatus};
 use cosmwasm_std::{Addr, Decimal, Decimal256};
 #[cfg(not(feature = "library"))]
@@ -35,9 +35,9 @@ pub fn create_vault(
     slippage_tolerance: Option<Decimal256>,
     price_threshold: Option<Decimal256>,
     swap_amount: Uint128,
-    time_interval: TimeInterval,
     target_start_time_utc_seconds: Option<Uint64>,
     target_price: Option<Decimal256>,
+    schedule_expression: String,
 ) -> Result<Response, ContractError> {
     assert_address_is_valid(deps.as_ref(), owner.clone(), "owner".to_string())?;
     assert_exactly_one_asset(info.funds.clone())?;
@@ -90,8 +90,8 @@ pub fn create_vault(
         slippage_tolerance,
         price_threshold,
         balance: info.funds[0].clone(),
-        time_interval: time_interval.clone(),
         started_at: None,
+        schedule_expression,
     };
 
     let vault = save_vault(deps.storage, vault_builder)?;

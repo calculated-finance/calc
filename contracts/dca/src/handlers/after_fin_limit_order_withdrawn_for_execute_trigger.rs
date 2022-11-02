@@ -39,10 +39,9 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
                     vault_id: vault.id,
                     configuration: TriggerConfiguration::Time {
                         target_time: get_next_target_time(
+                            vault.schedule_expression.clone(),
                             env.block.time,
-                            env.block.time,
-                            vault.time_interval.clone(),
-                        ),
+                        )?,
                     },
                 },
             )?;

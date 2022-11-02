@@ -1,9 +1,10 @@
 use base::{
     events::event::{EventBuilder, EventData, ExecutionSkippedReason},
     pair::Pair,
-    triggers::trigger::{TimeInterval, Trigger, TriggerConfiguration},
+    triggers::trigger::{Trigger, TriggerConfiguration},
     vaults::vault::VaultStatus,
 };
+use chrono::{TimeZone, Timelike, Utc};
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env},
     Addr, Coin, DepsMut, Env, Reply, SubMsgResult, Timestamp, Uint128,
@@ -35,6 +36,19 @@ fn setup(deps: DepsMut, env: Env) {
         .save(deps.storage, pair.address.clone(), &pair)
         .unwrap();
 
+    let current_time = Utc.timestamp(
+        env.block
+            .time
+            .seconds()
+            .try_into()
+            .expect("valid timestamp"),
+        env.block
+            .time
+            .subsec_nanos()
+            .try_into()
+            .expect("valid timestamp"),
+    );
+
     let vault = save_vault(
         deps.storage,
         VaultBuilder {
@@ -49,7 +63,13 @@ fn setup(deps: DepsMut, env: Env) {
             slippage_tolerance: None,
             price_threshold: None,
             balance: Coin::new(Uint128::new(1000).into(), "base"),
-            time_interval: TimeInterval::Daily,
+            schedule_expression: format!(
+                "{:?} {:?} {:?} * * *",
+                current_time.second(),
+                current_time.minute(),
+                current_time.hour()
+            )
+            .to_string(),
             started_at: None,
         },
     )

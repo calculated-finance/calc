@@ -23,8 +23,10 @@ library = []
 
 [dependencies]
 base = { path = "../../packages/base" }
+chrono = { version = "0.4.22", default-features = false }
 cosmwasm-std = "1.0.0"
 cosmwasm-storage = "1.1.1"
+cron = "0.12.0"
 cw-storage-plus = "0.15.0"
 cw2 = "0.15.0"
 enum-as-inner = "0.5.1"

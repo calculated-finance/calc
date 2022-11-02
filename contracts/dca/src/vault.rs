@@ -1,6 +1,6 @@
 use base::{
     pair::Pair,
-    triggers::trigger::{TimeInterval, TriggerConfiguration},
+    triggers::trigger::TriggerConfiguration,
     vaults::vault::{Destination, PositionType, VaultStatus},
 };
 use cosmwasm_schema::cw_serde;
@@ -20,11 +20,11 @@ pub struct Vault {
     pub position_type: Option<PositionType>,
     pub slippage_tolerance: Option<Decimal256>,
     pub price_threshold: Option<Decimal256>,
-    pub time_interval: TimeInterval,
     pub started_at: Option<Timestamp>,
     pub swapped_amount: Coin,
     pub received_amount: Coin,
     pub trigger: Option<TriggerConfiguration>,
+    pub schedule_expression: String,
 }
 
 impl Vault {
@@ -85,8 +85,8 @@ pub struct VaultBuilder {
     pub position_type: Option<PositionType>,
     pub slippage_tolerance: Option<Decimal256>,
     pub price_threshold: Option<Decimal256>,
-    pub time_interval: TimeInterval,
     pub started_at: Option<Timestamp>,
+    pub schedule_expression: String,
 }
 
 impl VaultBuilder {
@@ -102,8 +102,8 @@ impl VaultBuilder {
         position_type: Option<PositionType>,
         slippage_tolerance: Option<Decimal256>,
         price_threshold: Option<Decimal256>,
-        time_interval: TimeInterval,
         started_at: Option<Timestamp>,
+        schedule_expression: String,
     ) -> VaultBuilder {
         VaultBuilder {
             created_at,
@@ -117,8 +117,8 @@ impl VaultBuilder {
             position_type,
             slippage_tolerance,
             price_threshold,
-            time_interval,
             started_at,
+            schedule_expression,
         }
     }
 
@@ -136,7 +136,6 @@ impl VaultBuilder {
             position_type: self.position_type,
             slippage_tolerance: self.slippage_tolerance,
             price_threshold: self.price_threshold,
-            time_interval: self.time_interval,
             started_at: self.started_at,
             swapped_amount: coin(0, self.balance.denom.clone()),
             received_amount: coin(
@@ -147,6 +146,7 @@ impl VaultBuilder {
                 },
             ),
             trigger: None,
+            schedule_expression: self.schedule_expression,
         }
     }
 }

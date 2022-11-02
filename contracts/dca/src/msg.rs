@@ -1,6 +1,6 @@
 use base::events::event::Event;
 use base::pair::Pair;
-use base::triggers::trigger::{TimeInterval, Trigger};
+use base::triggers::trigger::Trigger;
 use base::vaults::vault::{Destination, PositionType, VaultStatus};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Decimal, Decimal256, Uint128, Uint64};
@@ -44,9 +44,9 @@ pub enum ExecuteMsg {
         slippage_tolerance: Option<Decimal256>,
         price_threshold: Option<Decimal256>,
         swap_amount: Uint128,
-        time_interval: TimeInterval,
         target_start_time_utc_seconds: Option<Uint64>,
         target_price: Option<Decimal256>,
+        schedule_expression: String,
     },
     Deposit {
         address: Addr,
@@ -117,7 +117,7 @@ pub struct TriggerIdsResponse {
 #[cw_serde]
 pub struct VaultResponse {
     pub vault: Vault,
-    pub trigger: Option<Trigger>
+    pub trigger: Option<Trigger>,
 }
 
 #[cw_serde]
