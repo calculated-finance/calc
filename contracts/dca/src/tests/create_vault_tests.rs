@@ -669,6 +669,14 @@ fn with_immediate_time_trigger_should_create_active_vault() {
                 (swap_amount - checked_mul(swap_amount, mock.fee_percent).ok().unwrap()).into(),
                 DENOM_UTEST.to_string()
             ),
+            trigger: Some(TriggerConfiguration::Time {
+                target_time: mock
+                    .app
+                    .block_info()
+                    .time
+                    .plus_seconds(60 * 60)
+                    .minus_nanos(mock.app.block_info().time.subsec_nanos()),
+            })
         }
     );
 }
@@ -1307,7 +1315,12 @@ fn with_multiple_destinations_should_succeed() {
             swapped_amount: Coin::new(0, DENOM_UKUJI.to_string()),
             received_amount: Coin::new(0, DENOM_UTEST.to_string()),
             trigger: Some(TriggerConfiguration::Time {
-                target_time: mock.app.block_info().time
+                target_time: mock
+                    .app
+                    .block_info()
+                    .time
+                    .plus_seconds(10)
+                    .minus_nanos(mock.app.block_info().time.subsec_nanos())
             }),
         }
     );

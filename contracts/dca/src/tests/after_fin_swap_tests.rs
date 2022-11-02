@@ -167,7 +167,7 @@ fn with_insufficient_funds_creates_a_new_time_trigger() {
     let trigger = get_trigger(&mut deps.storage, vault_id).unwrap();
 
     assert_eq!(
-        trigger.configuration,
+        trigger.unwrap().configuration,
         TriggerConfiguration::Time {
             target_time: Timestamp::from_seconds(env.block.time.seconds() + 60 * 60 * 24)
         }
@@ -192,7 +192,7 @@ fn with_slippage_failure_creates_a_new_time_trigger() {
     let trigger = get_trigger(&mut deps.storage, vault_id).unwrap();
 
     assert_eq!(
-        trigger.configuration,
+        trigger.unwrap().configuration,
         TriggerConfiguration::Time {
             target_time: Timestamp::from_seconds(env.block.time.seconds() + 60 * 60 * 24)
         }
