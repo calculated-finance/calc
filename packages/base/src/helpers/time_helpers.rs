@@ -20,30 +20,13 @@ pub fn get_next_target_time(
     let last_execution_time =
         Utc.timestamp(last_execution_timestamp.seconds().try_into().unwrap(), 0);
 
-    let next_time = get_next_time(last_execution_time, interval.clone());
+    let mut next_time = get_next_time(last_execution_time, interval.clone());
 
-    if current_time.ge(&next_time) {
-        match interval {
-            TimeInterval::Monthly => {
-                let next = recover_monthly_interval(current_time, last_execution_time);
-                return Timestamp::from_seconds(next.timestamp().try_into().unwrap());
-            }
-            TimeInterval::Weekly => {
-                let next = recover_weekly_interval(current_time, last_execution_time);
-                return Timestamp::from_seconds(next.timestamp().try_into().unwrap());
-            }
-            TimeInterval::Daily => {
-                let next = recover_daily_interval(current_time, last_execution_time);
-                return Timestamp::from_seconds(next.timestamp().try_into().unwrap());
-            }
-            TimeInterval::Hourly => {
-                let next = recover_hourly_interval(current_time, last_execution_time);
-                return Timestamp::from_seconds(next.timestamp().try_into().unwrap());
-            }
-        }
-    } else {
-        return Timestamp::from_seconds(next_time.timestamp().try_into().unwrap());
+    while current_time.ge(&next_time) {
+        next_time = get_next_time(next_time, interval.clone());
     }
+
+    Timestamp::from_seconds(next_time.timestamp().try_into().unwrap())
 }
 
 fn get_next_time(previous: DateTime<Utc>, interval: TimeInterval) -> DateTime<Utc> {
@@ -53,54 +36,6 @@ fn get_next_time(previous: DateTime<Utc>, interval: TimeInterval) -> DateTime<Ut
         TimeInterval::Daily => previous + Duration::days(1),
         TimeInterval::Hourly => previous + Duration::hours(1),
     }
-}
-
-fn recover_monthly_interval(
-    current_time: DateTime<Utc>,
-    last_execution_time: DateTime<Utc>,
-) -> DateTime<Utc> {
-    let mut new_time = last_execution_time.clone();
-    while current_time.ge(&new_time) {
-        new_time = shift_months(new_time, 1);
-    }
-
-    return new_time;
-}
-
-fn recover_weekly_interval(
-    current_time: DateTime<Utc>,
-    last_execution_time: DateTime<Utc>,
-) -> DateTime<Utc> {
-    let mut new_time = last_execution_time.clone();
-    while current_time.ge(&new_time) {
-        new_time += Duration::days(7)
-    }
-
-    return new_time;
-}
-
-fn recover_daily_interval(
-    current_time: DateTime<Utc>,
-    last_execution_time: DateTime<Utc>,
-) -> DateTime<Utc> {
-    let mut new_time = last_execution_time.clone();
-    while current_time.ge(&new_time) {
-        new_time += Duration::days(1)
-    }
-
-    return new_time;
-}
-
-fn recover_hourly_interval(
-    current_time: DateTime<Utc>,
-    last_execution_time: DateTime<Utc>,
-) -> DateTime<Utc> {
-    let mut new_time = last_execution_time.clone();
-    while current_time.ge(&new_time) {
-        new_time += Duration::hours(1)
-    }
-
-    return new_time;
 }
 
 fn shift_months<D: Datelike>(date: D, months: i32) -> D {
