@@ -14,7 +14,7 @@ use super::{pairs::PAIRS, state_helpers::fetch_and_increment_counter, triggers::
 const VAULT_COUNTER: Item<u64> = Item::new("vault_counter_v7");
 
 #[cw_serde]
-struct VaultData {
+struct VaultDTO {
     pub id: Uint128,
     pub created_at: Timestamp,
     pub owner: Addr,
@@ -33,7 +33,7 @@ struct VaultData {
     pub received_amount: Coin,
 }
 
-impl From<Vault> for VaultData {
+impl From<Vault> for VaultDTO {
     fn from(vault: Vault) -> Self {
         Self {
             id: vault.id,
@@ -56,7 +56,7 @@ impl From<Vault> for VaultData {
     }
 }
 
-fn vault_from(data: &VaultData, pair: Pair, trigger: Option<TriggerConfiguration>) -> Vault {
+fn vault_from(data: &VaultDTO, pair: Pair, trigger: Option<TriggerConfiguration>) -> Vault {
     Vault {
         id: data.id,
         created_at: data.created_at,
@@ -79,18 +79,18 @@ fn vault_from(data: &VaultData, pair: Pair, trigger: Option<TriggerConfiguration
 }
 
 struct VaultIndexes<'a> {
-    pub owner: UniqueIndex<'a, (Addr, u128), VaultData, u128>,
-    pub owner_status: UniqueIndex<'a, (Addr, u8, u128), VaultData, u128>,
+    pub owner: UniqueIndex<'a, (Addr, u128), VaultDTO, u128>,
+    pub owner_status: UniqueIndex<'a, (Addr, u8, u128), VaultDTO, u128>,
 }
 
-impl<'a> IndexList<VaultData> for VaultIndexes<'a> {
-    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<VaultData>> + '_> {
-        let v: Vec<&dyn Index<VaultData>> = vec![&self.owner, &self.owner_status];
+impl<'a> IndexList<VaultDTO> for VaultIndexes<'a> {
+    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<VaultDTO>> + '_> {
+        let v: Vec<&dyn Index<VaultDTO>> = vec![&self.owner, &self.owner_status];
         Box::new(v.into_iter())
     }
 }
 
-fn vault_store<'a>() -> IndexedMap<'a, u128, VaultData, VaultIndexes<'a>> {
+fn vault_store<'a>() -> IndexedMap<'a, u128, VaultDTO, VaultIndexes<'a>> {
     let indexes = VaultIndexes {
         owner: UniqueIndex::new(|v| (v.owner.clone(), v.id.into()), "vaults_v7__owner"),
         owner_status: UniqueIndex::new(
