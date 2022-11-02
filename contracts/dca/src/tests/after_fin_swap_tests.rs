@@ -42,7 +42,7 @@ fn setup(deps: DepsMut, env: Env) {
             label: None,
             destinations: vec![],
             created_at: env.block.time.clone(),
-            status: VaultStatus::Scheduled,
+            status: VaultStatus::Active,
             pair,
             swap_amount: Uint128::new(100),
             position_type: None,
