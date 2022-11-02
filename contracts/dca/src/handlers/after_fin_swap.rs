@@ -188,27 +188,28 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
         SubMsgResult::Err(e) => {
             let execution_skipped_reason = ExecutionSkippedReason::from_fin_swap_error(e);
 
-            if execution_skipped_reason == ExecutionSkippedReason::InsufficientFunds {
-                update_vault(
-                    deps.storage,
-                    vault.id.into(),
-                    |existing_vault| -> StdResult<Vault> {
-                        match existing_vault {
-                            Some(mut existing_vault) => {
-                                existing_vault.status = VaultStatus::Inactive;
-                                Ok(existing_vault)
-                            }
-                            None => Err(StdError::NotFound {
-                                kind: format!(
-                                    "vault for address: {} with id: {}",
-                                    vault.owner.clone(),
-                                    vault.id
-                                ),
-                            }),
+            update_vault(
+                deps.storage,
+                vault.id.into(),
+                |existing_vault| -> StdResult<Vault> {
+                    match existing_vault {
+                        Some(mut existing_vault) => {
+                            existing_vault.status = match execution_skipped_reason {
+                                ExecutionSkippedReason::InsufficientFunds => VaultStatus::Inactive,
+                                _ => VaultStatus::Active,
+                            };
+                            Ok(existing_vault)
                         }
-                    },
-                )?;
-            }
+                        None => Err(StdError::NotFound {
+                            kind: format!(
+                                "vault for address: {} with id: {}",
+                                vault.owner.clone(),
+                                vault.id
+                            ),
+                        }),
+                    }
+                },
+            )?;
 
             create_event(
                 deps.storage,

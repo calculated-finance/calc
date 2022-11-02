@@ -240,14 +240,14 @@ fn with_slippage_failure_funds_leaves_vault_active() {
 
     let reply = Reply {
         id: AFTER_FIN_SWAP_REPLY_ID,
-        result: SubMsgResult::Err(ERROR_SWAP_INSUFFICIENT_FUNDS.to_string()),
+        result: SubMsgResult::Err(ERROR_SWAP_SLIPPAGE_EXCEEDED.to_string()),
     };
 
     after_fin_swap(deps.as_mut(), env.clone(), reply).unwrap();
 
     let vault = get_vault(&mut deps.storage, vault_id).unwrap();
 
-    assert_eq!(vault.status, VaultStatus::Inactive);
+    assert_eq!(vault.status, VaultStatus::Active);
 }
 
 #[test]
@@ -260,7 +260,7 @@ fn with_slippage_failure_does_not_reduce_vault_balance() {
 
     let reply = Reply {
         id: AFTER_FIN_SWAP_REPLY_ID,
-        result: SubMsgResult::Err(ERROR_SWAP_INSUFFICIENT_FUNDS.to_string()),
+        result: SubMsgResult::Err(ERROR_SWAP_SLIPPAGE_EXCEEDED.to_string()),
     };
 
     after_fin_swap(deps.as_mut(), env.clone(), reply).unwrap();
