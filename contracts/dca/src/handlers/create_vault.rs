@@ -96,6 +96,14 @@ pub fn create_vault(
 
     let vault = save_vault(deps.storage, vault_builder)?;
 
+    CACHE.save(
+        deps.storage,
+        &Cache {
+            vault_id: vault.id.clone(),
+            owner: vault.owner.clone(),
+        },
+    )?;
+
     create_event(
         deps.storage,
         EventBuilder::new(vault.id, env.block.clone(), EventData::DCAVaultCreated),
@@ -184,14 +192,6 @@ fn create_fin_limit_order_trigger(
                 order_idx: None,
                 target_price: target_price.clone(),
             },
-        },
-    )?;
-
-    CACHE.save(
-        deps.storage,
-        &Cache {
-            vault_id: vault.id.clone(),
-            owner: vault.owner.clone(),
         },
     )?;
 
