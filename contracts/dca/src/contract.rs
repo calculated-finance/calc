@@ -61,6 +61,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             fee_percent: msg.fee_percent,
             staking_router_address: msg.staking_router_address,
             page_limit: msg.page_limit,
+            minumum_execution_interval_in_seconds: msg.minumum_execution_interval_in_seconds,
         },
     )?;
 
@@ -87,6 +88,7 @@ pub fn instantiate(
             fee_percent: msg.fee_percent,
             staking_router_address: msg.staking_router_address,
             page_limit: msg.page_limit,
+            minumum_execution_interval_in_seconds: msg.minumum_execution_interval_in_seconds,
         },
     )?;
 
@@ -147,6 +149,7 @@ pub fn execute(
             fee_percent,
             staking_router_address,
             page_limit,
+            minumum_execution_interval_in_seconds,
         } => update_config_handler(
             deps,
             info,
@@ -154,6 +157,7 @@ pub fn execute(
             fee_percent,
             staking_router_address,
             page_limit,
+            minumum_execution_interval_in_seconds,
         ),
         ExecuteMsg::UpdateVault {
             address,

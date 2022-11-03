@@ -10,10 +10,11 @@ use crate::vault::Vault;
 use base::events::event::{EventBuilder, EventData};
 use base::helpers::math_helpers::checked_mul;
 use base::helpers::message_helpers::get_flat_map_for_event_type;
+use base::helpers::time_helpers::date_time_from_timestamp;
 use base::pair::Pair;
 use base::triggers::trigger::TriggerConfiguration;
 use base::vaults::vault::{Destination, PostExecutionAction, VaultStatus};
-use chrono::{TimeZone, Timelike, Utc};
+use chrono::Timelike;
 use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, Uint128, Uint64};
 use cw_multi_test::Executor;
 use std::str::FromStr;
@@ -57,7 +58,7 @@ fn with_price_trigger_should_update_address_balances() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_price: Some(Decimal256::from_str("1.0").unwrap()),
                 target_start_time_utc_seconds: None,
             },
@@ -124,7 +125,7 @@ fn with_price_trigger_should_create_vault() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_price: Some(Decimal256::from_str("1.0").unwrap()),
                 target_start_time_utc_seconds: None,
             },
@@ -156,6 +157,8 @@ fn with_price_trigger_should_create_vault() {
     );
     assert_eq!(vault_response.vault.swap_amount, swap_amount);
     assert_eq!(vault_response.vault.pair.address, mock.fin_contract_address);
+    assert_eq!(vault_response.vault.schedule_expression, "$ $ * ? * *");
+    assert!(vault_response.vault.trigger.is_some());
 }
 
 #[test]
@@ -184,7 +187,7 @@ fn with_price_trigger_should_create_trigger() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_price: Some(Decimal256::from_str("1.879").unwrap()),
                 target_start_time_utc_seconds: None,
             },
@@ -245,7 +248,7 @@ fn with_price_trigger_should_publish_vault_created_event() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: None,
                 target_price: Some(Decimal256::from_str("1.0").unwrap()),
             },
@@ -286,7 +289,7 @@ fn with_price_trigger_should_publish_funds_deposited_event() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: None,
                 target_price: Some(Decimal256::from_str("1.0").unwrap()),
             },
@@ -340,7 +343,7 @@ fn with_price_trigger_with_existing_vault_should_create_vault() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_price: Some(Decimal256::from_str("1.0").unwrap()),
                 target_start_time_utc_seconds: None,
             },
@@ -424,7 +427,7 @@ fn with_price_trigger_twice_for_user_should_succeed() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_price: Some(Decimal256::from_str("1.0").unwrap()),
                 target_start_time_utc_seconds: None,
             },
@@ -513,7 +516,7 @@ fn with_immediate_time_trigger_should_update_address_balances() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: None,
                 target_price: None,
             },
@@ -573,7 +576,7 @@ fn with_immediate_time_trigger_should_update_vault_balance() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: None,
                 target_price: None,
             },
@@ -602,21 +605,7 @@ fn with_immediate_time_trigger_should_create_active_vault() {
         DENOM_UKUJI,
     );
 
-    let current_time = Utc.timestamp(
-        mock.app.block_info().time.seconds().try_into().unwrap(),
-        mock.app
-            .block_info()
-            .time
-            .subsec_nanos()
-            .try_into()
-            .unwrap(),
-    );
-
-    let schedule_expression = format!(
-        "{:?} {:?} * * * *",
-        current_time.second(),
-        current_time.minute()
-    );
+    let current_time = date_time_from_timestamp(mock.app.block_info().time);
 
     mock.app
         .execute_contract(
@@ -631,7 +620,7 @@ fn with_immediate_time_trigger_should_create_active_vault() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: schedule_expression.clone(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: None,
                 target_price: None,
             },
@@ -668,7 +657,11 @@ fn with_immediate_time_trigger_should_create_active_vault() {
             created_at: mock.app.block_info().time,
             status: VaultStatus::Active,
             position_type: None,
-            schedule_expression,
+            schedule_expression: format!(
+                "{:?} {:?} * ? * *",
+                current_time.second(),
+                current_time.minute()
+            ),
             balance: Coin::new(
                 (vault_deposit - swap_amount).into(),
                 DENOM_UKUJI.to_string()
@@ -723,7 +716,7 @@ fn with_immediate_time_trigger_should_publish_events() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: None,
                 target_price: None,
             },
@@ -810,7 +803,7 @@ fn with_immediate_time_trigger_and_slippage_failure_should_update_address_balanc
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: None,
                 target_price: None,
             },
@@ -860,7 +853,7 @@ fn with_immediate_time_trigger_and_slippage_failure_should_update_vault_balance(
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: None,
                 target_price: None,
             },
@@ -904,7 +897,7 @@ fn with_time_trigger_should_create_vault() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: Some(Uint64::from(target_start_time.seconds())),
                 target_price: None,
             },
@@ -941,7 +934,7 @@ fn with_time_trigger_should_create_vault() {
             created_at: mock.app.block_info().time,
             status: VaultStatus::Scheduled,
             position_type: None,
-            schedule_expression: "0 0 * ? * *".to_string(),
+            schedule_expression: "$ $ * ? * *".to_string(),
             balance: Coin::new(vault_deposit.into(), DENOM_UKUJI.to_string()),
             slippage_tolerance: None,
             swap_amount,
@@ -999,7 +992,7 @@ fn with_time_trigger_should_update_address_balances() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: Some(Uint64::from(target_start_time.seconds())),
                 target_price: None,
             },
@@ -1049,7 +1042,7 @@ fn with_time_trigger_should_publish_vault_created_event() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: None,
                 target_price: None,
             },
@@ -1091,7 +1084,7 @@ fn with_time_trigger_should_publish_funds_deposited_event() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: None,
                 target_price: None,
             },
@@ -1148,7 +1141,7 @@ fn with_time_trigger_with_existing_vault_should_create_vault() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: Some(Uint64::from(target_start_time.seconds())),
                 target_price: None,
             },
@@ -1189,7 +1182,7 @@ fn with_time_trigger_with_existing_vault_should_create_vault() {
             status: VaultStatus::Scheduled,
             position_type: None,
             slippage_tolerance: None,
-            schedule_expression: "0 0 * ? * *".to_string(),
+            schedule_expression: "$ $ * ? * *".to_string(),
             balance: Coin::new(vault_deposit.into(), DENOM_UKUJI.to_string()),
             swap_amount,
             pair: Pair {
@@ -1233,7 +1226,7 @@ fn with_time_trigger_with_target_time_in_the_past_should_fail() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: Some(Uint64::from(
                     mock.app.block_info().time.seconds() - 60,
                 )),
@@ -1284,7 +1277,7 @@ fn with_multiple_destinations_should_succeed() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: Some(
                     (mock.app.block_info().time.seconds() + 10).into(),
                 ),
@@ -1319,7 +1312,7 @@ fn with_multiple_destinations_should_succeed() {
             created_at: mock.app.block_info().time,
             status: VaultStatus::Scheduled,
             position_type: None,
-            schedule_expression: "0 0 * ? * *".to_string(),
+            schedule_expression: "$ $ * ? * *".to_string(),
             balance: Coin::new(vault_deposit.into(), DENOM_UKUJI.to_string()),
             slippage_tolerance: None,
             swap_amount,
@@ -1369,7 +1362,7 @@ fn with_price_and_time_trigger_should_fail() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: Some(Uint64::from(
                     mock.app.block_info().time.plus_seconds(2).seconds(),
                 )),
@@ -1410,7 +1403,7 @@ fn with_no_assets_should_fail() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: None,
                 target_price: None,
             },
@@ -1448,7 +1441,7 @@ fn with_multiple_assets_should_fail() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: None,
                 target_price: None,
             },
@@ -1491,7 +1484,7 @@ fn with_non_existent_pair_address_should_fail() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: None,
                 target_price: None,
             },
@@ -1535,7 +1528,7 @@ fn with_destination_allocations_less_than_100_percent_should_fail() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: None,
                 target_price: None,
             },
@@ -1585,7 +1578,7 @@ fn with_more_than_10_destination_allocations_should_fail() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_start_time_utc_seconds: None,
                 target_price: None,
             },
@@ -1626,7 +1619,7 @@ fn with_passed_in_owner_should_succeed() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "$ $ * ? * *".to_string(),
                 target_price: Some(Decimal256::from_str("1.0").unwrap()),
                 target_start_time_utc_seconds: None,
             },

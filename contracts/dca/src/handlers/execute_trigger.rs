@@ -7,6 +7,7 @@ use crate::state::events::create_event;
 use crate::state::vaults::{get_vault, update_vault};
 use crate::validation_helpers::assert_target_time_is_in_past;
 use base::events::event::{EventBuilder, EventData, ExecutionSkippedReason};
+use base::helpers::time_helpers::try_hydrate_cron_expression;
 use base::triggers::trigger::TriggerConfiguration;
 use base::vaults::vault::{PositionType, VaultStatus};
 use cosmwasm_std::StdError;
@@ -45,6 +46,10 @@ pub fn execute_trigger(
             Some(mut existing_vault) => {
                 existing_vault.status = VaultStatus::Active;
                 existing_vault.started_at = Some(env.block.time);
+                existing_vault.schedule_expression = try_hydrate_cron_expression(
+                    existing_vault.schedule_expression,
+                    env.block.time,
+                )?;
                 Ok(existing_vault)
             }
             None => Err(StdError::NotFound {

@@ -13,7 +13,9 @@ use crate::tests::mocks::{
 };
 use base::events::event::{EventBuilder, EventData};
 use base::helpers::math_helpers::checked_mul;
+use base::helpers::time_helpers::date_time_from_timestamp;
 use base::vaults::vault::{Destination, PostExecutionAction, VaultStatus};
+use chrono::Timelike;
 use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, Uint128};
 use cw_multi_test::Executor;
 
@@ -437,6 +439,55 @@ fn for_filled_fin_limit_order_trigger_should_distribute_to_multiple_destinations
                 )
             })
             .collect::<Vec<_>>(),
+    );
+}
+
+#[test]
+fn for_filled_fin_limit_order_trigger_should_hydrate_schedule_expression() {
+    let user_address = Addr::unchecked(USER);
+    let user_balance = TEN;
+    let vault_deposit = TEN;
+    let swap_amount = ONE;
+    let mut mock = MockApp::new(fin_contract_filled_limit_order())
+        .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
+        .with_vault_with_filled_fin_limit_price_trigger(
+            &user_address,
+            None,
+            Coin::new(vault_deposit.into(), DENOM_UKUJI),
+            swap_amount,
+            "fin",
+        );
+
+    let vault_id = mock.vault_ids.get("fin").unwrap().to_owned();
+
+    mock.app
+        .execute_contract(
+            Addr::unchecked(ADMIN),
+            mock.dca_contract_address.clone(),
+            &ExecuteMsg::ExecuteTrigger {
+                trigger_id: vault_id,
+            },
+            &[],
+        )
+        .unwrap();
+
+    let vault_response: VaultResponse = mock
+        .app
+        .wrap()
+        .query_wasm_smart(
+            &mock.dca_contract_address,
+            &&QueryMsg::GetVault {
+                vault_id,
+                address: user_address.clone(),
+            },
+        )
+        .unwrap();
+
+    let block_time = date_time_from_timestamp(mock.app.block_info().time);
+
+    assert_eq!(
+        vault_response.vault.schedule_expression,
+        format!("{} {} * ? * *", block_time.second(), block_time.minute())
     );
 }
 
@@ -942,6 +993,59 @@ fn for_ready_time_trigger_should_create_new_time_trigger() {
         .unwrap();
 
     assert_eq!(get_time_trigger_ids_response.trigger_ids.len(), 1);
+}
+
+#[test]
+fn for_ready_time_trigger_should_hydrate_schedule_expression() {
+    let user_address = Addr::unchecked(USER);
+    let user_balance = TEN;
+    let vault_deposit = TEN;
+    let swap_amount = ONE;
+
+    let mut mock = MockApp::new(fin_contract_pass_slippage_tolerance())
+        .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
+        .with_vault_with_time_trigger(
+            &user_address,
+            None,
+            Coin::new(vault_deposit.into(), DENOM_UKUJI),
+            swap_amount,
+            "time",
+            None,
+        );
+
+    let vault_id = mock.vault_ids.get("time").unwrap().to_owned();
+
+    mock.elapse_time(10);
+
+    mock.app
+        .execute_contract(
+            Addr::unchecked(ADMIN),
+            mock.dca_contract_address.clone(),
+            &ExecuteMsg::ExecuteTrigger {
+                trigger_id: vault_id,
+            },
+            &[],
+        )
+        .unwrap();
+
+    let vault_response: VaultResponse = mock
+        .app
+        .wrap()
+        .query_wasm_smart(
+            &mock.dca_contract_address,
+            &&QueryMsg::GetVault {
+                vault_id,
+                address: user_address.clone(),
+            },
+        )
+        .unwrap();
+
+    let block_time = date_time_from_timestamp(mock.app.block_info().time);
+
+    assert_eq!(
+        vault_response.vault.schedule_expression,
+        format!("{} {} * ? * *", block_time.second(), block_time.minute())
+    );
 }
 
 #[test]

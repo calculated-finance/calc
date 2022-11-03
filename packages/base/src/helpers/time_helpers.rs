@@ -1,34 +1,238 @@
-use chrono::{TimeZone, Utc};
-use cosmwasm_std::{StdResult, Timestamp};
+use chrono::{DateTime, Datelike, TimeZone, Timelike, Utc};
+use cosmwasm_std::{StdError, StdResult, Timestamp};
 use cron::Schedule;
 use std::{convert::TryInto, str::FromStr};
+
+pub fn try_hydrate_cron_expression(
+    cron_expression: String,
+    timestamp: Timestamp,
+) -> StdResult<String> {
+    let date = date_time_from_timestamp(timestamp);
+
+    let hydrated_expression = cron_expression
+        .split(' ')
+        .zip(vec![
+            date.second().to_string(),
+            date.minute().to_string(),
+            date.hour().to_string(),
+            date.day().to_string(),
+            date.month().to_string(),
+            date.weekday().to_string(),
+        ])
+        .map(|(old, new)| str::replace(old, "$", &new))
+        .collect::<Vec<String>>()
+        .join(" ");
+
+    match Schedule::from_str(&hydrated_expression) {
+        Ok(_) => Ok(hydrated_expression),
+        Err(_) => Err(StdError::generic_err(format!(
+            "Invalid cron expression: {}",
+            hydrated_expression
+        ))),
+    }
+}
 
 pub fn get_next_target_time(
     schedule_expression: String,
     block_time: Timestamp,
 ) -> StdResult<Timestamp> {
-    let schedule = Schedule::from_str(&schedule_expression).expect("valid cron expression");
+    let schedule =
+        Schedule::from_str(&schedule_expression).expect("should be valid cron expression");
+
     let next_execution_time = schedule
-        .after(
-            &Utc.timestamp(
-                block_time.seconds().try_into().expect("valid timestamp"),
-                block_time
-                    .subsec_nanos()
-                    .try_into()
-                    .expect("valid timestamp"),
-            ),
-        )
+        .after(&date_time_from_timestamp(block_time))
         .next()
-        .unwrap();
+        .expect("should have a next execution time");
 
     Ok(Timestamp::from_seconds(
         next_execution_time.timestamp() as u64
     ))
 }
 
+pub fn date_time_from_timestamp(timestamp: Timestamp) -> DateTime<Utc> {
+    Utc.timestamp(
+        timestamp.seconds() as i64,
+        timestamp
+            .subsec_nanos()
+            .try_into()
+            .expect("should be a valid timestamp"),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn hydrate_with_seconds_works() {
+        let cron_expression = "$ * * * * *".to_string();
+        let date = Utc.ymd(2021, 1, 1).and_hms(0, 0, 0);
+
+        let hydrated = try_hydrate_cron_expression(
+            cron_expression,
+            Timestamp::from_seconds(date.timestamp() as u64),
+        )
+        .unwrap();
+
+        assert_eq!(hydrated, "0 * * * * *");
+    }
+
+    #[test]
+    fn hydrate_with_minutes_works() {
+        let cron_expression = "* $ * * * *".to_string();
+        let date = Utc.ymd(2021, 1, 1).and_hms(0, 0, 0);
+
+        let hydrated = try_hydrate_cron_expression(
+            cron_expression,
+            Timestamp::from_seconds(date.timestamp() as u64),
+        )
+        .unwrap();
+
+        assert_eq!(hydrated, "* 0 * * * *");
+    }
+
+    #[test]
+    fn hydrate_with_hours_works() {
+        let cron_expression = "* * $ * * *".to_string();
+        let date = Utc.ymd(2021, 1, 1).and_hms(0, 0, 0);
+
+        let hydrated = try_hydrate_cron_expression(
+            cron_expression,
+            Timestamp::from_seconds(date.timestamp() as u64),
+        )
+        .unwrap();
+
+        assert_eq!(hydrated, "* * 0 * * *");
+    }
+
+    #[test]
+    fn hydrate_with_days_works() {
+        let cron_expression = "* * * $ * *".to_string();
+        let date = Utc.ymd(2021, 1, 1).and_hms(0, 0, 0);
+
+        let hydrated = try_hydrate_cron_expression(
+            cron_expression,
+            Timestamp::from_seconds(date.timestamp() as u64),
+        )
+        .unwrap();
+
+        assert_eq!(hydrated, "* * * 1 * *");
+    }
+
+    #[test]
+    fn hydrate_with_months_works() {
+        let cron_expression = "* * * * $ *".to_string();
+        let date = Utc.ymd(2021, 1, 1).and_hms(0, 0, 0);
+
+        let hydrated = try_hydrate_cron_expression(
+            cron_expression,
+            Timestamp::from_seconds(date.timestamp() as u64),
+        )
+        .unwrap();
+
+        assert_eq!(hydrated, "* * * * 1 *");
+    }
+
+    #[test]
+    fn hydrate_with_weekdays_works() {
+        let cron_expression = "* * * * * $".to_string();
+        let date = Utc.ymd(2021, 1, 1).and_hms(0, 0, 0);
+
+        let hydrated = try_hydrate_cron_expression(
+            cron_expression,
+            Timestamp::from_seconds(date.timestamp() as u64),
+        )
+        .unwrap();
+
+        assert_eq!(hydrated, "* * * * * Fri");
+    }
+
+    #[test]
+    fn try_hydrate_for_hourly_schedule_works() {
+        let cron_expression = "$ $ * ? * *".to_string();
+        let date = Utc.ymd(2021, 1, 1).and_hms(3, 2, 1);
+
+        let hydrated = try_hydrate_cron_expression(
+            cron_expression,
+            Timestamp::from_seconds(date.timestamp() as u64),
+        )
+        .unwrap();
+
+        assert_eq!(hydrated, "1 2 * ? * *");
+    }
+
+    #[test]
+    fn try_hydrate_for_daily_schedule_works() {
+        let cron_expression = "$ $ $ ? * *".to_string();
+        let date = Utc.ymd(2021, 1, 1).and_hms(3, 2, 1);
+
+        let hydrated = try_hydrate_cron_expression(
+            cron_expression,
+            Timestamp::from_seconds(date.timestamp() as u64),
+        )
+        .unwrap();
+
+        assert_eq!(hydrated, "1 2 3 ? * *");
+    }
+
+    #[test]
+    fn try_hydrate_for_weekly_schedule_works() {
+        let cron_expression = "$ $ $ ? * $".to_string();
+        let date = Utc.ymd(2021, 1, 1).and_hms(3, 2, 1);
+
+        let hydrated = try_hydrate_cron_expression(
+            cron_expression,
+            Timestamp::from_seconds(date.timestamp() as u64),
+        )
+        .unwrap();
+
+        assert_eq!(hydrated, "1 2 3 ? * Fri");
+    }
+
+    #[test]
+    fn try_hydrate_for_monthly_schedule_works() {
+        let cron_expression = "$ $ $ $ * ?".to_string();
+        let date = Utc.ymd(2021, 1, 1).and_hms(3, 2, 1);
+
+        let hydrated = try_hydrate_cron_expression(
+            cron_expression,
+            Timestamp::from_seconds(date.timestamp() as u64),
+        )
+        .unwrap();
+
+        assert_eq!(hydrated, "1 2 3 1 * ?");
+    }
+
+    #[test]
+    fn try_hydrate_for_custom_schedule_works() {
+        let cron_expression = "$ $ $ $/1 * ?".to_string();
+        let date = Utc.ymd(2021, 1, 1).and_hms(3, 2, 1);
+
+        let hydrated = try_hydrate_cron_expression(
+            cron_expression,
+            Timestamp::from_seconds(date.timestamp() as u64),
+        )
+        .unwrap();
+
+        assert_eq!(hydrated, "1 2 3 1/1 * ?");
+    }
+
+    #[test]
+    fn try_hydrate_for_invalid_schedule_fails() {
+        let cron_expression = "$$$ $ $ $/1 * ?".to_string();
+        let date = Utc.ymd(2021, 1, 1).and_hms(3, 2, 1);
+
+        let err = try_hydrate_cron_expression(
+            cron_expression,
+            Timestamp::from_seconds(date.timestamp() as u64),
+        )
+        .unwrap_err();
+
+        assert_eq!(
+            err.to_string(),
+            "Generic error: Invalid cron expression: 111 2 3 1/1 * ?"
+        );
+    }
 
     #[test]
     fn get_next_execution_time_monthly_should_get_next_month() {

@@ -1,9 +1,12 @@
 use crate::error::ContractError;
 use crate::state::config::get_config;
 use crate::vault::Vault;
+use base::helpers::time_helpers::{date_time_from_timestamp, try_hydrate_cron_expression};
 use base::pair::Pair;
 use base::vaults::vault::{Destination, PostExecutionAction, VaultStatus};
 use cosmwasm_std::{Addr, Coin, Decimal, Deps, Storage, Timestamp, Uint128};
+use cron::Schedule;
+use std::str::FromStr;
 
 pub fn assert_exactly_one_asset(funds: Vec<Coin>) -> Result<(), ContractError> {
     if funds.is_empty() || funds.len() > 1 {
@@ -238,5 +241,48 @@ pub fn assert_denom_is_bond_denom(denom: String) -> Result<(), ContractError> {
             val: format!("{} is not the bond denomination", denom),
         });
     }
+    Ok(())
+}
+
+pub fn assert_schedule_expression_is_valid(
+    schedule_expression: String,
+    current_time: Timestamp,
+) -> Result<(), ContractError> {
+    match try_hydrate_cron_expression(schedule_expression.clone(), current_time) {
+        Ok(_) => Ok(()),
+        Err(_) => Err(ContractError::CustomError {
+            val: format!("{} is an invalid schedule expression", schedule_expression),
+        }),
+    }
+}
+
+pub fn assert_schedule_cadence_is_large_enough(
+    storage: &dyn Storage,
+    schedule_expression: String,
+    current_time: Timestamp,
+) -> Result<(), ContractError> {
+    let schedule = Schedule::from_str(schedule_expression.as_str())
+        .expect("should be a valid schedule expression");
+
+    let executions = schedule
+        .after(&date_time_from_timestamp(current_time))
+        .take(2)
+        .collect::<Vec<_>>();
+
+    let config = get_config(storage)?;
+
+    if executions[1]
+        .signed_duration_since(executions[0])
+        .num_seconds()
+        < config.minumum_execution_interval_in_seconds.into()
+    {
+        return Err(ContractError::CustomError {
+            val: format!(
+                "scheduled executions must be at least {:?} seconds apart",
+                config.minumum_execution_interval_in_seconds
+            ),
+        });
+    }
+
     Ok(())
 }

@@ -9,6 +9,7 @@ pub struct Config {
     pub fee_percent: Decimal,
     pub staking_router_address: Addr,
     pub page_limit: u16,
+    pub minumum_execution_interval_in_seconds: u16,
 }
 
 const CONFIG: Item<Config> = Item::new("config_v4");

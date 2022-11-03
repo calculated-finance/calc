@@ -9,8 +9,9 @@ use crate::validation_helpers::{
     assert_address_is_valid, assert_delegation_denom_is_stakeable,
     assert_destination_allocations_add_up_to_one, assert_destination_send_addresses_are_valid,
     assert_destination_validator_addresses_are_valid, assert_destinations_limit_is_not_breached,
-    assert_exactly_one_asset, assert_send_denom_is_in_pair_denoms,
-    assert_swap_amount_is_less_than_or_equal_to_balance, assert_target_start_time_is_in_future,
+    assert_exactly_one_asset, assert_schedule_expression_is_valid,
+    assert_send_denom_is_in_pair_denoms, assert_swap_amount_is_less_than_or_equal_to_balance,
+    assert_target_start_time_is_in_future,
 };
 use crate::vault::{Vault, VaultBuilder};
 use base::events::event::{EventBuilder, EventData};
@@ -43,6 +44,7 @@ pub fn create_vault(
     assert_exactly_one_asset(info.funds.clone())?;
     assert_swap_amount_is_less_than_or_equal_to_balance(swap_amount, info.funds[0].clone())?;
     assert_destinations_limit_is_not_breached(&destinations)?;
+    assert_schedule_expression_is_valid(schedule_expression.clone(), env.block.time)?;
 
     if let Some(target_time) = target_start_time_utc_seconds {
         assert_target_start_time_is_in_future(

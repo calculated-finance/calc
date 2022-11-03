@@ -73,6 +73,7 @@ impl MockApp {
                 fee_percent: Decimal::from_str("0.015").unwrap(),
                 staking_router_address: Addr::unchecked("staking-router"),
                 page_limit: 1000,
+                minumum_execution_interval_in_seconds: 5 * 60,
             },
             "dca",
         );
@@ -199,7 +200,7 @@ impl MockApp {
                     swap_amount,
                     target_price: Some(Decimal256::from_str("1.0").unwrap()),
                     target_start_time_utc_seconds: None,
-                    schedule_expression: "0 0 * ? * *".to_string(),
+                    schedule_expression: "$ $ * ? * *".to_string(),
                 },
                 &vec![balance],
             )
@@ -240,7 +241,7 @@ impl MockApp {
                     swap_amount,
                     target_price: Some(Decimal256::from_str("1.0").unwrap()),
                     target_start_time_utc_seconds: None,
-                    schedule_expression: "0 0 * ? * *".to_string(),
+                    schedule_expression: "$ $ * ? * *".to_string(),
                 },
                 &vec![balance],
             )
@@ -298,7 +299,7 @@ impl MockApp {
                     swap_amount,
                     target_price: Some(Decimal256::from_str("1.0").unwrap()),
                     target_start_time_utc_seconds: None,
-                    schedule_expression: "0 0 * ? * *".to_string(),
+                    schedule_expression: "$ $ * ? * *".to_string(),
                 },
                 &vec![balance],
             )
@@ -366,7 +367,7 @@ impl MockApp {
                         self.app.block_info().time.plus_seconds(2).seconds(),
                     )),
                     target_price: None,
-                    schedule_expression: "0 0 * ? * *".to_string(),
+                    schedule_expression: "$ $ * ? * *".to_string(),
                 },
                 &vec![balance],
             )

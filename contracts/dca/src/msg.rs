@@ -14,6 +14,7 @@ pub struct InstantiateMsg {
     pub fee_percent: Decimal,
     pub staking_router_address: Addr,
     pub page_limit: u16,
+    pub minumum_execution_interval_in_seconds: u16,
 }
 
 #[cw_serde]
@@ -23,6 +24,7 @@ pub struct MigrateMsg {
     pub fee_percent: Decimal,
     pub staking_router_address: Addr,
     pub page_limit: u16,
+    pub minumum_execution_interval_in_seconds: u16,
 }
 
 #[cw_serde]
@@ -64,6 +66,7 @@ pub enum ExecuteMsg {
         fee_percent: Option<Decimal>,
         staking_router_address: Option<Addr>,
         page_limit: Option<u16>,
+        minumum_execution_interval_in_seconds: Option<u16>,
     },
     UpdateVault {
         address: Addr,
