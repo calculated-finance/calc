@@ -1,10 +1,11 @@
 use base::{
     events::event::{EventBuilder, EventData, ExecutionSkippedReason},
+    helpers::time_helpers::date_time_from_timestamp,
     pair::Pair,
     triggers::trigger::{Trigger, TriggerConfiguration},
     vaults::vault::VaultStatus,
 };
-use chrono::{TimeZone, Timelike, Utc};
+use chrono::Timelike;
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env},
     Addr, Coin, DepsMut, Env, Reply, SubMsgResult, Timestamp, Uint128,
@@ -36,18 +37,7 @@ fn setup(deps: DepsMut, env: Env) {
         .save(deps.storage, pair.address.clone(), &pair)
         .unwrap();
 
-    let current_time = Utc.timestamp(
-        env.block
-            .time
-            .seconds()
-            .try_into()
-            .expect("valid timestamp"),
-        env.block
-            .time
-            .subsec_nanos()
-            .try_into()
-            .expect("valid timestamp"),
-    );
+    let current_time = date_time_from_timestamp(env.block.time);
 
     let vault = save_vault(
         deps.storage,
