@@ -22,7 +22,7 @@ pub fn get_next_target_time(
 
     let mut next_time = get_next_time(last_execution_time, &interval);
 
-    match interval.clone() {
+    match interval {
         TimeInterval::Monthly => {
             while next_time.le(&current_time) {
                 next_time = get_next_time(next_time, &interval);
