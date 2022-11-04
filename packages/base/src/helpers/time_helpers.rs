@@ -9,22 +9,23 @@ pub fn try_hydrate_cron_expression(
 ) -> StdResult<String> {
     let date = date_time_from_timestamp(timestamp);
 
-    let hydrated_expression = cron_expression
-        .split(' ')
-        .zip(vec![
-            date.second().to_string(),
-            date.minute().to_string(),
-            date.hour().to_string(),
-            date.day().to_string(),
-            date.month().to_string(),
-            date.weekday().to_string(),
-        ])
-        .map(|(old, new)| str::replace(old, "$", &new))
-        .collect::<Vec<String>>()
-        .join(" ");
+    let hydrated_expression = cron_to_quartz(
+        cron_expression
+            .split_whitespace()
+            .zip(vec![
+                date.minute().to_string(),
+                date.hour().to_string(),
+                date.day().to_string(),
+                date.month().to_string(),
+                date.weekday().to_string(),
+            ])
+            .map(|(old, new)| str::replace(old, "$", &new))
+            .collect::<Vec<String>>()
+            .join(" "),
+    );
 
-    match Schedule::from_str(&hydrated_expression) {
-        Ok(_) => Ok(hydrated_expression),
+    match Schedule::from_str(&hydrated_expression.clone()) {
+        Ok(_) => Ok(quartz_to_cron(hydrated_expression)),
         Err(_) => Err(StdError::generic_err(format!(
             "Invalid cron expression: {}",
             hydrated_expression
@@ -32,12 +33,32 @@ pub fn try_hydrate_cron_expression(
     }
 }
 
+fn cron_to_quartz(cron_expression: String) -> String {
+    format!("0 {}", cron_expression)
+}
+
+fn quartz_to_cron(quartz_expression: String) -> String {
+    quartz_expression
+        .strip_prefix("0 ")
+        .expect("should have a seconds value at the start")
+        .to_string()
+}
+
 pub fn get_next_target_time(
     schedule_expression: String,
     block_time: Timestamp,
 ) -> StdResult<Timestamp> {
-    let schedule =
-        Schedule::from_str(&schedule_expression).expect("should be valid cron expression");
+    let schedule = Schedule::from_str(&cron_to_quartz(schedule_expression))
+        .expect("should be valid cron expression");
+
+    println!(
+        "{:?}",
+        schedule
+            .after(&date_time_from_timestamp(block_time))
+            .next()
+            .unwrap()
+            .to_rfc2822()
+    );
 
     let next_execution_time = schedule
         .after(&date_time_from_timestamp(block_time))
@@ -65,7 +86,7 @@ mod tests {
 
     #[test]
     fn hydrate_with_seconds_works() {
-        let cron_expression = "$ * * * * *".to_string();
+        let cron_expression = "* * * * *".to_string();
         let date = Utc.ymd(2021, 1, 1).and_hms(0, 0, 0);
 
         let hydrated = try_hydrate_cron_expression(
@@ -74,12 +95,12 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(hydrated, "0 * * * * *");
+        assert_eq!(hydrated, "* * * * *");
     }
 
     #[test]
     fn hydrate_with_minutes_works() {
-        let cron_expression = "* $ * * * *".to_string();
+        let cron_expression = "$ * * * *".to_string();
         let date = Utc.ymd(2021, 1, 1).and_hms(0, 0, 0);
 
         let hydrated = try_hydrate_cron_expression(
@@ -88,12 +109,12 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(hydrated, "* 0 * * * *");
+        assert_eq!(hydrated, "0 * * * *");
     }
 
     #[test]
     fn hydrate_with_hours_works() {
-        let cron_expression = "* * $ * * *".to_string();
+        let cron_expression = "* 0 * * *".to_string();
         let date = Utc.ymd(2021, 1, 1).and_hms(0, 0, 0);
 
         let hydrated = try_hydrate_cron_expression(
@@ -102,12 +123,12 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(hydrated, "* * 0 * * *");
+        assert_eq!(hydrated, "* 0 * * *");
     }
 
     #[test]
     fn hydrate_with_days_works() {
-        let cron_expression = "* * * $ * *".to_string();
+        let cron_expression = "* * 1 * *".to_string();
         let date = Utc.ymd(2021, 1, 1).and_hms(0, 0, 0);
 
         let hydrated = try_hydrate_cron_expression(
@@ -116,12 +137,12 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(hydrated, "* * * 1 * *");
+        assert_eq!(hydrated, "* * 1 * *");
     }
 
     #[test]
     fn hydrate_with_months_works() {
-        let cron_expression = "* * * * $ *".to_string();
+        let cron_expression = "* * * $ *".to_string();
         let date = Utc.ymd(2021, 1, 1).and_hms(0, 0, 0);
 
         let hydrated = try_hydrate_cron_expression(
@@ -130,12 +151,12 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(hydrated, "* * * * 1 *");
+        assert_eq!(hydrated, "* * * 1 *");
     }
 
     #[test]
     fn hydrate_with_weekdays_works() {
-        let cron_expression = "* * * * * $".to_string();
+        let cron_expression = "* * * * $".to_string();
         let date = Utc.ymd(2021, 1, 1).and_hms(0, 0, 0);
 
         let hydrated = try_hydrate_cron_expression(
@@ -144,12 +165,12 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(hydrated, "* * * * * Fri");
+        assert_eq!(hydrated, "* * * * Fri");
     }
 
     #[test]
     fn try_hydrate_for_hourly_schedule_works() {
-        let cron_expression = "$ $ * ? * *".to_string();
+        let cron_expression = "$ * * * *".to_string();
         let date = Utc.ymd(2021, 1, 1).and_hms(3, 2, 1);
 
         let hydrated = try_hydrate_cron_expression(
@@ -158,12 +179,12 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(hydrated, "1 2 * ? * *");
+        assert_eq!(hydrated, "2 * * * *");
     }
 
     #[test]
     fn try_hydrate_for_daily_schedule_works() {
-        let cron_expression = "$ $ $ ? * *".to_string();
+        let cron_expression = "$ $ * * *".to_string();
         let date = Utc.ymd(2021, 1, 1).and_hms(3, 2, 1);
 
         let hydrated = try_hydrate_cron_expression(
@@ -172,12 +193,12 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(hydrated, "1 2 3 ? * *");
+        assert_eq!(hydrated, "2 3 * * *");
     }
 
     #[test]
     fn try_hydrate_for_weekly_schedule_works() {
-        let cron_expression = "$ $ $ ? * $".to_string();
+        let cron_expression = "$ $ * * $".to_string();
         let date = Utc.ymd(2021, 1, 1).and_hms(3, 2, 1);
 
         let hydrated = try_hydrate_cron_expression(
@@ -186,12 +207,12 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(hydrated, "1 2 3 ? * Fri");
+        assert_eq!(hydrated, "2 3 * * Fri");
     }
 
     #[test]
     fn try_hydrate_for_monthly_schedule_works() {
-        let cron_expression = "$ $ $ $ * ?".to_string();
+        let cron_expression = "$ $ $ * *".to_string();
         let date = Utc.ymd(2021, 1, 1).and_hms(3, 2, 1);
 
         let hydrated = try_hydrate_cron_expression(
@@ -200,12 +221,12 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(hydrated, "1 2 3 1 * ?");
+        assert_eq!(hydrated, "2 3 1 * *");
     }
 
     #[test]
     fn try_hydrate_for_custom_schedule_works() {
-        let cron_expression = "$ $ $ $/1 * ?".to_string();
+        let cron_expression = "$ $ $/1 * *".to_string();
         let date = Utc.ymd(2021, 1, 1).and_hms(3, 2, 1);
 
         let hydrated = try_hydrate_cron_expression(
@@ -214,12 +235,12 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(hydrated, "1 2 3 1/1 * ?");
+        assert_eq!(hydrated, "2 3 1/1 * *");
     }
 
     #[test]
     fn try_hydrate_for_invalid_schedule_fails() {
-        let cron_expression = "$$$ $ $ $/1 * ?".to_string();
+        let cron_expression = "$$$ $ $/1 * *".to_string();
         let date = Utc.ymd(2021, 1, 1).and_hms(3, 2, 1);
 
         let err = try_hydrate_cron_expression(
@@ -230,7 +251,7 @@ mod tests {
 
         assert_eq!(
             err.to_string(),
-            "Generic error: Invalid cron expression: 111 2 3 1/1 * ?"
+            "Generic error: Invalid cron expression: 0 222 3 1/1 * *"
         );
     }
 
@@ -245,7 +266,7 @@ mod tests {
             Timestamp::from_seconds(expected_next_execution_time.timestamp().try_into().unwrap());
 
         let actual_next_execution_time =
-            get_next_target_time("0 0 1 1 * *".to_string(), mock_current_timestamp).unwrap();
+            get_next_target_time("0 1 1 * *".to_string(), mock_current_timestamp).unwrap();
 
         assert_eq!(
             expected_next_execution_timestamp,
@@ -265,7 +286,7 @@ mod tests {
             Timestamp::from_seconds(expected_next_execution_time.timestamp().try_into().unwrap());
 
         let actual_next_execution_time =
-            get_next_target_time("0 0 1 1 * *".to_string(), mock_current_timestamp).unwrap();
+            get_next_target_time("0 1 1 * *".to_string(), mock_current_timestamp).unwrap();
 
         assert_eq!(
             expected_next_execution_timestamp,
@@ -285,7 +306,7 @@ mod tests {
             Timestamp::from_seconds(expected_next_execution_time.timestamp().try_into().unwrap());
 
         let actual_next_execution_time =
-            get_next_target_time("0 0 2 1 * *".to_string(), mock_current_timestamp).unwrap();
+            get_next_target_time("0 2 1 * *".to_string(), mock_current_timestamp).unwrap();
 
         assert_eq!(
             expected_next_execution_timestamp,
@@ -305,7 +326,7 @@ mod tests {
             Timestamp::from_seconds(expected_next_execution_time.timestamp().try_into().unwrap());
 
         let actual_next_execution_time =
-            get_next_target_time("0 0 1 ? * SAT".to_string(), mock_current_timestamp).unwrap();
+            get_next_target_time("0 1 * * SAT".to_string(), mock_current_timestamp).unwrap();
 
         assert_eq!(
             expected_next_execution_timestamp,
@@ -325,7 +346,7 @@ mod tests {
             Timestamp::from_seconds(expected_next_execution_time.timestamp().try_into().unwrap());
 
         let actual_next_execution_time =
-            get_next_target_time("0 0 1 ? * SAT".to_string(), mock_current_timestamp).unwrap();
+            get_next_target_time("0 1 * * SAT".to_string(), mock_current_timestamp).unwrap();
 
         assert_eq!(
             expected_next_execution_timestamp,
@@ -345,7 +366,7 @@ mod tests {
             Timestamp::from_seconds(expected_next_execution_time.timestamp().try_into().unwrap());
 
         let actual_next_execution_time =
-            get_next_target_time("0 0 2 ? * SAT".to_string(), mock_current_timestamp).unwrap();
+            get_next_target_time("0 2 * * SAT".to_string(), mock_current_timestamp).unwrap();
 
         assert_eq!(
             expected_next_execution_timestamp,
@@ -365,7 +386,7 @@ mod tests {
             Timestamp::from_seconds(expected_next_execution_time.timestamp().try_into().unwrap());
 
         let actual_next_execution_time =
-            get_next_target_time("0 0 1 * * ?".to_string(), mock_current_timestamp).unwrap();
+            get_next_target_time("0 1 * * *".to_string(), mock_current_timestamp).unwrap();
 
         assert_eq!(
             expected_next_execution_timestamp,
@@ -385,7 +406,7 @@ mod tests {
             Timestamp::from_seconds(expected_next_execution_time.timestamp().try_into().unwrap());
 
         let actual_next_execution_time =
-            get_next_target_time("0 0 1 * * ?".to_string(), mock_current_timestamp).unwrap();
+            get_next_target_time("0 1 * * *".to_string(), mock_current_timestamp).unwrap();
 
         assert_eq!(
             expected_next_execution_timestamp,
@@ -405,7 +426,7 @@ mod tests {
             Timestamp::from_seconds(expected_next_execution_time.timestamp().try_into().unwrap());
 
         let actual_next_execution_time =
-            get_next_target_time("0 0 2 * * ?".to_string(), mock_current_timestamp).unwrap();
+            get_next_target_time("0 2 * * *".to_string(), mock_current_timestamp).unwrap();
 
         assert_eq!(
             expected_next_execution_timestamp,
@@ -425,7 +446,7 @@ mod tests {
             Timestamp::from_seconds(expected_next_execution_time.timestamp().try_into().unwrap());
 
         let actual_next_execution_time =
-            get_next_target_time("0 0 * ? * *".to_string(), mock_current_timestamp).unwrap();
+            get_next_target_time("0 * * * *".to_string(), mock_current_timestamp).unwrap();
 
         assert_eq!(
             expected_next_execution_timestamp,
@@ -445,7 +466,7 @@ mod tests {
             Timestamp::from_seconds(expected_next_execution_time.timestamp().try_into().unwrap());
 
         let actual_next_execution_time =
-            get_next_target_time("0 0 * ? * *".to_string(), mock_current_timestamp).unwrap();
+            get_next_target_time("0 * * * *".to_string(), mock_current_timestamp).unwrap();
 
         assert_eq!(
             expected_next_execution_timestamp,
@@ -465,7 +486,7 @@ mod tests {
             Timestamp::from_seconds(expected_next_execution_time.timestamp().try_into().unwrap());
 
         let actual_next_execution_time =
-            get_next_target_time("0 0 * ? * *".to_string(), mock_current_timestamp).unwrap();
+            get_next_target_time("0 * * * *".to_string(), mock_current_timestamp).unwrap();
 
         assert_eq!(
             expected_next_execution_timestamp,

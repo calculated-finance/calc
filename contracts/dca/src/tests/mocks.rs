@@ -200,7 +200,7 @@ impl MockApp {
                     swap_amount,
                     target_price: Some(Decimal256::from_str("1.0").unwrap()),
                     target_start_time_utc_seconds: None,
-                    schedule_expression: "$ $ * ? * *".to_string(),
+                    schedule_expression: "$ * * * *".to_string(),
                 },
                 &vec![balance],
             )
@@ -241,7 +241,7 @@ impl MockApp {
                     swap_amount,
                     target_price: Some(Decimal256::from_str("1.0").unwrap()),
                     target_start_time_utc_seconds: None,
-                    schedule_expression: "$ $ * ? * *".to_string(),
+                    schedule_expression: "$ * * * *".to_string(),
                 },
                 &vec![balance],
             )
@@ -299,7 +299,7 @@ impl MockApp {
                     swap_amount,
                     target_price: Some(Decimal256::from_str("1.0").unwrap()),
                     target_start_time_utc_seconds: None,
-                    schedule_expression: "$ $ * ? * *".to_string(),
+                    schedule_expression: "$ * * * *".to_string(),
                 },
                 &vec![balance],
             )
@@ -367,7 +367,7 @@ impl MockApp {
                         self.app.block_info().time.plus_seconds(2).seconds(),
                     )),
                     target_price: None,
-                    schedule_expression: "$ $ * ? * *".to_string(),
+                    schedule_expression: "$ * * * *".to_string(),
                 },
                 &vec![balance],
             )

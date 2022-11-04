@@ -119,7 +119,7 @@ fn with_one_vault_should_return_proper_vault_data() {
             status: VaultStatus::Scheduled,
             balance: Coin::new(vault_deposit.into(), DENOM_UKUJI.to_string()),
             position_type: None,
-            schedule_expression: "$ $ * ? * *".to_string(),
+            schedule_expression: "$ * * * *".to_string(),
             slippage_tolerance: None,
             swap_amount,
             pair: Pair {

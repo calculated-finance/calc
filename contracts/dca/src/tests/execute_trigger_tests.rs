@@ -487,7 +487,7 @@ fn for_filled_fin_limit_order_trigger_should_hydrate_schedule_expression() {
 
     assert_eq!(
         vault_response.vault.schedule_expression,
-        format!("{} {} * ? * *", block_time.second(), block_time.minute())
+        format!("{} * * * *", block_time.minute())
     );
 }
 
@@ -1044,7 +1044,7 @@ fn for_ready_time_trigger_should_hydrate_schedule_expression() {
 
     assert_eq!(
         vault_response.vault.schedule_expression,
-        format!("{} {} * ? * *", block_time.second(), block_time.minute())
+        format!("{} * * * *", block_time.minute())
     );
 }
 

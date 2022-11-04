@@ -34,7 +34,7 @@ fn should_fetch_existing_trigger_id_by_order_idx() {
                 position_type: None,
                 slippage_tolerance: None,
                 swap_amount,
-                schedule_expression: "0 0 * ? * *".to_string(),
+                schedule_expression: "0 0 * * * *".to_string(),
                 target_price: Some(Decimal256::from_str("1.0").unwrap()),
                 target_start_time_utc_seconds: None,
             },

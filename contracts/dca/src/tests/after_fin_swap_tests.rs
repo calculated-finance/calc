@@ -54,8 +54,7 @@ fn setup(deps: DepsMut, env: Env) {
             price_threshold: None,
             balance: Coin::new(Uint128::new(1000).into(), "base"),
             schedule_expression: format!(
-                "{:?} {:?} {:?} * * *",
-                current_time.second(),
+                "{:?} {:?} * * *",
                 current_time.minute(),
                 current_time.hour()
             )
@@ -179,7 +178,13 @@ fn with_insufficient_funds_creates_a_new_time_trigger() {
     assert_eq!(
         trigger.unwrap().configuration,
         TriggerConfiguration::Time {
-            target_time: Timestamp::from_seconds(env.block.time.seconds() + 60 * 60 * 24)
+            target_time: Timestamp::from_seconds(
+                env.block
+                    .time
+                    .minus_seconds(env.block.time.seconds() % 60)
+                    .seconds()
+                    + 60 * 60 * 24
+            )
         }
     );
 }
@@ -204,7 +209,13 @@ fn with_slippage_failure_creates_a_new_time_trigger() {
     assert_eq!(
         trigger.unwrap().configuration,
         TriggerConfiguration::Time {
-            target_time: Timestamp::from_seconds(env.block.time.seconds() + 60 * 60 * 24)
+            target_time: Timestamp::from_seconds(
+                env.block
+                    .time
+                    .minus_seconds(env.block.time.seconds() % 60)
+                    .seconds()
+                    + 60 * 60 * 24
+            )
         }
     );
 }
