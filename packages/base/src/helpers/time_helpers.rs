@@ -29,8 +29,7 @@ pub fn get_next_target_time(
             }
         }
         _ => {
-            let diff = current_time - last_execution_time;
-            let increments = diff
+            let increments = (current_time - last_execution_time)
                 .num_seconds()
                 .checked_div(get_duration(last_execution_time, &interval).num_seconds())
                 .expect("should be a valid timestamp");
