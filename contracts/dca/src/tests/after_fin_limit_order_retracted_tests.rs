@@ -290,7 +290,7 @@ fn with_partially_filled_limit_order_should_return_withdraw_remainder() {
     )
     .unwrap();
 
-    assert!(response.messages.contains(&SubMsg::reply_always(
+    assert!(response.messages.contains(&SubMsg::reply_on_success(
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: vault.pair.address.to_string(),
             msg: to_binary(&FINExecuteMsg::WithdrawOrders {
@@ -380,7 +380,7 @@ fn with_partially_filled_limit_order_and_low_funds_should_withdraw_remainder() {
     )
     .unwrap();
 
-    assert!(response.messages.contains(&SubMsg::reply_always(
+    assert!(response.messages.contains(&SubMsg::reply_on_success(
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: vault.pair.address.to_string(),
             msg: to_binary(&FINExecuteMsg::WithdrawOrders {
@@ -468,7 +468,7 @@ fn with_filled_limit_order_should_withdraw_remainder() {
     )
     .unwrap();
 
-    assert!(response.messages.contains(&SubMsg::reply_always(
+    assert!(response.messages.contains(&SubMsg::reply_on_success(
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: vault.pair.address.to_string(),
             msg: to_binary(&FINExecuteMsg::WithdrawOrders {
@@ -555,7 +555,7 @@ fn with_filled_limit_order_and_low_funds_should_withdraw_remainder() {
     )
     .unwrap();
 
-    assert!(response.messages.contains(&SubMsg::reply_always(
+    assert!(response.messages.contains(&SubMsg::reply_on_success(
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: vault.pair.address.to_string(),
             msg: to_binary(&FINExecuteMsg::WithdrawOrders {
