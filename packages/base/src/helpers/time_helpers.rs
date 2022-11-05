@@ -20,26 +20,31 @@ pub fn get_next_target_time(
     let last_execution_time =
         Utc.timestamp(last_execution_timestamp.seconds().try_into().unwrap(), 0);
 
-    let mut next_time = get_next_time(last_execution_time, &interval);
+    let mut next_execution_time = get_next_time(last_execution_time, &interval);
 
     match interval {
         TimeInterval::Monthly => {
-            while next_time.le(&current_time) {
-                next_time = get_next_time(next_time, &interval);
+            while next_execution_time.le(&current_time) {
+                next_execution_time = get_next_time(next_execution_time, &interval);
             }
         }
         _ => {
-            let increments = (current_time - last_execution_time)
-                .num_seconds()
-                .checked_div(get_duration(last_execution_time, &interval).num_seconds())
-                .expect("should be a valid timestamp");
+            let interval_duration_in_seconds =
+                get_duration(last_execution_time, &interval).num_seconds();
 
-            next_time = last_execution_time
-                + get_duration(last_execution_time, &interval) * (increments + 1) as i32;
+            let increments_until_future_execution_date = (current_time - last_execution_time)
+                .num_seconds()
+                .checked_div(interval_duration_in_seconds)
+                .expect("should be a valid timestamp")
+                + 1;
+
+            next_execution_time = last_execution_time
+                + get_duration(last_execution_time, &interval)
+                    * increments_until_future_execution_date as i32;
         }
     }
 
-    Timestamp::from_seconds(next_time.timestamp().try_into().unwrap())
+    Timestamp::from_seconds(next_execution_time.timestamp().try_into().unwrap())
 }
 
 fn get_duration(previous: DateTime<Utc>, interval: &TimeInterval) -> Duration {
