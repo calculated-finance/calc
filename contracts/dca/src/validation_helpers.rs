@@ -270,7 +270,7 @@ pub fn assert_denom_is_bond_denom(denom: String) -> Result<(), ContractError> {
     Ok(())
 }
 
-pub fn assert_target_initial_receive_amount_greater_than_or_equal_to_minimum_receive_amount(
+pub fn assert_target_receive_amount_greater_than_or_equal_to_minimum_receive_amount(
     minimum_receive_amount: Option<Uint128>,
     target_initital_receive_amount: Option<Uint128>,
 ) -> Result<(), ContractError> {
@@ -279,7 +279,9 @@ pub fn assert_target_initial_receive_amount_greater_than_or_equal_to_minimum_rec
     {
         if target_initital_receive_amount.lt(&minimum_receive_amount) {
             return Err(ContractError::CustomError {
-                val: "target_initial_receive_amount must be greater than or equal to minimum_receive_amount".to_string()
+                val:
+                    "target_receive_amount must be greater than or equal to minimum_receive_amount"
+                        .to_string(),
             });
         }
     }

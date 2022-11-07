@@ -57,7 +57,7 @@ fn with_price_trigger_should_update_address_balances() {
                 slippage_tolerance: None,
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
-                target_initial_receive_amount: Some(swap_amount),
+                target_receive_amount: Some(swap_amount),
                 target_start_time_utc_seconds: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI.to_string())],
@@ -124,7 +124,7 @@ fn with_price_trigger_should_create_vault() {
                 slippage_tolerance: None,
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
-                target_initial_receive_amount: Some(swap_amount),
+                target_receive_amount: Some(swap_amount),
                 target_start_time_utc_seconds: None,
             },
             &vec![Coin::new(vault_deposit.into(), String::from(DENOM_UKUJI))],
@@ -178,7 +178,7 @@ fn with_price_trigger_for_fin_buy_should_create_correct_trigger() {
                 slippage_tolerance: None,
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
-                target_initial_receive_amount: Some(swap_amount * Uint128::new(10)),
+                target_receive_amount: Some(swap_amount * Uint128::new(10)),
                 target_start_time_utc_seconds: None,
             },
             &vec![Coin::new(vault_deposit.into(), String::from(DENOM_UKUJI))],
@@ -235,7 +235,7 @@ fn with_price_trigger_for_fin_sell_should_create_correct_trigger() {
                 slippage_tolerance: None,
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
-                target_initial_receive_amount: Some(swap_amount * Uint128::new(10)),
+                target_receive_amount: Some(swap_amount * Uint128::new(10)),
                 target_start_time_utc_seconds: None,
             },
             &vec![Coin::new(vault_deposit.into(), String::from(DENOM_UTEST))],
@@ -291,7 +291,7 @@ fn with_price_trigger_should_publish_vault_created_event() {
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: None,
-                target_initial_receive_amount: Some(swap_amount),
+                target_receive_amount: Some(swap_amount),
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -332,7 +332,7 @@ fn with_price_trigger_should_publish_funds_deposited_event() {
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: None,
-                target_initial_receive_amount: Some(swap_amount),
+                target_receive_amount: Some(swap_amount),
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -385,7 +385,7 @@ fn with_price_trigger_with_existing_vault_should_create_vault() {
                 slippage_tolerance: None,
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
-                target_initial_receive_amount: Some(swap_amount),
+                target_receive_amount: Some(swap_amount),
                 target_start_time_utc_seconds: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
@@ -463,7 +463,7 @@ fn with_price_trigger_twice_for_user_should_succeed() {
                 slippage_tolerance: None,
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
-                target_initial_receive_amount: Some(swap_amount),
+                target_receive_amount: Some(swap_amount),
                 target_start_time_utc_seconds: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI.to_string())],
@@ -553,7 +553,7 @@ fn with_immediate_time_trigger_should_update_address_balances() {
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: None,
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -613,7 +613,7 @@ fn with_immediate_time_trigger_should_update_vault_balance() {
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: None,
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -655,7 +655,7 @@ fn with_immediate_time_trigger_should_create_active_vault() {
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: None,
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -740,7 +740,7 @@ fn with_immediate_time_trigger_should_publish_events() {
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: None,
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -827,7 +827,7 @@ fn with_immediate_time_trigger_and_slippage_failure_should_update_address_balanc
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: None,
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -877,7 +877,7 @@ fn with_immediate_time_trigger_and_slippage_failure_should_update_vault_balance(
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: None,
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -921,7 +921,7 @@ fn with_time_trigger_should_create_vault() {
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: Some(Uint64::from(target_start_time.seconds())),
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -1009,7 +1009,7 @@ fn with_time_trigger_should_update_address_balances() {
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: Some(Uint64::from(target_start_time.seconds())),
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -1059,7 +1059,7 @@ fn with_time_trigger_should_publish_vault_created_event() {
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: None,
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -1101,7 +1101,7 @@ fn with_time_trigger_should_publish_funds_deposited_event() {
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: None,
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -1158,7 +1158,7 @@ fn with_time_trigger_with_existing_vault_should_create_vault() {
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: Some(Uint64::from(target_start_time.seconds())),
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -1238,7 +1238,7 @@ fn with_time_trigger_with_target_time_in_the_past_should_fail() {
                 target_start_time_utc_seconds: Some(Uint64::from(
                     mock.app.block_info().time.seconds() - 60,
                 )),
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -1289,7 +1289,7 @@ fn with_multiple_destinations_should_succeed() {
                 target_start_time_utc_seconds: Some(
                     (mock.app.block_info().time.seconds() + 10).into(),
                 ),
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -1367,7 +1367,7 @@ fn with_price_and_time_trigger_should_fail() {
                 target_start_time_utc_seconds: Some(Uint64::from(
                     mock.app.block_info().time.plus_seconds(2).seconds(),
                 )),
-                target_initial_receive_amount: Some(swap_amount),
+                target_receive_amount: Some(swap_amount),
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -1406,7 +1406,7 @@ fn with_no_assets_should_fail() {
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: None,
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![],
         )
@@ -1444,7 +1444,7 @@ fn with_multiple_assets_should_fail() {
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: None,
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![
                 Coin::new(vault_deposit.into(), DENOM_UTEST),
@@ -1487,7 +1487,7 @@ fn with_non_existent_pair_address_should_fail() {
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: None,
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -1531,7 +1531,7 @@ fn with_destination_allocations_less_than_100_percent_should_fail() {
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: None,
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -1582,7 +1582,7 @@ fn with_destination_allocation_equal_to_zero_should_fail() {
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: None,
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -1632,7 +1632,7 @@ fn with_more_than_10_destination_allocations_should_fail() {
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: None,
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )
@@ -1672,7 +1672,7 @@ fn with_passed_in_owner_should_succeed() {
                 slippage_tolerance: None,
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
-                target_initial_receive_amount: Some(swap_amount),
+                target_receive_amount: Some(swap_amount),
                 target_start_time_utc_seconds: None,
             },
             &vec![Coin::new(vault_deposit.into(), String::from(DENOM_UKUJI))],
@@ -1730,7 +1730,7 @@ fn with_swap_amount_equal_to_zero_should_fail() {
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
                 target_start_time_utc_seconds: None,
-                target_initial_receive_amount: None,
+                target_receive_amount: None,
             },
             &vec![Coin::new(vault_deposit.into(), DENOM_UKUJI)],
         )

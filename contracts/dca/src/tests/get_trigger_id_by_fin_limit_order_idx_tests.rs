@@ -37,7 +37,7 @@ fn should_fetch_existing_trigger_id_by_order_idx() {
                 slippage_tolerance: None,
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
-                target_initial_receive_amount: Some(swap_amount),
+                target_receive_amount: Some(swap_amount),
                 target_start_time_utc_seconds: None,
             },
             &vec![Coin::new(vault_deposit.into(), String::from(DENOM_UKUJI))],
