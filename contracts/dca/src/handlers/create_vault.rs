@@ -34,7 +34,7 @@ pub fn create_vault(
     mut destinations: Vec<Destination>,
     pair_address: Addr,
     position_type: Option<PositionType>,
-    slippage_tolerance: Option<Decimal256>,
+    slippage_tolerance: Option<Decimal>,
     minimum_receive_amount: Option<Uint128>,
     swap_amount: Uint128,
     time_interval: TimeInterval,

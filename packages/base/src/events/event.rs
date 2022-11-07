@@ -1,10 +1,10 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{BlockInfo, Coin, Decimal256, Timestamp, Uint128};
+use cosmwasm_std::{BlockInfo, Coin, Decimal, Timestamp, Uint128};
 
 #[cw_serde]
 pub enum ExecutionSkippedReason {
     SlippageToleranceExceeded,
-    PriceThresholdExceeded { price: Decimal256 },
+    PriceThresholdExceeded { price: Decimal },
     UnknownFailure,
 }
 
@@ -17,7 +17,7 @@ pub enum EventData {
     DCAVaultExecutionTriggered {
         base_denom: String,
         quote_denom: String,
-        asset_price: Decimal256,
+        asset_price: Decimal,
     },
     DCAVaultExecutionCompleted {
         sent: Coin,

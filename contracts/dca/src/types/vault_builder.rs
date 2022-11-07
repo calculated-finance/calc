@@ -3,7 +3,7 @@ use base::{
     triggers::trigger::TimeInterval,
     vaults::vault::{Destination, PositionType, VaultStatus},
 };
-use cosmwasm_std::{coin, Addr, Coin, Decimal256, Timestamp, Uint128};
+use cosmwasm_std::{coin, Addr, Coin, Decimal, Timestamp, Uint128};
 
 use super::vault::Vault;
 
@@ -17,7 +17,7 @@ pub struct VaultBuilder {
     pub pair: Pair,
     pub swap_amount: Uint128,
     pub position_type: Option<PositionType>,
-    pub slippage_tolerance: Option<Decimal256>,
+    pub slippage_tolerance: Option<Decimal>,
     pub minimum_receive_amount: Option<Uint128>,
     pub time_interval: TimeInterval,
     pub started_at: Option<Timestamp>,
@@ -34,7 +34,7 @@ impl VaultBuilder {
         pair: Pair,
         swap_amount: Uint128,
         position_type: Option<PositionType>,
-        slippage_tolerance: Option<Decimal256>,
+        slippage_tolerance: Option<Decimal>,
         minimum_receive_amount: Option<Uint128>,
         time_interval: TimeInterval,
         started_at: Option<Timestamp>,

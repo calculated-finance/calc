@@ -4,7 +4,7 @@ use base::{
     vaults::vault::{Destination, VaultStatus},
 };
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Coin, Decimal256, StdResult, Storage, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Coin, Decimal, StdResult, Storage, Timestamp, Uint128};
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, Item, UniqueIndex};
 
 use crate::types::{vault::Vault, vault_builder::VaultBuilder};
@@ -24,7 +24,7 @@ struct VaultDTO {
     pub balance: Coin,
     pub pair_address: Addr,
     pub swap_amount: Uint128,
-    pub slippage_tolerance: Option<Decimal256>,
+    pub slippage_tolerance: Option<Decimal>,
     pub minimum_receive_amount: Option<Uint128>,
     pub time_interval: TimeInterval,
     pub started_at: Option<Timestamp>,

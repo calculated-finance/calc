@@ -1,10 +1,10 @@
-use cosmwasm_std::{Decimal256, Uint128, Uint256};
+use cosmwasm_std::{Decimal, Uint128};
 use serde::{Deserialize, Serialize};
 // use serde instead of cw_serde so allow for deserialisation of unknown fields
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct FINPoolResponseWithoutDenom {
-    pub quote_price: Decimal256,
-    pub total_offer_amount: Uint256,
+    pub quote_price: Decimal,
+    pub total_offer_amount: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]

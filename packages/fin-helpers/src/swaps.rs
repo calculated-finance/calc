@@ -1,4 +1,4 @@
-use cosmwasm_std::{to_binary, Addr, Coin, CosmosMsg, Decimal256, SubMsg, WasmMsg};
+use cosmwasm_std::{to_binary, Addr, Coin, CosmosMsg, Decimal, Decimal256, SubMsg, WasmMsg};
 use kujira::fin::ExecuteMsg as FINExecuteMsg;
 
 pub fn create_fin_swap_without_slippage(
@@ -31,14 +31,14 @@ pub fn create_fin_swap_without_slippage(
 
 pub fn create_fin_swap_with_slippage(
     pair_address: Addr,
-    belief_price: Decimal256,
-    max_spread: Decimal256,
+    belief_price: Decimal,
+    max_spread: Decimal,
     coin_to_send_with_message: Coin,
     reply_id: u64,
 ) -> SubMsg {
     let fin_swap_msg = FINExecuteMsg::Swap {
-        belief_price: Some(belief_price),
-        max_spread: Some(max_spread),
+        belief_price: Some(Decimal256::from(belief_price)),
+        max_spread: Some(Decimal256::from(max_spread)),
         offer_asset: None,
         to: None,
     };

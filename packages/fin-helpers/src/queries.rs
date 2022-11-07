@@ -1,9 +1,9 @@
-use cosmwasm_std::{Addr, Decimal256, QuerierWrapper, Uint128};
+use cosmwasm_std::{Addr, Decimal, QuerierWrapper, Uint128};
 use kujira::fin::QueryMsg as FINQueryMsg;
 
 use crate::msg::{FINBookResponse, FINOrderResponseWithoutDenom};
 
-pub fn query_base_price(querier: QuerierWrapper, pair_address: Addr) -> Decimal256 {
+pub fn query_base_price(querier: QuerierWrapper, pair_address: Addr) -> Decimal {
     let book_query_msg = FINQueryMsg::Book {
         limit: Some(1),
         offset: None,
@@ -16,7 +16,7 @@ pub fn query_base_price(querier: QuerierWrapper, pair_address: Addr) -> Decimal2
     book_response.base[0].quote_price
 }
 
-pub fn query_quote_price(querier: QuerierWrapper, pair_address: Addr) -> Decimal256 {
+pub fn query_quote_price(querier: QuerierWrapper, pair_address: Addr) -> Decimal {
     let book_query_msg = FINQueryMsg::Book {
         limit: Some(1),
         offset: None,
