@@ -42,11 +42,7 @@ pub fn create_custom_fee(
 ) -> StdResult<()> {
     if fee_percent > Decimal::percent(100) {
         return Err(StdError::generic_err(
-<<<<<<< HEAD
             "fee_percent must be less than 100%, and expressed as a ratio out of 1 (i.e. use 0.015 to represent a fee of 1.5%)",
-=======
-            "fee_percent must be less than 100%, and expressed as a ratio out of 1 (i.e. 0.015 == 1.5%)",
->>>>>>> 0a86a7f (CRUD for custom fees)
         ));
     }
 
@@ -57,13 +53,10 @@ pub fn remove_custom_fee(storage: &mut dyn Storage, denom: String) {
     CUSTOM_FEES.remove(storage, denom);
 }
 
-<<<<<<< HEAD
 pub fn get_custom_fee(storage: &dyn Storage, denom: String) -> Option<Decimal> {
     CUSTOM_FEES.may_load(storage, denom).unwrap()
 }
 
-=======
->>>>>>> 0a86a7f (CRUD for custom fees)
 pub fn get_custom_fees(storage: &dyn Storage) -> StdResult<Vec<(String, Decimal)>> {
     CUSTOM_FEES
         .range(storage, None, None, Order::Ascending)
