@@ -24,8 +24,6 @@ pub fn after_fin_limit_order_submitted(
             let trigger = get_trigger(deps.storage, cache.vault_id)?
                 .expect(format!("fin limit order trigger for vault {:?}", cache.vault_id).as_str());
 
-            delete_trigger(deps.storage, cache.vault_id)?;
-
             match trigger.configuration {
                 TriggerConfiguration::FINLimitOrder { target_price, .. } => {
                     save_trigger(
