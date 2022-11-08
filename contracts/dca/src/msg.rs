@@ -72,6 +72,13 @@ pub enum ExecuteMsg {
         vault_id: Uint128,
         label: Option<String>,
     },
+    AddCustomFee {
+        denom: String,
+        fee_percent: Decimal,
+    },
+    RemoveCustomFee {
+        denom: String,
+    },
 }
 
 #[cw_serde]

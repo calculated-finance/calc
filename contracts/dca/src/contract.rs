@@ -1,4 +1,5 @@
 use crate::error::ContractError;
+use crate::handlers::add_custom_fee::create_custom_fee_handler;
 use crate::handlers::after_fin_limit_order_retracted::after_fin_limit_order_retracted;
 use crate::handlers::after_fin_limit_order_submitted::after_fin_limit_order_submitted;
 use crate::handlers::after_fin_limit_order_withdrawn_for_cancel_vault::after_fin_limit_order_withdrawn_for_cancel_vault;
@@ -18,6 +19,7 @@ use crate::handlers::get_time_trigger_ids::get_time_trigger_ids;
 use crate::handlers::get_trigger_id_by_fin_limit_order_idx::get_trigger_id_by_fin_limit_order_idx;
 use crate::handlers::get_vault::get_vault;
 use crate::handlers::get_vaults_by_address::get_vaults_by_address;
+use crate::handlers::remove_custom_fee::remove_custom_fee_handler;
 use crate::handlers::update_config::update_config_handler;
 use crate::handlers::update_vault_label::update_vault_label;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
@@ -164,6 +166,10 @@ pub fn execute(
             vault_id,
             label,
         } => update_vault_label(deps, info, address, vault_id, label),
+        ExecuteMsg::AddCustomFee { denom, fee_percent } => {
+            create_custom_fee_handler(deps, info, denom, fee_percent)
+        }
+        ExecuteMsg::RemoveCustomFee { denom } => remove_custom_fee_handler(deps, info, denom),
     }
 }
 
