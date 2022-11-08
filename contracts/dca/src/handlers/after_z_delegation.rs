@@ -35,21 +35,6 @@ pub fn after_z_delegation(
 
             let delegation = get_coin_from_display_formatted_coin(display_formatted_coin);
 
-            let config = get_config(deps.storage)?;
-
-            let automation_fee = Coin::new(
-                checked_mul(delegation.amount.clone(), config.automation_fee_percent)?.into(),
-                &delegation.denom,
-            );
-
-            // never try to send 0 tokens
-            if automation_fee.amount.gt(&Uint128::zero()) {
-                response = response.add_message(CosmosMsg::Bank(BankMsg::Send {
-                    to_address: config.fee_collector.to_string(),
-                    amount: vec![automation_fee.clone()],
-                }));
-            }
-
             create_event(
                 deps.storage,
                 EventBuilder::new(
@@ -63,6 +48,20 @@ pub fn after_z_delegation(
             )?;
         }
         SubMsgResult::Err(_) => {
+
+            // it's possible some delegation messages succeeed
+            // which is fine because this is jsut fee taking
+            // need to refund exactly once and make sure we dont refund from stale cache
+            // check greater than 0
+            // how do we overwrite this
+            if let Some(refunded) = cache.refunded {
+                if !refunded {
+
+
+
+                }
+            }
+
             create_event(
                 deps.storage,
                 EventBuilder::new(vault.id, env.block, EventData::DcaVaultDelegationFailed {}),
