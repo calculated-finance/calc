@@ -1796,7 +1796,7 @@ fn when_contract_is_paused_should_fail() {
                 slippage_tolerance: None,
                 swap_amount,
                 time_interval: TimeInterval::Hourly,
-                target_price: Some(Decimal256::from_str("1.0").unwrap()),
+                target_receive_amount: None,
                 target_start_time_utc_seconds: None,
             },
             &vec![Coin::new(vault_deposit.into(), String::from(DENOM_UKUJI))],
