@@ -189,7 +189,6 @@ fn create_fin_limit_order_trigger(
     target_price: Decimal256,
     response: Response,
 ) -> Result<Response, ContractError> {
-    // this trigger does not get saved because orderidx is None
     save_trigger(
         deps.storage,
         Trigger {
