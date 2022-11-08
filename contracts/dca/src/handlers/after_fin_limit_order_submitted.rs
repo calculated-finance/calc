@@ -24,7 +24,6 @@ pub fn after_fin_limit_order_submitted(
             let trigger = get_trigger(deps.storage, cache.vault_id)?
                 .expect(format!("fin limit order trigger for vault {:?}", cache.vault_id).as_str());
 
-            // why are we deleting this trigger and recreating
             delete_trigger(deps.storage, cache.vault_id)?;
 
             match trigger.configuration {
