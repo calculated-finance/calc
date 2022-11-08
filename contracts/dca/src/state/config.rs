@@ -21,7 +21,7 @@ pub fn get_config(store: &dyn Storage) -> StdResult<Config> {
 pub fn update_config(store: &mut dyn Storage, config: Config) -> StdResult<Config> {
     if config.fee_percent > Decimal::percent(100) {
         return Err(StdError::generic_err(
-            "fee_percent must be less than 100%, and expressed as a ratio out of 1 (i.e. 0.015 == 1.5%)",
+            "fee_percent must be less than 100%, and expressed as a ratio out of 1 (i.e. use 0.015 to represent a fee of 1.5%)",
         ));
     }
 
@@ -42,7 +42,7 @@ pub fn create_custom_fee(
 ) -> StdResult<()> {
     if fee_percent > Decimal::percent(100) {
         return Err(StdError::generic_err(
-            "fee_percent must be less than 100%, and expressed as a ratio out of 1 (i.e. 0.015 == 1.5%)",
+            "fee_percent must be less than 100%, and expressed as a ratio out of 1 (i.e. use 0.015 to represent a fee of 1.5%)",
         ));
     }
 
@@ -51,6 +51,10 @@ pub fn create_custom_fee(
 
 pub fn remove_custom_fee(storage: &mut dyn Storage, denom: String) {
     CUSTOM_FEES.remove(storage, denom);
+}
+
+pub fn get_custom_fee(storage: &dyn Storage, denom: String) -> Option<Decimal> {
+    CUSTOM_FEES.may_load(storage, denom).unwrap()
 }
 
 pub fn get_custom_fees(storage: &dyn Storage) -> StdResult<Vec<(String, Decimal)>> {

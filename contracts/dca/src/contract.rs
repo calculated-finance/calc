@@ -12,6 +12,7 @@ use crate::handlers::create_vault::create_vault;
 use crate::handlers::delete_pair::delete_pair;
 use crate::handlers::deposit::deposit;
 use crate::handlers::execute_trigger::execute_trigger_handler;
+use crate::handlers::get_custom_fees::get_custom_fees_handler;
 use crate::handlers::get_events::get_events;
 use crate::handlers::get_events_by_resource_id::get_events_by_resource_id;
 use crate::handlers::get_pairs::get_pairs;
@@ -230,5 +231,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetEvents { start_after, limit } => {
             to_binary(&get_events(deps, start_after, limit)?)
         }
+        QueryMsg::GetCustomFees {} => to_binary(&get_custom_fees_handler(deps)?),
     }
 }

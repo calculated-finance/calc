@@ -110,6 +110,8 @@ pub enum QueryMsg {
         start_after: Option<u64>,
         limit: Option<u16>,
     },
+    #[returns(CustomFeesResponse)]
+    GetCustomFees {},
 }
 
 #[cw_serde]
@@ -140,4 +142,9 @@ pub struct VaultsResponse {
 #[cw_serde]
 pub struct EventsResponse {
     pub events: Vec<Event>,
+}
+
+#[cw_serde]
+pub struct CustomFeesResponse {
+    pub custom_fees: Vec<(String, Decimal)>,
 }
