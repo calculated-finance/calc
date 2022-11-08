@@ -10,6 +10,7 @@ pub fn update_config_handler(
     info: MessageInfo,
     fee_collector: Option<Addr>,
     fee_percent: Option<Decimal>,
+    automation_fee_percent: Option<Decimal>,
     staking_router_address: Option<Addr>,
     page_limit: Option<u16>,
     paused: Option<bool>,
@@ -27,6 +28,8 @@ pub fn update_config_handler(
                     .to_string(),
             )?,
             fee_percent: fee_percent.unwrap_or(existing_config.fee_percent),
+            automation_fee_percent: automation_fee_percent
+                .unwrap_or(existing_config.automation_fee_percent),
             staking_router_address: deps.api.addr_validate(
                 &staking_router_address
                     .unwrap_or(existing_config.staking_router_address)

@@ -1793,6 +1793,7 @@ fn when_contract_is_paused_should_fail() {
             &ExecuteMsg::UpdateConfig {
                 fee_collector: Some(Addr::unchecked(ADMIN)),
                 fee_percent: Some(Decimal::from_str("0.015").unwrap()),
+                automation_fee_percent: Some(Decimal::from_str("0.0075").unwrap()),
                 staking_router_address: None,
                 page_limit: None,
                 paused: Some(true),
