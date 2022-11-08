@@ -8,6 +8,7 @@
     "type": "object",
     "required": [
       "admin",
+      "automation_fee_percent",
       "fee_collector",
       "fee_percent",
       "page_limit",
@@ -17,6 +18,9 @@
     "properties": {
       "admin": {
         "$ref": "#/definitions/Addr"
+      },
+      "automation_fee_percent": {
+        "$ref": "#/definitions/Decimal"
       },
       "fee_collector": {
         "$ref": "#/definitions/Addr"
@@ -282,6 +286,16 @@
           "update_config": {
             "type": "object",
             "properties": {
+              "automation_fee_percent": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/Decimal"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
               "fee_collector": {
                 "anyOf": [
                   {
