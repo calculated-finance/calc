@@ -2,7 +2,7 @@ use std::cmp::min;
 
 use crate::contract::AFTER_Z_DELEGATION_REPLY_ID;
 use crate::error::ContractError;
-use crate::state::cache::{CACHE, Cache};
+use crate::state::cache::{Cache, CACHE};
 use crate::state::config::{get_config, get_custom_fee};
 use crate::state::events::create_event;
 use crate::state::triggers::{delete_trigger, save_trigger};
@@ -97,6 +97,8 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
 
             let total_to_redistribute = coin_received.amount - execution_fee.amount;
 
+            // could be zero or more
+            // zero if no delegations
             let mut total_automation_fees = Coin::new(0, coin_received.denom.clone());
 
             vault.destinations.iter().for_each(|destination| {
@@ -113,41 +115,52 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                         // authz delegations use funds from the users wallet so send back to user
 
                         let automation_fee = Coin::new(
-                            checked_mul(amount, config.automation_fee_percent).expect("amount to be taken should be valid").into(),
+                            checked_mul(amount, config.automation_fee_percent)
+                                .expect("amount to be taken should be valid")
+                                .into(),
                             &coin_received.denom.clone(),
                         );
 
                         total_automation_fees = Coin::new(
-                            total_automation_fees.amount.checked_add(automation_fee.amount).expect("amount to add should be valid").into(), 
-                            coin_received.denom.clone()
+                            total_automation_fees
+                                .amount
+                                .checked_add(automation_fee.amount)
+                                .expect("amount to add should be valid")
+                                .into(),
+                            coin_received.denom.clone(),
                         );
 
                         let amount_to_delegate = Coin::new(
-                            amount.checked_sub(automation_fee.amount).expect("amount to delegate should be valid").into(),
-                            coin_received.denom.clone()
+                            amount
+                                .checked_sub(automation_fee.amount)
+                                .expect("amount to delegate should be valid")
+                                .into(),
+                            coin_received.denom.clone(),
                         );
 
-                        // we should check if this is greater than 0
-                        messages.push(CosmosMsg::Bank(BankMsg::Send {
-                            to_address: vault.owner.to_string(),
-                            amount: vec![amount_to_delegate.clone()],
-                        }));
+                        if (amount_to_delegate.amount.gt(&Uint128::zero())) {
+                            // we should check if this is greater than 0
+                            messages.push(CosmosMsg::Bank(BankMsg::Send {
+                                to_address: vault.owner.to_string(),
+                                amount: vec![amount_to_delegate.clone()],
+                            }));
 
-                        // we should only do this if above is greater than 0
-                        sub_msgs.push(SubMsg::reply_always(
-                            CosmosMsg::Wasm(WasmMsg::Execute {
-                                contract_addr: config.staking_router_address.to_string(),
-                                msg: to_binary(&StakingRouterExecuteMsg::ZDelegate {
-                                    delegator_address: vault.owner.clone(),
-                                    validator_address: destination.address.clone(),
-                                    denom: amount_to_delegate.denom.clone(),
-                                    amount: amount_to_delegate.amount.clone(),
-                                })
-                                .unwrap(),
-                                funds: vec![],
-                            }),
-                            AFTER_Z_DELEGATION_REPLY_ID,
-                        ))
+                            // we should only do this if above is greater than 0
+                            sub_msgs.push(SubMsg::reply_always(
+                                CosmosMsg::Wasm(WasmMsg::Execute {
+                                    contract_addr: config.staking_router_address.to_string(),
+                                    msg: to_binary(&StakingRouterExecuteMsg::ZDelegate {
+                                        delegator_address: vault.owner.clone(),
+                                        validator_address: destination.address.clone(),
+                                        denom: amount_to_delegate.denom.clone(),
+                                        amount: amount_to_delegate.amount.clone(),
+                                    })
+                                    .unwrap(),
+                                    funds: vec![],
+                                }),
+                                AFTER_Z_DELEGATION_REPLY_ID,
+                            ))
+                        }
                     }
                 }
             });
@@ -160,12 +173,18 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                     amount: vec![total_automation_fees.clone()],
                 }));
 
-                CACHE.save(deps.storage, &Cache{
-                    owner: cache.owner,
-                    vault_id: cache.vault_id,
-                    refunded: Some(false),
-                    total_automation_fees: Some(total_automation_fees),
-                })?;
+                // set refunded as false because there are some delegations about to be made
+                // if any fail, we need to refund all automation fees exactly once
+                // because multiple sub messages will be generated
+                CACHE.save(
+                    deps.storage,
+                    &Cache {
+                        owner: cache.owner,
+                        vault_id: cache.vault_id,
+                        refunded: Some(false),
+                        total_automation_fees: Some(total_automation_fees),
+                    },
+                )?;
             }
 
             update_vault(

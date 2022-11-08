@@ -89,6 +89,8 @@ pub fn setup_active_vault_with_funds(deps: DepsMut, env: Env) -> Vault {
             &Cache {
                 vault_id: vault.id,
                 owner: Addr::unchecked("owner"),
+                refunded: None,
+                total_automation_fees: None,
             },
         )
         .unwrap();
@@ -150,6 +152,8 @@ pub fn setup_active_vault_with_low_funds(deps: DepsMut, env: Env) -> Vault {
             &Cache {
                 vault_id: vault.id,
                 owner: Addr::unchecked("owner"),
+                refunded: None,
+                total_automation_fees: None,
             },
         )
         .unwrap();

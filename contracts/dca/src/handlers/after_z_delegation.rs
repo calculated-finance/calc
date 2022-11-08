@@ -1,14 +1,12 @@
 use crate::error::ContractError;
-use crate::state::cache::CACHE;
-use crate::state::config::get_config;
+use crate::state::cache::{Cache, CACHE};
 use crate::state::events::create_event;
 use crate::state::vaults::get_vault;
 use base::events::event::{EventBuilder, EventData};
-use base::helpers::math_helpers::checked_mul;
 use base::helpers::message_helpers::{
     get_attribute_in_event, get_coin_from_display_formatted_coin,
 };
-use cosmwasm_std::{SubMsgResult, Coin, Uint128, CosmosMsg, BankMsg};
+use cosmwasm_std::{BankMsg, SubMsgResult};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{DepsMut, Env, Reply, Response};
 
@@ -48,17 +46,29 @@ pub fn after_z_delegation(
             )?;
         }
         SubMsgResult::Err(_) => {
-
             // it's possible some delegation messages succeeed
-            // which is fine because this is jsut fee taking
+            // which is fine because this is just fee taking
             // need to refund exactly once and make sure we dont refund from stale cache
             // check greater than 0
-            // how do we overwrite this
-            if let Some(refunded) = cache.refunded {
-                if !refunded {
+            if let (Some(refunded), Some(total_automation_fees)) =
+                (cache.refunded.clone(), cache.total_automation_fees.clone())
+            {
+                match (refunded, total_automation_fees) {
+                    (false, automation_fees_to_refund) => {
+                        response = response.add_message(BankMsg::Send {
+                            to_address: cache.owner.to_string(),
+                            amount: vec![automation_fees_to_refund],
+                        });
 
-
-
+                        CACHE.save(
+                            deps.storage,
+                            &Cache {
+                                refunded: Some(true),
+                                ..cache.clone()
+                            },
+                        )?;
+                    }
+                    _ => {}
                 }
             }
 
