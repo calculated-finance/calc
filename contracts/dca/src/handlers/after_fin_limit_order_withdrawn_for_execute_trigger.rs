@@ -116,7 +116,7 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
                 }));
             }
 
-            let mut total_automation_fees = Coin::new(0, coin_received.denom.clone());
+            let mut total_automation_fees = Uint128::zero();
 
             vault.destinations.iter().for_each(|destination| {
                 let amount = checked_mul(total_to_redistribute, destination.allocation)
@@ -130,26 +130,19 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
                     })),
                     PostExecutionAction::ZDelegate => {
                         // authz delegations use funds from the users wallet so send back to user
-
-                        let automation_fee = Coin::new(
+                        let automation_fee = 
                             checked_mul(amount, config.automation_fee_percent)
-                                .expect("amount to be taken should be valid")
-                                .into(),
-                            &coin_received.denom.clone(),
-                        );
+                                .expect("amount to be taken should be valid");
 
-                        total_automation_fees = Coin::new(
+                        total_automation_fees = 
                             total_automation_fees
-                                .amount
-                                .checked_add(automation_fee.amount)
+                                .checked_add(automation_fee)
                                 .expect("amount to add should be valid")
-                                .into(),
-                            coin_received.denom.clone(),
-                        );
+                                .into();
 
                         let amount_to_delegate = Coin::new(
                             amount
-                                .checked_sub(automation_fee.amount)
+                                .checked_sub(automation_fee)
                                 .expect("amount to delegate should be valid")
                                 .into(),
                             coin_received.denom.clone(),
@@ -180,10 +173,10 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
                 }
             });
 
-            if total_automation_fees.amount.gt(&Uint128::zero()) {
+            if total_automation_fees.gt(&Uint128::zero()) {
                 messages.push(CosmosMsg::Bank(BankMsg::Send {
                     to_address: config.fee_collector.to_string(),
-                    amount: vec![total_automation_fees.clone()],
+                    amount: vec![Coin::new(total_automation_fees.into(), coin_received.denom.clone())],
                 }));
             }
 
