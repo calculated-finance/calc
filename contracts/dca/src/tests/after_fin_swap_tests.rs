@@ -74,8 +74,6 @@ fn with_succcesful_swap_returns_funds_to_destination() {
             },
         );
 
-    println!("{:?}", automation_fees);
-
     assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
         to_address: vault.destinations.first().unwrap().address.to_string(),
         amount: vec![Coin::new(
