@@ -7,7 +7,7 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Coin, Decimal256, StdResult, Storage, Timestamp, Uint128};
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, Item, UniqueIndex};
 
-use crate::types::{vault::Vault, vault_builder::VaultBuilder};
+use crate::types::{price_delta_limit::PriceDeltaLimit, vault::Vault, vault_builder::VaultBuilder};
 
 use super::{pairs::PAIRS, state_helpers::fetch_and_increment_counter, triggers::get_trigger};
 
@@ -30,6 +30,7 @@ struct VaultDTO {
     pub started_at: Option<Timestamp>,
     pub swapped_amount: Coin,
     pub received_amount: Coin,
+    pub price_delta_limits: Vec<PriceDeltaLimit>,
 }
 
 impl From<Vault> for VaultDTO {
@@ -50,6 +51,7 @@ impl From<Vault> for VaultDTO {
             started_at: vault.started_at,
             swapped_amount: vault.swapped_amount,
             received_amount: vault.received_amount,
+            price_delta_limits: vec![],
         }
     }
 }
@@ -89,13 +91,13 @@ impl<'a> IndexList<VaultDTO> for VaultIndexes<'a> {
 
 fn vault_store<'a>() -> IndexedMap<'a, u128, VaultDTO, VaultIndexes<'a>> {
     let indexes = VaultIndexes {
-        owner: UniqueIndex::new(|v| (v.owner.clone(), v.id.into()), "vaults_v8__owner"),
+        owner: UniqueIndex::new(|v| (v.owner.clone(), v.id.into()), "vaults_v9__owner"),
         owner_status: UniqueIndex::new(
             |v| (v.owner.clone(), v.status.clone() as u8, v.id.into()),
-            "vaults_v8__owner_status",
+            "vaults_v9__owner_status",
         ),
     };
-    IndexedMap::new("vaults_v8", indexes)
+    IndexedMap::new("vaults_v9", indexes)
 }
 
 pub fn save_vault(store: &mut dyn Storage, vault_builder: VaultBuilder) -> StdResult<Vault> {
@@ -129,6 +131,35 @@ pub fn get_vaults_by_address(
     };
 
     Ok(partition
+        .range(
+            store,
+            start_after.map(|vault_id| Bound::exclusive(vault_id)),
+            None,
+            cosmwasm_std::Order::Ascending,
+        )
+        .take(limit.unwrap_or(30) as usize)
+        .map(|result| {
+            let (_, data) =
+                result.expect(format!("a vault with id after {:?}", start_after).as_str());
+            vault_from(
+                &data,
+                PAIRS
+                    .load(store, data.pair_address.clone())
+                    .expect(format!("a pair for pair address {:?}", data.pair_address).as_str()),
+                get_trigger(store, data.id.into())
+                    .expect(format!("a trigger for vault id {}", data.id).as_str())
+                    .map(|t| t.configuration),
+            )
+        })
+        .collect::<Vec<Vault>>())
+}
+
+pub fn get_vaults(
+    store: &dyn Storage,
+    start_after: Option<u128>,
+    limit: Option<u16>,
+) -> StdResult<Vec<Vault>> {
+    Ok(vault_store()
         .range(
             store,
             start_after.map(|vault_id| Bound::exclusive(vault_id)),

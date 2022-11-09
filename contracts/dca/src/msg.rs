@@ -102,6 +102,11 @@ pub enum QueryMsg {
         start_after: Option<u128>,
         limit: Option<u16>,
     },
+    #[returns(VaultsResponse)]
+    GetVaults {
+        start_after: Option<u128>,
+        limit: Option<u16>,
+    },
     #[returns(EventsResponse)]
     GetEventsByResourceId {
         resource_id: Uint128,
