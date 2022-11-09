@@ -97,8 +97,6 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
 
             let total_to_redistribute = coin_received.amount - execution_fee.amount;
 
-            // could be zero or more
-            // zero if no delegations
             let mut total_automation_fees = Uint128::zero();
 
             vault.destinations.iter().for_each(|destination| {
