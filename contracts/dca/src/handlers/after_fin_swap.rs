@@ -102,30 +102,30 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
             let mut total_automation_fees = Uint128::zero();
 
             vault.destinations.iter().for_each(|destination| {
-                let amount = checked_mul(total_to_redistribute, destination.allocation)
+                let allocation_amount = checked_mul(total_to_redistribute, destination.allocation)
                     .ok()
                     .expect("amount to be distributed should be valid");
 
                 match destination.action {
                     PostExecutionAction::Send => messages.push(CosmosMsg::Bank(BankMsg::Send {
                         to_address: destination.address.to_string(),
-                        amount: vec![Coin::new(amount.into(), &coin_received.denom)],
+                        amount: vec![Coin::new(allocation_amount.into(), &coin_received.denom)],
                     })),
                     PostExecutionAction::ZDelegate => {
                         // authz delegations use funds from the users wallet so send back to user
-                        let automation_fee = 
-                            checked_mul(amount, config.delegation_fee_percent)
+                        let delegation_fee = 
+                            checked_mul(allocation_amount, config.delegation_fee_percent)
                                 .expect("amount to be taken should be valid");
 
                         total_automation_fees = 
                             total_automation_fees
-                                .checked_add(automation_fee)
+                                .checked_add(delegation_fee)
                                 .expect("amount to add should be valid")
                                 .into();
 
                         let amount_to_delegate = Coin::new(
-                            amount
-                                .checked_sub(automation_fee)
+                            allocation_amount
+                                .checked_sub(delegation_fee)
                                 .expect("amount to delegate should be valid")
                                 .into(),
                             coin_received.denom.clone(),
