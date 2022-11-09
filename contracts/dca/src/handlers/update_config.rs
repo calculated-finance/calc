@@ -45,6 +45,10 @@ pub fn update_config_handler(
         .add_attribute("fee_percent", config.fee_percent.to_string())
         .add_attribute("fee_collector", config.fee_collector.to_string())
         .add_attribute(
+            "automation_fee_percent",
+            config.automation_fee_percent.to_string(),
+        )
+        .add_attribute(
             "staking_router_address",
             config.staking_router_address.to_string(),
         ))
