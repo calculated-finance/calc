@@ -11,7 +11,7 @@ use cosmwasm_std::{
 };
 
 #[test]
-fn create_custom_fee_should_succeed() {
+fn create_custom_swap_fee_should_succeed() {
     let mut deps = mock_dependencies();
     let env = mock_env();
     let info = mock_info(ADMIN, &vec![]);
@@ -28,7 +28,7 @@ fn create_custom_fee_should_succeed() {
 }
 
 #[test]
-fn create_custom_fee_should_overwrite_existing_fee() {
+fn create_custom_swap_fee_should_overwrite_existing_fee() {
     let mut deps = mock_dependencies();
     let env = mock_env();
     let info = mock_info(ADMIN, &vec![]);
@@ -58,7 +58,7 @@ fn create_custom_fee_should_overwrite_existing_fee() {
 }
 
 #[test]
-fn create_custom_fee_larger_than_100_percent_should_fail() {
+fn create_custom_swap_fee_larger_than_100_percent_should_fail() {
     let mut deps = mock_dependencies();
     let env = mock_env();
     let info = mock_info(ADMIN, &vec![]);
@@ -72,5 +72,5 @@ fn create_custom_fee_larger_than_100_percent_should_fail() {
     )
     .unwrap_err();
 
-    assert_eq!(response.to_string(), "Generic error: fee_percent must be less than 100%, and expressed as a ratio out of 1 (i.e. use 0.015 to represent a fee of 1.5%)");
+    assert_eq!(response.to_string(), "Generic error: swap_fee_percent must be less than 100%, and expressed as a ratio out of 1 (i.e. use 0.015 to represent a fee of 1.5%)");
 }
