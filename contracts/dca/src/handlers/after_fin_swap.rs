@@ -113,15 +113,14 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                     })),
                     PostExecutionAction::ZDelegate => {
                         // authz delegations use funds from the users wallet so send back to user
-                        let delegation_fee = 
+                        let delegation_fee =
                             checked_mul(allocation_amount, config.delegation_fee_percent)
                                 .expect("amount to be taken should be valid");
 
-                        total_automation_fees = 
-                            total_automation_fees
-                                .checked_add(delegation_fee)
-                                .expect("amount to add should be valid")
-                                .into();
+                        total_automation_fees = total_automation_fees
+                            .checked_add(delegation_fee)
+                            .expect("amount to add should be valid")
+                            .into();
 
                         let amount_to_delegate = Coin::new(
                             allocation_amount
@@ -158,7 +157,10 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
             if total_automation_fees.gt(&Uint128::zero()) {
                 messages.push(CosmosMsg::Bank(BankMsg::Send {
                     to_address: config.fee_collector.to_string(),
-                    amount: vec![Coin::new(total_automation_fees.into(), coin_received.denom.clone())],
+                    amount: vec![Coin::new(
+                        total_automation_fees.into(),
+                        coin_received.denom.clone(),
+                    )],
                 }));
             }
 

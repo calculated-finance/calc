@@ -1,5 +1,4 @@
 use crate::error::ContractError;
-use crate::handlers::create_custom_swap_fee::create_custom_swap_fee;
 use crate::handlers::after_fin_limit_order_retracted::after_fin_limit_order_retracted;
 use crate::handlers::after_fin_limit_order_submitted::after_fin_limit_order_submitted;
 use crate::handlers::after_fin_limit_order_withdrawn_for_cancel_vault::after_fin_limit_order_withdrawn_for_cancel_vault;
@@ -7,6 +6,7 @@ use crate::handlers::after_fin_limit_order_withdrawn_for_execute_trigger::after_
 use crate::handlers::after_fin_swap::after_fin_swap;
 use crate::handlers::after_z_delegation::after_z_delegation;
 use crate::handlers::cancel_vault::cancel_vault;
+use crate::handlers::create_custom_swap_fee::create_custom_swap_fee;
 use crate::handlers::create_pair::create_pair;
 use crate::handlers::create_vault::create_vault;
 use crate::handlers::delete_pair::delete_pair;
@@ -171,9 +171,10 @@ pub fn execute(
             vault_id,
             label,
         } => update_vault_label(deps, info, address, vault_id, label),
-        ExecuteMsg::CreateCustomSwapFee { denom, swap_fee_percent } => {
-            create_custom_swap_fee(deps, info, denom, swap_fee_percent)
-        }
+        ExecuteMsg::CreateCustomSwapFee {
+            denom,
+            swap_fee_percent,
+        } => create_custom_swap_fee(deps, info, denom, swap_fee_percent),
         ExecuteMsg::RemoveCustomSwapFee { denom } => remove_custom_swap_fee(deps, info, denom),
     }
 }
