@@ -79,7 +79,7 @@ pub enum ExecuteMsg {
         denom: String,
         swap_fee_percent: Decimal,
     },
-    RemoveCustomFee {
+    RemoveCustomSwapFee {
         denom: String,
     },
 }

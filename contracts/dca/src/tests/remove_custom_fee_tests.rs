@@ -2,7 +2,7 @@ use super::mocks::ADMIN;
 use crate::{
     handlers::{
         create_custom_swap_fee::create_custom_swap_fee, get_custom_fees::get_custom_fees_handler,
-        remove_custom_fee::remove_custom_fee_handler,
+        remove_custom_swap_fee::remove_custom_swap_fee,
     },
     tests::helpers::instantiate_contract,
 };
@@ -34,7 +34,7 @@ fn remove_custom_fee_should_succeed() {
     assert_eq!(custom_fees.len(), 1);
     assert_eq!(custom_fees[0], (denom.clone(), Decimal::percent(1)));
 
-    remove_custom_fee_handler(deps.as_mut(), info, denom).unwrap();
+    remove_custom_swap_fee(deps.as_mut(), info, denom).unwrap();
 
     let custom_fees = get_custom_fees_handler(deps.as_ref()).unwrap();
 
