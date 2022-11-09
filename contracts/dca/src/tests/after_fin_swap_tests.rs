@@ -54,9 +54,9 @@ fn with_succcesful_swap_returns_funds_to_destination() {
     )
     .unwrap();
 
-    let fee = get_config(&deps.storage).unwrap().fee_percent * receive_amount;
+    let fee = get_config(&deps.storage).unwrap().swap_fee_percent * receive_amount;
 
-    let automation_fee = get_config(&deps.storage).unwrap().automation_fee_percent;
+    let automation_fee = get_config(&deps.storage).unwrap().delegation_fee_percent;
 
     let automation_fees = vault
         .destinations
@@ -110,7 +110,7 @@ fn with_succcesful_swap_returns_fee_to_fee_collector() {
     .unwrap();
 
     let config = get_config(&deps.storage).unwrap();
-    let fee = config.fee_percent * receive_amount;
+    let fee = config.swap_fee_percent * receive_amount;
 
     assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
         to_address: config.fee_collector.to_string(),

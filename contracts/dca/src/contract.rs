@@ -1,5 +1,5 @@
 use crate::error::ContractError;
-use crate::handlers::add_custom_fee::create_custom_fee_handler;
+use crate::handlers::create_custom_swap_fee::create_custom_swap_fee;
 use crate::handlers::after_fin_limit_order_retracted::after_fin_limit_order_retracted;
 use crate::handlers::after_fin_limit_order_submitted::after_fin_limit_order_submitted;
 use crate::handlers::after_fin_limit_order_withdrawn_for_cancel_vault::after_fin_limit_order_withdrawn_for_cancel_vault;
@@ -61,8 +61,8 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         Config {
             admin: msg.admin,
             fee_collector: msg.fee_collector,
-            fee_percent: msg.fee_percent,
-            automation_fee_percent: msg.automation_fee_percent,
+            swap_fee_percent: msg.swap_fee_percent,
+            delegation_fee_percent: msg.delegation_fee_percent,
             staking_router_address: msg.staking_router_address,
             page_limit: msg.page_limit,
             paused: msg.paused,
@@ -89,8 +89,8 @@ pub fn instantiate(
         Config {
             admin: msg.admin.clone(),
             fee_collector: msg.fee_collector,
-            fee_percent: msg.fee_percent,
-            automation_fee_percent: msg.automation_fee_percent,
+            swap_fee_percent: msg.swap_fee_percent,
+            delegation_fee_percent: msg.delegation_fee_percent,
             staking_router_address: msg.staking_router_address,
             page_limit: msg.page_limit,
             paused: false,
@@ -151,8 +151,8 @@ pub fn execute(
         ExecuteMsg::Deposit { address, vault_id } => deposit(deps, env, info, address, vault_id),
         ExecuteMsg::UpdateConfig {
             fee_collector,
-            fee_percent,
-            automation_fee_percent,
+            swap_fee_percent,
+            delegation_fee_percent,
             staking_router_address,
             page_limit,
             paused,
@@ -160,8 +160,8 @@ pub fn execute(
             deps,
             info,
             fee_collector,
-            fee_percent,
-            automation_fee_percent,
+            swap_fee_percent,
+            delegation_fee_percent,
             staking_router_address,
             page_limit,
             paused,
@@ -171,8 +171,8 @@ pub fn execute(
             vault_id,
             label,
         } => update_vault_label(deps, info, address, vault_id, label),
-        ExecuteMsg::AddCustomFee { denom, fee_percent } => {
-            create_custom_fee_handler(deps, info, denom, fee_percent)
+        ExecuteMsg::CreateCustomSwapFee { denom, swap_fee_percent } => {
+            create_custom_swap_fee(deps, info, denom, swap_fee_percent)
         }
         ExecuteMsg::RemoveCustomFee { denom } => remove_custom_fee_handler(deps, info, denom),
     }

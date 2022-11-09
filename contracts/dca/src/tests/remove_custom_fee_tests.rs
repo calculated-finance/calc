@@ -1,7 +1,7 @@
 use super::mocks::ADMIN;
 use crate::{
     handlers::{
-        add_custom_fee::create_custom_fee_handler, get_custom_fees::get_custom_fees_handler,
+        create_custom_swap_fee::create_custom_swap_fee, get_custom_fees::get_custom_fees_handler,
         remove_custom_fee::remove_custom_fee_handler,
     },
     tests::helpers::instantiate_contract,
@@ -21,7 +21,7 @@ fn remove_custom_fee_should_succeed() {
 
     let denom = "ukuji".to_string();
 
-    create_custom_fee_handler(
+    create_custom_swap_fee(
         deps.as_mut(),
         info.clone(),
         denom.clone(),

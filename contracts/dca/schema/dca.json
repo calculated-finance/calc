@@ -8,25 +8,22 @@
     "type": "object",
     "required": [
       "admin",
-      "automation_fee_percent",
+      "delegation_fee_percent",
       "fee_collector",
-      "fee_percent",
       "page_limit",
       "paused",
-      "staking_router_address"
+      "staking_router_address",
+      "swap_fee_percent"
     ],
     "properties": {
       "admin": {
         "$ref": "#/definitions/Addr"
       },
-      "automation_fee_percent": {
+      "delegation_fee_percent": {
         "$ref": "#/definitions/Decimal"
       },
       "fee_collector": {
         "$ref": "#/definitions/Addr"
-      },
-      "fee_percent": {
-        "$ref": "#/definitions/Decimal"
       },
       "page_limit": {
         "type": "integer",
@@ -38,6 +35,9 @@
       },
       "staking_router_address": {
         "$ref": "#/definitions/Addr"
+      },
+      "swap_fee_percent": {
+        "$ref": "#/definitions/Decimal"
       }
     },
     "additionalProperties": false,
@@ -286,7 +286,7 @@
           "update_config": {
             "type": "object",
             "properties": {
-              "automation_fee_percent": {
+              "delegation_fee_percent": {
                 "anyOf": [
                   {
                     "$ref": "#/definitions/Decimal"
@@ -300,16 +300,6 @@
                 "anyOf": [
                   {
                     "$ref": "#/definitions/Addr"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
-              "fee_percent": {
-                "anyOf": [
-                  {
-                    "$ref": "#/definitions/Decimal"
                   },
                   {
                     "type": "null"
@@ -334,6 +324,16 @@
                 "anyOf": [
                   {
                     "$ref": "#/definitions/Addr"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "swap_fee_percent": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/Decimal"
                   },
                   {
                     "type": "null"
@@ -380,20 +380,20 @@
       {
         "type": "object",
         "required": [
-          "add_custom_fee"
+          "create_custom_swap_fee"
         ],
         "properties": {
-          "add_custom_fee": {
+          "create_custom_swap_fee": {
             "type": "object",
             "required": [
               "denom",
-              "fee_percent"
+              "swap_fee_percent"
             ],
             "properties": {
               "denom": {
                 "type": "string"
               },
-              "fee_percent": {
+              "swap_fee_percent": {
                 "$ref": "#/definitions/Decimal"
               }
             },

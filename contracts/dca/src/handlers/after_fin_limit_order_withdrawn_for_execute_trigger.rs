@@ -64,7 +64,7 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
                 }
                 (Some(swap_denom_fee_percent), None) => swap_denom_fee_percent,
                 (None, Some(receive_denom_fee_percent)) => receive_denom_fee_percent,
-                (None, None) => config.fee_percent,
+                (None, None) => config.swap_fee_percent,
             };
 
             let execution_fee = Coin::new(
@@ -131,7 +131,7 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
                     PostExecutionAction::ZDelegate => {
                         // authz delegations use funds from the users wallet so send back to user
                         let automation_fee = 
-                            checked_mul(amount, config.automation_fee_percent)
+                            checked_mul(amount, config.delegation_fee_percent)
                                 .expect("amount to be taken should be valid");
 
                         total_automation_fees = 

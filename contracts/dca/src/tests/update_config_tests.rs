@@ -17,8 +17,8 @@ fn update_fee_percent_with_valid_value_should_succeed() {
             mock.dca_contract_address.clone(),
             &ExecuteMsg::UpdateConfig {
                 fee_collector: Some(Addr::unchecked(ADMIN)),
-                fee_percent: Some(Decimal::from_str("0.015").unwrap()),
-                automation_fee_percent: Some(Decimal::from_str("0.0075").unwrap()),
+                swap_fee_percent: Some(Decimal::from_str("0.015").unwrap()),
+                delegation_fee_percent: Some(Decimal::from_str("0.0075").unwrap()),
                 staking_router_address: None,
                 page_limit: None,
                 paused: None,
@@ -39,8 +39,8 @@ fn update_fee_percent_more_than_100_percent_should_fail() {
             mock.dca_contract_address.clone(),
             &ExecuteMsg::UpdateConfig {
                 fee_collector: Some(Addr::unchecked(ADMIN)),
-                fee_percent: Some(Decimal::from_str("1.5").unwrap()),
-                automation_fee_percent: Some(Decimal::from_str("0.0075").unwrap()),
+                swap_fee_percent: Some(Decimal::from_str("1.5").unwrap()),
+                delegation_fee_percent: Some(Decimal::from_str("0.0075").unwrap()),
                 staking_router_address: None,
                 page_limit: None,
                 paused: None,
