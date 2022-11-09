@@ -1,13 +1,11 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Coin, Uint128};
+use cosmwasm_std::{Addr, Uint128};
 use cw_storage_plus::Item;
 
 #[cw_serde]
 pub struct Cache {
     pub vault_id: Uint128,
     pub owner: Addr,
-    pub total_automation_fees: Option<Coin>,
-    pub refunded: Option<bool>,
 }
 
 #[cw_serde]

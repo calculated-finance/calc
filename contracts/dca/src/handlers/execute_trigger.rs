@@ -134,8 +134,6 @@ pub fn execute_trigger(
                 &Cache {
                     vault_id: vault.id,
                     owner: vault.owner.clone(),
-                    refunded: None,
-                    total_automation_fees: None,
                 },
             )?;
 
@@ -170,8 +168,6 @@ pub fn execute_trigger(
                 let cache: Cache = Cache {
                     vault_id: vault.id,
                     owner: vault.owner.clone(),
-                    refunded: None,
-                    total_automation_fees: None,
                 };
 
                 CACHE.save(deps.storage, &cache)?;

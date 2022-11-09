@@ -1,6 +1,6 @@
 use crate::contract::AFTER_Z_DELEGATION_REPLY_ID;
 use crate::error::ContractError;
-use crate::state::cache::{Cache, CACHE, LIMIT_ORDER_CACHE};
+use crate::state::cache::{CACHE, LIMIT_ORDER_CACHE};
 use crate::state::config::{get_config, get_custom_fee};
 use crate::state::events::create_event;
 use crate::state::triggers::{delete_trigger, save_trigger};
@@ -185,15 +185,6 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
                     to_address: config.fee_collector.to_string(),
                     amount: vec![total_automation_fees.clone()],
                 }));
-
-                CACHE.save(
-                    deps.storage,
-                    &Cache {
-                        refunded: Some(false),
-                        total_automation_fees: Some(total_automation_fees),
-                        ..cache.clone()
-                    },
-                )?;
             }
 
             create_event(

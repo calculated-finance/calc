@@ -112,8 +112,6 @@ pub fn create_vault(
         &Cache {
             vault_id: vault.id.clone(),
             owner: vault.owner.clone(),
-            refunded: None,
-            total_automation_fees: None,
         },
     )?;
 

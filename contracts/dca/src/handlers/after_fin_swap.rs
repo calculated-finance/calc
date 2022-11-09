@@ -2,7 +2,7 @@ use std::cmp::min;
 
 use crate::contract::AFTER_Z_DELEGATION_REPLY_ID;
 use crate::error::ContractError;
-use crate::state::cache::{Cache, CACHE};
+use crate::state::cache::CACHE;
 use crate::state::config::{get_config, get_custom_fee};
 use crate::state::events::create_event;
 use crate::state::triggers::{delete_trigger, save_trigger};
@@ -22,7 +22,7 @@ use fin_helpers::codes::ERROR_SWAP_SLIPPAGE_EXCEEDED;
 use staking_router::msg::ExecuteMsg as StakingRouterExecuteMsg;
 
 pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, ContractError> {
-    let mut cache = CACHE.load(deps.storage)?;
+    let cache = CACHE.load(deps.storage)?;
     let vault = get_vault(deps.storage, cache.vault_id.into())?;
 
     let mut attributes: Vec<Attribute> = Vec::new();
@@ -138,14 +138,11 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                             coin_received.denom.clone(),
                         );
 
-                        if (amount_to_delegate.amount.gt(&Uint128::zero())) {
-                            // we should check if this is greater than 0
+                        if amount_to_delegate.amount.gt(&Uint128::zero()) {
                             messages.push(CosmosMsg::Bank(BankMsg::Send {
                                 to_address: vault.owner.to_string(),
                                 amount: vec![amount_to_delegate.clone()],
                             }));
-
-                            // we should only do this if above is greater than 0
                             sub_msgs.push(SubMsg::reply_always(
                                 CosmosMsg::Wasm(WasmMsg::Execute {
                                     contract_addr: config.staking_router_address.to_string(),
@@ -165,26 +162,11 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                 }
             });
 
-            // never try to send 0 tokens
-            // this should also be checked to make sure we arent refunding from stale cache
             if total_automation_fees.amount.gt(&Uint128::zero()) {
                 messages.push(CosmosMsg::Bank(BankMsg::Send {
                     to_address: config.fee_collector.to_string(),
                     amount: vec![total_automation_fees.clone()],
                 }));
-
-                // set refunded as false because there are some delegations about to be made
-                // if any fail, we need to refund all automation fees exactly once
-                // because multiple sub messages will be generated
-                CACHE.save(
-                    deps.storage,
-                    &Cache {
-                        owner: cache.owner,
-                        vault_id: cache.vault_id,
-                        refunded: Some(false),
-                        total_automation_fees: Some(total_automation_fees),
-                    },
-                )?;
             }
 
             update_vault(

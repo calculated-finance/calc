@@ -106,8 +106,6 @@ fn cancel_fin_limit_order_trigger(
     let cache = Cache {
         vault_id: vault.id,
         owner: vault.owner.clone(),
-        refunded: None,
-        total_automation_fees: None,
     };
 
     CACHE.save(deps.storage, &cache)?;
