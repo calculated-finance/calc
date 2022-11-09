@@ -9,8 +9,8 @@ pub fn update_config_handler(
     deps: DepsMut,
     info: MessageInfo,
     fee_collector: Option<Addr>,
-    fee_percent: Option<Decimal>,
-    automation_fee_percent: Option<Decimal>,
+    swap_fee_percent: Option<Decimal>,
+    delegation_fee_percent: Option<Decimal>,
     staking_router_address: Option<Addr>,
     page_limit: Option<u16>,
     paused: Option<bool>,
@@ -27,8 +27,8 @@ pub fn update_config_handler(
                     .unwrap_or(existing_config.fee_collector)
                     .to_string(),
             )?,
-            swap_fee_percent: fee_percent.unwrap_or(existing_config.swap_fee_percent),
-            delegation_fee_percent: automation_fee_percent
+            swap_fee_percent: swap_fee_percent.unwrap_or(existing_config.swap_fee_percent),
+            delegation_fee_percent: delegation_fee_percent
                 .unwrap_or(existing_config.delegation_fee_percent),
             staking_router_address: deps.api.addr_validate(
                 &staking_router_address
