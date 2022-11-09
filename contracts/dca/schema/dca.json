@@ -724,10 +724,10 @@
       {
         "type": "object",
         "required": [
-          "get_custom_fees"
+          "get_custom_swap_fees"
         ],
         "properties": {
-          "get_custom_fees": {
+          "get_custom_swap_fees": {
             "type": "object",
             "additionalProperties": false
           }
@@ -758,7 +758,7 @@
   "migrate": null,
   "sudo": null,
   "responses": {
-    "get_custom_fees": {
+    "get_custom_swap_fees": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "CustomFeesResponse",
       "type": "object",

@@ -1,7 +1,7 @@
 use super::mocks::ADMIN;
 use crate::{
     handlers::{
-        create_custom_swap_fee::create_custom_swap_fee, get_custom_fees::get_custom_fees_handler,
+        create_custom_swap_fee::create_custom_swap_fee, get_custom_swap_fees::get_custom_swap_fees,
     },
     tests::helpers::instantiate_contract,
 };
@@ -21,7 +21,7 @@ fn create_custom_swap_fee_should_succeed() {
 
     create_custom_swap_fee(deps.as_mut(), info, denom.clone(), Decimal::percent(1)).unwrap();
 
-    let custom_fees = get_custom_fees_handler(deps.as_ref()).unwrap();
+    let custom_fees = get_custom_swap_fees(deps.as_ref()).unwrap();
 
     assert_eq!(custom_fees.len(), 1);
     assert_eq!(custom_fees[0], (denom.clone(), Decimal::percent(1)));
@@ -44,14 +44,14 @@ fn create_custom_swap_fee_should_overwrite_existing_fee() {
     )
     .unwrap();
 
-    let custom_fees = get_custom_fees_handler(deps.as_ref()).unwrap();
+    let custom_fees = get_custom_swap_fees(deps.as_ref()).unwrap();
 
     assert_eq!(custom_fees.len(), 1);
     assert_eq!(custom_fees[0], (denom.clone(), Decimal::percent(1)));
 
     create_custom_swap_fee(deps.as_mut(), info, denom.clone(), Decimal::percent(3)).unwrap();
 
-    let custom_fees = get_custom_fees_handler(deps.as_ref()).unwrap();
+    let custom_fees = get_custom_swap_fees(deps.as_ref()).unwrap();
 
     assert_eq!(custom_fees.len(), 1);
     assert_eq!(custom_fees[0], (denom, Decimal::percent(3)));

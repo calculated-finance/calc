@@ -11,7 +11,7 @@ pub mod create_vault;
 pub mod delete_pair;
 pub mod deposit;
 pub mod execute_trigger;
-pub mod get_custom_fees;
+pub mod get_custom_swap_fees;
 pub mod get_events;
 pub mod get_events_by_resource_id;
 pub mod get_pairs;

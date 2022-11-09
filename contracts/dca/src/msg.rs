@@ -119,7 +119,7 @@ pub enum QueryMsg {
         limit: Option<u16>,
     },
     #[returns(CustomFeesResponse)]
-    GetCustomFees {},
+    GetCustomSwapFees {},
 }
 
 #[cw_serde]
