@@ -233,12 +233,10 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
         }
         SubMsgResult::Err(e) => {
             let execution_skipped_reason = if e.contains(ERROR_SWAP_SLIPPAGE_EXCEEDED) {
-                ExecutionSkippedReason::SlippageToleranceExceeded
+                ExecutionSkippedReason::SlippageToleranceExceeded {
+                    error_message: e.to_string(),
+                }
             } else {
-                ExecutionSkippedReason::UnknownFailure
-            };
-
-            if execution_skipped_reason != ExecutionSkippedReason::SlippageToleranceExceeded {
                 update_vault(
                     deps.storage,
                     vault.id.into(),
@@ -258,7 +256,11 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                         }
                     },
                 )?;
-            }
+
+                ExecutionSkippedReason::UnknownFailure {
+                    error_message: e.to_string(),
+                }
+            };
 
             create_event(
                 deps.storage,

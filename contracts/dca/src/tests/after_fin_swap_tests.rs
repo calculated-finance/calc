@@ -208,7 +208,9 @@ fn with_insufficient_funds_publishes_unknown_failure_event() {
             vault_id,
             env.block.clone(),
             EventData::DcaVaultExecutionSkipped {
-                reason: ExecutionSkippedReason::UnknownFailure
+                reason: ExecutionSkippedReason::UnknownFailure {
+                    error_message: "Generic failure".to_string()
+                }
             }
         )
         .build(1)
@@ -329,7 +331,9 @@ fn with_slippage_failure_publishes_execution_failed_event() {
             vault_id,
             env.block.clone(),
             EventData::DcaVaultExecutionSkipped {
-                reason: ExecutionSkippedReason::SlippageToleranceExceeded
+                reason: ExecutionSkippedReason::SlippageToleranceExceeded {
+                    error_message: ERROR_SWAP_SLIPPAGE_EXCEEDED.to_string()
+                }
             }
         )
         .build(1)
