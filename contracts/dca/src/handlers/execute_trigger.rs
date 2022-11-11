@@ -11,7 +11,7 @@ use base::events::event::{EventBuilder, EventData, ExecutionSkippedReason};
 use base::helpers::time_helpers::get_next_target_time;
 use base::triggers::trigger::{Trigger, TriggerConfiguration};
 use base::vaults::vault::{PositionType, VaultStatus};
-use cosmwasm_std::{Decimal256, StdError};
+use cosmwasm_std::StdError;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{DepsMut, Env, Response, Uint128};
 use fin_helpers::limit_orders::create_withdraw_limit_order_sub_msg;
@@ -57,9 +57,7 @@ pub fn execute_trigger(
 
     let belief_price = match position_type {
         PositionType::Enter => query_base_price(deps.querier, vault.pair.address.clone()),
-        PositionType::Exit => Decimal256::one()
-            .checked_div(query_quote_price(deps.querier, vault.pair.address.clone()))
-            .expect("should return a valid FIN price"),
+        PositionType::Exit => query_quote_price(deps.querier, vault.pair.address.clone()),
     };
 
     create_event(
