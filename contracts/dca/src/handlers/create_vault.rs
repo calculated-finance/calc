@@ -12,8 +12,7 @@ use crate::validation_helpers::{
     assert_destination_allocations_add_up_to_one, assert_destination_send_addresses_are_valid,
     assert_destination_validator_addresses_are_valid, assert_destinations_limit_is_not_breached,
     assert_exactly_one_asset, assert_no_destination_allocations_are_zero,
-    assert_send_denom_is_in_pair_denoms,
-    assert_swap_amount_is_greater_than_50000,
+    assert_send_denom_is_in_pair_denoms, assert_swap_amount_is_greater_than_50000,
     assert_target_receive_amount_greater_than_or_equal_to_minimum_receive_amount,
     assert_target_start_time_is_in_future,
 };

@@ -96,10 +96,6 @@ impl Vault {
         self.balance.amount < self.swap_amount
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.balance.amount.is_zero()
-    }
-
     pub fn is_active(&self) -> bool {
         self.status == VaultStatus::Active
     }

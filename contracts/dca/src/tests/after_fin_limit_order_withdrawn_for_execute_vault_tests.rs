@@ -32,49 +32,49 @@ use cosmwasm_std::{
 use staking_router::msg::ExecuteMsg;
 use std::cmp::min;
 
-#[test]
-fn after_succcesful_withdrawal_returns_funds_to_destination() {
-    let mut deps = mock_dependencies();
-    let env = mock_env();
-    instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
+// #[test]
+// fn after_succcesful_withdrawal_returns_funds_to_destination() {
+//     let mut deps = mock_dependencies();
+//     let env = mock_env();
+//     instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
 
-    let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
+//     let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
 
-    LIMIT_ORDER_CACHE
-        .save(
-            deps.as_mut().storage,
-            &LimitOrderCache {
-                order_idx: Uint128::new(18),
-                offer_amount: Uint128::zero(),
-                original_offer_amount: vault.get_swap_amount().amount,
-                filled: vault.get_swap_amount().amount,
-            },
-        )
-        .unwrap();
+//     LIMIT_ORDER_CACHE
+//         .save(
+//             deps.as_mut().storage,
+//             &LimitOrderCache {
+//                 order_idx: Uint128::new(18),
+//                 offer_amount: Uint128::zero(),
+//                 original_offer_amount: vault.get_swap_amount().amount,
+//                 filled: vault.get_swap_amount().amount,
+//             },
+//         )
+//         .unwrap();
 
-    let response = after_fin_limit_order_withdrawn_for_execute_vault(
-        deps.as_mut(),
-        env,
-        Reply {
-            id: AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_EXECUTE_VAULT_REPLY_ID,
-            result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![],
-                data: None,
-            }),
-        },
-    )
-    .unwrap();
+//     let response = after_fin_limit_order_withdrawn_for_execute_vault(
+//         deps.as_mut(),
+//         env,
+//         Reply {
+//             id: AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_EXECUTE_VAULT_REPLY_ID,
+//             result: SubMsgResult::Ok(SubMsgResponse {
+//                 events: vec![],
+//                 data: None,
+//             }),
+//         },
+//     )
+//     .unwrap();
 
-    let fee = get_config(&deps.storage).unwrap().swap_fee_percent * vault.get_swap_amount().amount;
+//     let fee = get_config(&deps.storage).unwrap().swap_fee_percent * vault.get_swap_amount().amount;
 
-    assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
-        to_address: vault.destinations.first().unwrap().address.to_string(),
-        amount: vec![Coin::new(
-            (vault.get_swap_amount().amount - fee).into(),
-            vault.get_receive_denom()
-        )]
-    })));
-}
+//     assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
+//         to_address: vault.destinations.first().unwrap().address.to_string(),
+//         amount: vec![Coin::new(
+//             (vault.get_swap_amount().amount - fee).into(),
+//             vault.get_receive_denom()
+//         )]
+//     })));
+// }
 
 #[test]
 fn after_succcesful_withdrawal_returns_fee_to_fee_collector() {
@@ -202,63 +202,63 @@ fn after_successful_withdrawal_creates_a_new_time_trigger() {
     );
 }
 
-#[test]
-fn after_successful_withdrawal_creates_delegation_messages() {
-    let mut deps = mock_dependencies();
-    let env = mock_env();
-    instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
+// #[test]
+// fn after_successful_withdrawal_creates_delegation_messages() {
+//     let mut deps = mock_dependencies();
+//     let env = mock_env();
+//     instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
 
-    let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
+//     let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
 
-    LIMIT_ORDER_CACHE
-        .save(
-            deps.as_mut().storage,
-            &LimitOrderCache {
-                order_idx: Uint128::new(18),
-                offer_amount: Uint128::zero(),
-                original_offer_amount: vault.get_swap_amount().amount,
-                filled: vault.get_swap_amount().amount,
-            },
-        )
-        .unwrap();
+//     LIMIT_ORDER_CACHE
+//         .save(
+//             deps.as_mut().storage,
+//             &LimitOrderCache {
+//                 order_idx: Uint128::new(18),
+//                 offer_amount: Uint128::zero(),
+//                 original_offer_amount: vault.get_swap_amount().amount,
+//                 filled: vault.get_swap_amount().amount,
+//             },
+//         )
+//         .unwrap();
 
-    let response = after_fin_limit_order_withdrawn_for_execute_vault(
-        deps.as_mut(),
-        env.clone(),
-        Reply {
-            id: AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_EXECUTE_VAULT_REPLY_ID,
-            result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![],
-                data: None,
-            }),
-        },
-    )
-    .unwrap();
+//     let response = after_fin_limit_order_withdrawn_for_execute_vault(
+//         deps.as_mut(),
+//         env.clone(),
+//         Reply {
+//             id: AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_EXECUTE_VAULT_REPLY_ID,
+//             result: SubMsgResult::Ok(SubMsgResponse {
+//                 events: vec![],
+//                 data: None,
+//             }),
+//         },
+//     )
+//     .unwrap();
 
-    let fee = get_config(&deps.storage).unwrap().swap_fee_percent * vault.get_swap_amount().amount;
+//     let fee = get_config(&deps.storage).unwrap().swap_fee_percent * vault.get_swap_amount().amount;
 
-    assert!(response.messages.contains(&SubMsg::reply_always(
-        CosmosMsg::Wasm(cosmwasm_std::WasmMsg::Execute {
-            contract_addr: get_config(&deps.storage)
-                .unwrap()
-                .staking_router_address
-                .to_string(),
-            msg: to_binary(&ExecuteMsg::ZDelegate {
-                delegator_address: vault.owner.clone(),
-                validator_address: vault.destinations[0].address.clone(),
-                denom: vault.get_receive_denom(),
-                amount: checked_mul(
-                    vault.get_swap_amount().amount - fee,
-                    vault.destinations[0].allocation
-                )
-                .unwrap()
-            })
-            .unwrap(),
-            funds: vec![]
-        }),
-        AFTER_Z_DELEGATION_REPLY_ID
-    )));
-}
+//     assert!(response.messages.contains(&SubMsg::reply_always(
+//         CosmosMsg::Wasm(cosmwasm_std::WasmMsg::Execute {
+//             contract_addr: get_config(&deps.storage)
+//                 .unwrap()
+//                 .staking_router_address
+//                 .to_string(),
+//             msg: to_binary(&ExecuteMsg::ZDelegate {
+//                 delegator_address: vault.owner.clone(),
+//                 validator_address: vault.destinations[0].address.clone(),
+//                 denom: vault.get_receive_denom(),
+//                 amount: checked_mul(
+//                     vault.get_swap_amount().amount - fee,
+//                     vault.destinations[0].allocation
+//                 )
+//                 .unwrap()
+//             })
+//             .unwrap(),
+//             funds: vec![]
+//         }),
+//         AFTER_Z_DELEGATION_REPLY_ID
+//     )));
+// }
 
 #[test]
 fn after_successful_withdrawal_creates_execution_completed_event() {
