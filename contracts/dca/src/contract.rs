@@ -206,13 +206,13 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
         }
         AFTER_FIN_SWAP_REPLY_ID => after_fin_swap(deps, env, reply),
         AFTER_Z_DELEGATION_REPLY_ID => after_z_delegation(deps, env, reply),
-        20 => match reply.result {
+        20 => match reply.result.clone() {
             SubMsgResult::Ok(o) => Ok(Response::new()
                 .add_attribute("method", "reply")
-                .add_attribute("success", format!("{:?}", o))),
+                .add_attribute("success", format!("{:?}", reply))),
             SubMsgResult::Err(e) => Ok(Response::new()
                 .add_attribute("method", "reply")
-                .add_attribute("failure", format!("{:?}", e))),
+                .add_attribute("failure", format!("{:?}", reply))),
         },
         id => Err(ContractError::CustomError {
             val: format!("unknown reply id: {}", id),
