@@ -117,7 +117,6 @@ pub fn execute_trigger(
                 return Ok(response.to_owned());
             };
 
-            // about to execute
             if !vault.has_sufficient_funds() {
                 create_event(
                     deps.storage,
