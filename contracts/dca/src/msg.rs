@@ -44,6 +44,7 @@ pub enum ExecuteMsg {
         max_spread: Option<Decimal256>,
         pair_address: String,
     },
+    ThrowErr {},
     CreateVault {
         owner: Option<Addr>,
         label: Option<String>,
