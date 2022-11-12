@@ -199,9 +199,7 @@ pub fn execute(
                 val: "belief_price and max_spread must be both set or both unset".to_string(),
             }),
         },
-        ExecuteMsg::ThrowErr {} => Err(ContractError::CustomError {
-            val: "belief_price and max_spread must be both set or both unset".to_string(),
-        }),
+        ExecuteMsg::ThrowErr {} => Err(ContractError::Std(StdError::generic_err("test error"))),
     }
 }
 
