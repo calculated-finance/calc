@@ -1925,8 +1925,8 @@ fn when_contract_is_paused_should_fail() {
 fn for_vault_with_insufficient_swap_amount_should_set_vault_status_to_inactive() {
     let user_address = Addr::unchecked(USER);
     let user_balance = ONE;
-    let vault_deposit = ONE;
-    let swap_amount = Uint128::one();
+    let vault_deposit = Uint128::one();
+    let swap_amount = Uint128::from(50001u128);
 
     let mut mock = MockApp::new(fin_contract_high_swap_price())
         .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
@@ -1970,8 +1970,8 @@ fn for_vault_with_insufficient_swap_amount_should_set_vault_status_to_inactive()
 fn for_vault_with_insufficient_swap_amount_should_not_update_vault_balance() {
     let user_address = Addr::unchecked(USER);
     let user_balance = ONE;
-    let vault_deposit = ONE;
-    let swap_amount = Uint128::one();
+    let vault_deposit = Uint128::one();
+    let swap_amount = Uint128::from(50001u128);
 
     let mut mock = MockApp::new(fin_contract_high_swap_price())
         .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
@@ -2015,8 +2015,8 @@ fn for_vault_with_insufficient_swap_amount_should_not_update_vault_balance() {
 fn for_vault_with_insufficient_swap_amount_should_not_update_address_balances() {
     let user_address = Addr::unchecked(USER);
     let user_balance = ONE;
-    let vault_deposit = ONE;
-    let swap_amount = Uint128::one();
+    let vault_deposit = Uint128::one();
+    let swap_amount = Uint128::from(50001u128);
 
     let mut mock = MockApp::new(fin_contract_high_swap_price())
         .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
@@ -2045,7 +2045,7 @@ fn for_vault_with_insufficient_swap_amount_should_not_update_address_balances() 
     assert_address_balances(
         &mock,
         &[
-            (&user_address, DENOM_UKUJI, Uint128::new(0)),
+            (&user_address, DENOM_UKUJI, ONE - Uint128::one()),
             (&user_address, DENOM_UTEST, Uint128::new(0)),
             (
                 &mock.dca_contract_address,
@@ -2063,8 +2063,8 @@ fn for_vault_with_insufficient_swap_amount_should_not_update_address_balances() 
 fn for_vault_with_insufficient_swap_amount_should_publish_events() {
     let user_address = Addr::unchecked(USER);
     let user_balance = ONE;
-    let vault_deposit = ONE;
-    let swap_amount = Uint128::one();
+    let vault_deposit = Uint128::one();
+    let swap_amount = Uint128::from(50001u128);
 
     let mut mock = MockApp::new(fin_contract_high_swap_price())
         .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
