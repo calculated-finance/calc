@@ -43,8 +43,9 @@ pub const AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_CANCEL_VAULT_REPLY_ID: u64 = 5;
 pub const AFTER_Z_DELEGATION_REPLY_ID: u64 = 6;
 
 #[entry_point]
-pub fn migrate(_: DepsMut, _: Env, _: MigrateMsg) -> Result<Response, ContractError> {
-    unimplemented!()
+pub fn migrate(deps: DepsMut, _: Env, _: MigrateMsg) -> Result<Response, ContractError> {
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    Ok(Response::new())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
