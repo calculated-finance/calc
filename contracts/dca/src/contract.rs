@@ -26,11 +26,15 @@ use crate::handlers::update_config::update_config_handler;
 use crate::handlers::update_vault_label::update_vault_label;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::config::{update_config, Config};
+use crate::state::events::create_event;
+use base::events::event::{EventBuilder, EventData};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };
+use cosmwasm_std::{Addr, SubMsgResult};
 use cw2::set_contract_version;
+use fin_helpers::swaps::{create_fin_swap_with_slippage, create_fin_swap_without_slippage};
 
 pub const CONTRACT_NAME: &str = "crates.io:calc-dca";
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -151,6 +155,39 @@ pub fn execute(
             swap_fee_percent,
         } => create_custom_swap_fee(deps, info, denom, swap_fee_percent),
         ExecuteMsg::RemoveCustomSwapFee { denom } => remove_custom_swap_fee(deps, info, denom),
+        ExecuteMsg::Swap {
+            belief_price,
+            max_spread,
+            pair_address,
+        } => match (belief_price, max_spread) {
+            (None, None) => {
+                let msg = create_fin_swap_without_slippage(
+                    Addr::unchecked(pair_address.clone()),
+                    info.funds[0].clone(),
+                    20,
+                );
+                Ok(Response::new()
+                    .add_submessage(msg)
+                    .add_attribute("method", "swap")
+                    .add_attribute("pair_address", pair_address.clone()))
+            }
+            (Some(belief), Some(slip)) => {
+                let msg = create_fin_swap_with_slippage(
+                    Addr::unchecked(pair_address.clone()),
+                    belief,
+                    slip,
+                    info.funds[0].clone(),
+                    20,
+                );
+                Ok(Response::new()
+                    .add_submessage(msg)
+                    .add_attribute("method", "swap")
+                    .add_attribute("pair_address", pair_address.clone()))
+            }
+            _ => Err(ContractError::CustomError {
+                val: "belief_price and max_spread must be both set or both unset".to_string(),
+            }),
+        },
     }
 }
 
@@ -169,6 +206,14 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
         }
         AFTER_FIN_SWAP_REPLY_ID => after_fin_swap(deps, env, reply),
         AFTER_Z_DELEGATION_REPLY_ID => after_z_delegation(deps, env, reply),
+        20 => match reply.result {
+            SubMsgResult::Ok(o) => Ok(Response::new()
+                .add_attribute("method", "reply")
+                .add_attribute("response", format!("{:?}", o))),
+            SubMsgResult::Err(e) => Ok(Response::new()
+                .add_attribute("method", "reply")
+                .add_attribute("response", format!("{:?}", e))),
+        },
         id => Err(ContractError::CustomError {
             val: format!("unknown reply id: {}", id),
         }),

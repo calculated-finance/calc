@@ -39,6 +39,11 @@ pub enum ExecuteMsg {
     DeletePair {
         address: Addr,
     },
+    Swap {
+        belief_price: Option<Decimal256>,
+        max_spread: Option<Decimal256>,
+        pair_address: String,
+    },
     CreateVault {
         owner: Option<Addr>,
         label: Option<String>,
