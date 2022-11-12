@@ -13,6 +13,7 @@ use cosmwasm_std::{
 use fin_helpers::codes::ERROR_SWAP_SLIPPAGE_EXCEEDED;
 
 use crate::{
+    constants::TEN,
     contract::AFTER_FIN_SWAP_REPLY_ID,
     handlers::{
         after_fin_swap::after_fin_swap, get_events_by_resource_id::get_events_by_resource_id,
@@ -284,12 +285,8 @@ fn with_slippage_failure_publishes_execution_failed_event() {
     ));
 }
 
-// slippage is calculated based on remaining funds on vault
-// so an error could occur for any reason
-// if the vault balance is less than 50000 we make it inactive
-// otherwise its a slippage error
 #[test]
-fn with_slippage_failure_funds_leaves_vault_active() {
+fn with_slippage_failure_leaves_vault_active() {
     let mut deps = mock_dependencies();
     let env = mock_env();
 
@@ -304,8 +301,6 @@ fn with_slippage_failure_funds_leaves_vault_active() {
     after_fin_swap(deps.as_mut(), env.clone(), reply).unwrap();
 
     let vault = get_vault(&mut deps.storage, vault_id).unwrap();
-
-    println!("{:?}", vault);
 
     assert_eq!(vault.status, VaultStatus::Active);
 }
@@ -327,10 +322,7 @@ fn with_slippage_failure_does_not_reduce_vault_balance() {
 
     let vault = get_vault(&mut deps.storage, vault_id).unwrap();
 
-    assert_eq!(
-        vault.balance,
-        Coin::new(Uint128::new(150000).into(), "base")
-    );
+    assert_eq!(vault.balance, Coin::new(TEN.into(), "base"));
 }
 
 #[test]
