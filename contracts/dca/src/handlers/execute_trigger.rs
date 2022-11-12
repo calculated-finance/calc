@@ -117,7 +117,8 @@ pub fn execute_trigger(
                 return Ok(response.to_owned());
             };
 
-            if !vault.has_sufficient_funds(belief_price) {
+            // about to execute
+            if !vault.has_sufficient_funds() {
                 create_event(
                     deps.storage,
                     EventBuilder::new(
