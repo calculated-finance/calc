@@ -209,10 +209,10 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
         20 => match reply.result {
             SubMsgResult::Ok(o) => Ok(Response::new()
                 .add_attribute("method", "reply")
-                .add_attribute("response", format!("{:?}", o))),
+                .add_attribute("success", format!("{:?}", o))),
             SubMsgResult::Err(e) => Ok(Response::new()
                 .add_attribute("method", "reply")
-                .add_attribute("response", format!("{:?}", e))),
+                .add_attribute("failure", format!("{:?}", e))),
         },
         id => Err(ContractError::CustomError {
             val: format!("unknown reply id: {}", id),
