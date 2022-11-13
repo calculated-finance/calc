@@ -185,7 +185,7 @@ fn with_successful_swap_creates_a_new_time_trigger() {
 }
 
 #[test]
-fn with_insufficient_funds_does_not_reduce_vault_balance() {
+fn with_failed_swap_and_insufficient_funds_does_not_reduce_vault_balance() {
     let mut deps = mock_dependencies();
     let env = mock_env();
 
@@ -205,7 +205,7 @@ fn with_insufficient_funds_does_not_reduce_vault_balance() {
 }
 
 #[test]
-fn with_insufficient_funds_creates_a_new_time_trigger() {
+fn with_failed_swap_and_insufficient_funds_does_not_create_a_new_time_trigger() {
     let mut deps = mock_dependencies();
     let env = mock_env();
 
@@ -220,13 +220,27 @@ fn with_insufficient_funds_creates_a_new_time_trigger() {
     after_fin_swap(deps.as_mut(), env.clone(), reply).unwrap();
 
     let trigger = get_trigger(&mut deps.storage, vault_id).unwrap();
+    assert!(trigger.is_none());
+}
 
-    assert_eq!(
-        trigger.unwrap().configuration,
-        TriggerConfiguration::Time {
-            target_time: Timestamp::from_seconds(env.block.time.seconds() + 60 * 60 * 24)
-        }
-    );
+#[test]
+fn with_failed_swap_and_insufficient_funds_sets_vault_to_inactive() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+
+    setup_active_vault_with_low_funds(deps.as_mut(), env.clone());
+    let vault_id = Uint128::one();
+
+    let reply = Reply {
+        id: AFTER_FIN_SWAP_REPLY_ID,
+        result: SubMsgResult::Err("Generic failure".to_string()),
+    };
+
+    after_fin_swap(deps.as_mut(), env.clone(), reply).unwrap();
+
+    let vault = get_vault(&mut deps.storage, vault_id).unwrap();
+
+    assert_eq!(vault.status, VaultStatus::Inactive);
 }
 
 #[test]
