@@ -128,7 +128,7 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                         );
 
                         if amount_to_delegate.amount.gt(&Uint128::zero()) {
-                            messages.push(CosmosMsg::Bank(BankMsg::Send {
+                            sub_msgs.push(SubMsg::new(BankMsg::Send {
                                 to_address: vault.owner.to_string(),
                                 amount: vec![amount_to_delegate.clone()],
                             }));
@@ -300,6 +300,7 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
             attributes.push(Attribute::new("status", "skipped"));
         }
     }
+
     Ok(Response::new()
         .add_attribute("method", "fin_swap_completed")
         .add_attribute("owner", vault.owner.to_string())

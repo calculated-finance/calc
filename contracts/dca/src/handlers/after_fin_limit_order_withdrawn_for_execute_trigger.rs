@@ -148,11 +148,10 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
                         );
 
                         if amount_to_delegate.amount.gt(&Uint128::zero()) {
-                            messages.push(CosmosMsg::Bank(BankMsg::Send {
+                            sub_msgs.push(SubMsg::new(BankMsg::Send {
                                 to_address: vault.owner.to_string(),
                                 amount: vec![amount_to_delegate.clone()],
                             }));
-
                             sub_msgs.push(SubMsg::reply_always(
                                 CosmosMsg::Wasm(WasmMsg::Execute {
                                     contract_addr: config.staking_router_address.to_string(),
