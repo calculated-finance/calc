@@ -79,15 +79,25 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
             let swap_fee = checked_mul(coin_received.amount, fee_percent)?;
             let total_after_swap_fee = coin_received.amount - swap_fee;
             let automation_fee = checked_mul(total_after_swap_fee, automation_fee_rate)?;
-            let total_fee = swap_fee + automation_fee;
 
-            if total_fee.gt(&Uint128::zero()) {
+            if swap_fee.gt(&Uint128::zero()) {
                 messages.push(CosmosMsg::Bank(BankMsg::Send {
                     to_address: config.fee_collector.to_string(),
-                    amount: vec![Coin::new(total_fee.into(), coin_received.denom.clone())],
+                    amount: vec![Coin::new(swap_fee.into(), coin_received.denom.clone())],
                 }));
             }
 
+            if automation_fee.gt(&Uint128::zero()) {
+                messages.push(CosmosMsg::Bank(BankMsg::Send {
+                    to_address: config.fee_collector.to_string(),
+                    amount: vec![Coin::new(
+                        automation_fee.into(),
+                        coin_received.denom.clone(),
+                    )],
+                }));
+            }
+
+            let total_fee = swap_fee + automation_fee;
             let total_after_total_fee = coin_received.amount - total_fee;
 
             vault.destinations.iter().for_each(|destination| {

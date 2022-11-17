@@ -102,8 +102,7 @@ fn after_succcesful_withdrawal_returns_fee_to_fee_collector() {
     instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
 
     let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
-
-    let received_amount = vault.get_swap_amount().amount;
+    let received_amount = Uint128::new(324234);
 
     LIMIT_ORDER_CACHE
         .save(
@@ -131,23 +130,29 @@ fn after_succcesful_withdrawal_returns_fee_to_fee_collector() {
     .unwrap();
 
     let config = get_config(&deps.storage).unwrap();
-    let mut fee = config.swap_fee_percent * vault.get_swap_amount().amount;
+    let swap_fee = config.swap_fee_percent * received_amount;
+    let total_after_swap_fee = received_amount - swap_fee;
 
-    vault
+    let automation_fee = vault
         .destinations
         .iter()
         .filter(|d| d.action == PostExecutionAction::ZDelegate)
-        .for_each(|destination| {
+        .fold(Uint128::zero(), |acc, destination| {
             let allocation_amount =
-                checked_mul(received_amount - fee, destination.allocation).unwrap();
+                checked_mul(total_after_swap_fee, destination.allocation).unwrap();
             let allocation_automation_fee =
                 checked_mul(allocation_amount, config.delegation_fee_percent).unwrap();
-            fee = fee.checked_add(allocation_automation_fee).unwrap();
+            acc.checked_add(allocation_automation_fee).unwrap()
         });
 
     assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
         to_address: config.fee_collector.to_string(),
-        amount: vec![Coin::new(fee.into(), vault.get_receive_denom())]
+        amount: vec![Coin::new(swap_fee.into(), vault.get_receive_denom())]
+    })));
+
+    assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
+        to_address: config.fee_collector.to_string(),
+        amount: vec![Coin::new(automation_fee.into(), vault.get_receive_denom())]
     })));
 }
 
@@ -438,7 +443,7 @@ fn with_custom_fee_for_base_denom_takes_custom_fee() {
     )
     .unwrap();
 
-    let receive_amount = vault.get_swap_amount().amount;
+    let received_amount = Uint128::new(2187312);
 
     LIMIT_ORDER_CACHE
         .save(
@@ -447,7 +452,7 @@ fn with_custom_fee_for_base_denom_takes_custom_fee() {
                 order_idx: Uint128::new(18),
                 offer_amount: Uint128::zero(),
                 original_offer_amount: vault.get_swap_amount().amount,
-                filled: receive_amount,
+                filled: received_amount,
             },
         )
         .unwrap();
@@ -466,23 +471,29 @@ fn with_custom_fee_for_base_denom_takes_custom_fee() {
     .unwrap();
 
     let config = get_config(&deps.storage).unwrap();
-    let mut fee = custom_fee_percent * vault.get_swap_amount().amount;
+    let swap_fee = custom_fee_percent * received_amount;
+    let total_after_swap_fee = received_amount - swap_fee;
 
-    vault
+    let automation_fee = vault
         .destinations
         .iter()
         .filter(|d| d.action == PostExecutionAction::ZDelegate)
-        .for_each(|destination| {
+        .fold(Uint128::zero(), |acc, destination| {
             let allocation_amount =
-                checked_mul(receive_amount - fee, destination.allocation).unwrap();
+                checked_mul(total_after_swap_fee, destination.allocation).unwrap();
             let allocation_automation_fee =
                 checked_mul(allocation_amount, config.delegation_fee_percent).unwrap();
-            fee = fee.checked_add(allocation_automation_fee).unwrap();
+            acc.checked_add(allocation_automation_fee).unwrap()
         });
 
     assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
         to_address: config.fee_collector.to_string(),
-        amount: vec![Coin::new(fee.into(), vault.get_receive_denom())]
+        amount: vec![Coin::new(swap_fee.into(), vault.get_receive_denom())]
+    })));
+
+    assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
+        to_address: config.fee_collector.to_string(),
+        amount: vec![Coin::new(automation_fee.into(), vault.get_receive_denom())]
     })));
 }
 
@@ -503,7 +514,7 @@ fn with_custom_fee_for_quote_denom_takes_custom_fee() {
     )
     .unwrap();
 
-    let receive_amount = vault.get_swap_amount().amount;
+    let received_amount = Uint128::new(1298321);
 
     LIMIT_ORDER_CACHE
         .save(
@@ -512,7 +523,7 @@ fn with_custom_fee_for_quote_denom_takes_custom_fee() {
                 order_idx: Uint128::new(18),
                 offer_amount: Uint128::zero(),
                 original_offer_amount: vault.get_swap_amount().amount,
-                filled: receive_amount,
+                filled: received_amount,
             },
         )
         .unwrap();
@@ -531,23 +542,29 @@ fn with_custom_fee_for_quote_denom_takes_custom_fee() {
     .unwrap();
 
     let config = get_config(&deps.storage).unwrap();
-    let mut fee = custom_fee_percent * vault.get_swap_amount().amount;
+    let swap_fee = custom_fee_percent * received_amount;
+    let total_after_swap_fee = received_amount - swap_fee;
 
-    vault
+    let automation_fee = vault
         .destinations
         .iter()
         .filter(|d| d.action == PostExecutionAction::ZDelegate)
-        .for_each(|destination| {
+        .fold(Uint128::zero(), |acc, destination| {
             let allocation_amount =
-                checked_mul(receive_amount - fee, destination.allocation).unwrap();
+                checked_mul(total_after_swap_fee, destination.allocation).unwrap();
             let allocation_automation_fee =
                 checked_mul(allocation_amount, config.delegation_fee_percent).unwrap();
-            fee = fee.checked_add(allocation_automation_fee).unwrap();
+            acc.checked_add(allocation_automation_fee).unwrap()
         });
 
     assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
         to_address: config.fee_collector.to_string(),
-        amount: vec![Coin::new(fee.into(), vault.get_receive_denom())]
+        amount: vec![Coin::new(swap_fee.into(), vault.get_receive_denom())]
+    })));
+
+    assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
+        to_address: config.fee_collector.to_string(),
+        amount: vec![Coin::new(automation_fee.into(), vault.get_receive_denom())]
     })));
 }
 
@@ -576,7 +593,7 @@ fn with_custom_fee_for_both_denoms_takes_lower_fee() {
     )
     .unwrap();
 
-    let receive_amount = vault.get_swap_amount().amount;
+    let received_amount = Uint128::new(8798372);
 
     LIMIT_ORDER_CACHE
         .save(
@@ -585,7 +602,7 @@ fn with_custom_fee_for_both_denoms_takes_lower_fee() {
                 order_idx: Uint128::new(18),
                 offer_amount: Uint128::zero(),
                 original_offer_amount: vault.get_swap_amount().amount,
-                filled: receive_amount,
+                filled: received_amount,
             },
         )
         .unwrap();
@@ -604,23 +621,28 @@ fn with_custom_fee_for_both_denoms_takes_lower_fee() {
     .unwrap();
 
     let config = get_config(&deps.storage).unwrap();
-    let mut fee =
-        min(swap_denom_fee_percent, receive_denom_fee_percent) * vault.get_swap_amount().amount;
+    let swap_fee = min(swap_denom_fee_percent, receive_denom_fee_percent) * received_amount;
+    let total_after_swap_fee = received_amount - swap_fee;
 
-    vault
+    let automation_fee = vault
         .destinations
         .iter()
         .filter(|d| d.action == PostExecutionAction::ZDelegate)
-        .for_each(|destination| {
+        .fold(Uint128::zero(), |acc, destination| {
             let allocation_amount =
-                checked_mul(receive_amount - fee, destination.allocation).unwrap();
+                checked_mul(total_after_swap_fee, destination.allocation).unwrap();
             let allocation_automation_fee =
                 checked_mul(allocation_amount, config.delegation_fee_percent).unwrap();
-            fee = fee.checked_add(allocation_automation_fee).unwrap();
+            acc.checked_add(allocation_automation_fee).unwrap()
         });
 
     assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
         to_address: config.fee_collector.to_string(),
-        amount: vec![Coin::new(fee.into(), vault.get_receive_denom())]
+        amount: vec![Coin::new(swap_fee.into(), vault.get_receive_denom())]
+    })));
+
+    assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
+        to_address: config.fee_collector.to_string(),
+        amount: vec![Coin::new(automation_fee.into(), vault.get_receive_denom())]
     })));
 }
