@@ -1,4 +1,4 @@
-use base::ibc::msg::TestResponse;
+use base::ibc::msg::{KCalc};
 use cosmwasm_std::{DepsMut, IbcReceiveResponse, StdResult};
 
 use crate::{
@@ -19,7 +19,7 @@ pub fn receive_test(
     STATE.save(deps.storage, &state)?;
 
     // send response message
-    let res = TestResponse {
+    let res = KCalc::TestResponse {
         value: format!("host chain receieved: {} from {} yolo", value, caller),
     };
 

@@ -36,3 +36,5 @@ once a contract is instantiated it will be assigned a port
     - create keys on kujir and output to json
     - use output json in hermes keys add command to add the key to the chain
     - same for juno
+4. hermes clients, connections and channels
+    - https://hermes.informal.systems/tutorials/local-chains/add-a-new-relay-path.html

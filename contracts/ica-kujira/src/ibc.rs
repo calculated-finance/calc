@@ -1,11 +1,11 @@
-use base::ibc::msg::CalcIBC;
+use base::ibc::msg::{CalcIBC, KCalc};
 use cosmwasm_std::{
     entry_point, from_binary, DepsMut, Env, Ibc3ChannelOpenResponse, IbcBasicResponse,
     IbcChannelCloseMsg, IbcChannelConnectMsg, IbcChannelOpenMsg, IbcPacketAckMsg,
-    IbcPacketReceiveMsg, IbcReceiveResponse, StdResult, IbcPacketTimeoutMsg, IbcMsg, IbcTimeout,
+    IbcPacketReceiveMsg, IbcReceiveResponse, StdResult, IbcPacketTimeoutMsg,
 };
 
-use crate::{handlers::receive_test::receive_test, ContractError};
+use crate::ContractError;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 /// enforces ordering and versioing constraints
@@ -27,8 +27,7 @@ pub fn ibc_channel_connect(
 ) -> StdResult<IbcBasicResponse> {
     // let channel = msg.channel();
     // let channel_id = &channel.endpoint.channel_id;
-    Ok(IbcBasicResponse::new()
-    .add_attribute("method", "ibc_channel_connect"))
+    Ok(IbcBasicResponse::new().add_attribute("method", "ibc_channel_connect"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -45,37 +44,36 @@ pub fn ibc_channel_close(
 #[cfg_attr(not(feature = "library"), entry_point)]
 /// never should be called as the other side never sends packets
 pub fn ibc_packet_receive(
-    deps: DepsMut,
+    _deps: DepsMut,
     _env: Env,
     msg: IbcPacketReceiveMsg,
 ) -> StdResult<IbcReceiveResponse> {
-    let packet = msg.packet;
-    let caller = packet.dest.channel_id;
-    let packet: CalcIBC = from_binary(&packet.data)?;
-
+    let packet: KCalc = from_binary(&msg.packet.data)?;
     match packet {
-        CalcIBC::Test { value } => receive_test(deps, caller, value),
+        KCalc::TestResponse { value } => handle_kcalc(value)
     }
+}
+
+pub fn handle_kcalc(value: String) -> StdResult<IbcReceiveResponse> {
+    Ok(
+        IbcReceiveResponse::new()
+        .add_attribute("method", "handle_kcalc")
+        .add_attribute("value", value.to_string())
+    )
 }
 
 // this wont be called because we wont send any packets from the juno side for poc
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn ibc_packet_ack(
     _deps: DepsMut,
-    env: Env,
-    msg: IbcPacketAckMsg,
+    _env: Env,
+    _msg: IbcPacketAckMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
     // which local channel was this packet send from
     //let caller = msg.original_packet.src.channel_id.clone();
     // we need to parse the ack based on our request
 
-    let ibc_packet = IbcMsg::SendPacket { channel_id: msg.original_packet.src.channel_id, data: msg.acknowledgement.data, timeout: IbcTimeout::with_timestamp(env.block.time.plus_seconds(300)) };
-
-    Ok(
-        IbcBasicResponse::new()
-        .add_attribute("message", "ack from kujira ibc")
-        .add_message(ibc_packet)
-    )
+    Ok(IbcBasicResponse::new())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

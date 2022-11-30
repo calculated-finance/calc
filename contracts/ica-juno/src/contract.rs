@@ -13,6 +13,11 @@ const CONTRACT_NAME: &str = "crates.io:ica-juno";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 */
 
+#[entry_point]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: InstantiateMsg) -> Result<Response, ContractError> {
+    Ok(Response::default())
+}
+
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     _deps: DepsMut,
