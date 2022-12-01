@@ -1,3 +1,4 @@
+use crate::state::Config;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Uint128};
 
@@ -15,6 +16,12 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
+    IbcDelegate {
+        channel_id: String,
+        staking_contract_address: String,
+        delegator_address: Addr,
+        validator_address: Addr,
+    },
     ZDelegate {
         delegator_address: Addr,
         validator_address: Addr,
@@ -34,4 +41,6 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(Vec<Addr>)]
     GetAllowedZCallers {},
+    #[returns(Config)]
+    GetConfig {},
 }
