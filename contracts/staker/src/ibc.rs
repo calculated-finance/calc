@@ -5,8 +5,8 @@ use cosmwasm_std::{
 };
 
 use crate::{
-    error::ContractError,
     state::{Config, CONFIG},
+    ContractError,
 };
 
 #[entry_point]
@@ -38,24 +38,26 @@ pub fn ibc_channel_close(
 
 #[entry_point]
 pub fn ibc_packet_receive(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
     _msg: IbcPacketReceiveMsg,
 ) -> Result<IbcReceiveResponse, ContractError> {
-    Ok(IbcReceiveResponse::new().add_attribute("method", "ibc_packet_receive"))
-}
-
-#[entry_point]
-pub fn ibc_packet_ack(
-    deps: DepsMut,
-    _env: Env,
-    _msg: IbcPacketAckMsg,
-) -> StdResult<IbcBasicResponse> {
     CONFIG.update(deps.storage, |mut existing_config| -> StdResult<Config> {
         existing_config.counter = existing_config.counter + 1;
         Ok(existing_config)
     })?;
 
+    Ok(IbcReceiveResponse::new()
+        .set_ack(b"{}")
+        .add_attribute("method", "ibc_packet_receive"))
+}
+
+#[entry_point]
+pub fn ibc_packet_ack(
+    _deps: DepsMut,
+    _env: Env,
+    _msg: IbcPacketAckMsg,
+) -> StdResult<IbcBasicResponse> {
     Ok(IbcBasicResponse::new().add_attribute("method", "ibc_packet_ack"))
 }
 

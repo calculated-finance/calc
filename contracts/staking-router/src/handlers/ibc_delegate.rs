@@ -1,8 +1,6 @@
 use cosmwasm_std::{Addr, DepsMut, Env, IbcMsg, MessageInfo, Response};
 
-use crate::ContractError;
-
-// use crate::{validation_helpers::assert_exactly_one_asset, ContractError};
+use crate::{validation_helpers::assert_exactly_one_asset, ContractError};
 
 pub fn ibc_delegate(
     _deps: DepsMut,
@@ -13,7 +11,7 @@ pub fn ibc_delegate(
     _delegator_address: Addr,
     _validator_address: Addr,
 ) -> Result<Response, ContractError> {
-    // assert_exactly_one_asset(info.funds.clone())?;
+    assert_exactly_one_asset(info.funds.clone())?;
 
     let ibc_transfer_msg = IbcMsg::Transfer {
         channel_id,
