@@ -928,6 +928,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "staker"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-multi-test",
+ "cw-storage-plus",
+ "cw2",
+ "schemars",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "staking-router"
 version = "1.0.0"
 dependencies = [

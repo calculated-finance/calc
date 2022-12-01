@@ -8,6 +8,8 @@ use crate::handlers::add_allowed_z_caller::add_allowed_z_caller;
 use crate::handlers::get_allowed_z_callers::get_allowed_z_callers;
 use crate::handlers::remove_allowed_z_caller::remove_allowed_z_caller;
 use crate::handlers::zdelegate::zdelegate;
+use crate::handlers::get_config::get_config;
+use crate::handlers::ibc_delegate::ibc_delegate;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::{Config, CONFIG};
 
@@ -39,6 +41,7 @@ pub fn instantiate(
                 )
             })
             .collect(),
+        counter: 0
     };
 
     CONFIG.save(deps.storage, &config)?;
@@ -54,6 +57,20 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::IbcDelegate {
+            channel_id,
+            staking_contract_address,
+            delegator_address,
+            validator_address,
+        } => ibc_delegate(
+            deps,
+            env,
+            info,
+            channel_id,
+            staking_contract_address,
+            delegator_address,
+            validator_address,
+        ),
         ExecuteMsg::ZDelegate {
             delegator_address,
             validator_address,
@@ -81,5 +98,6 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
     match _msg {
         QueryMsg::GetAllowedZCallers {} => to_binary(&get_allowed_z_callers(deps)?),
+        QueryMsg::GetConfig {} => to_binary(&get_config(deps)?),
     }
 }
