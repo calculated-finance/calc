@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Storage, Coin};
+use cosmwasm_std::{Addr, Coin, Storage};
 
 use crate::{state::CONFIG, ContractError};
 
