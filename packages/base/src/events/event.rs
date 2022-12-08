@@ -40,6 +40,10 @@ pub enum EventData {
         delegation: Coin,
     },
     DcaVaultDelegationFailed {},
+    DcaSourceConnected {
+        address: String,
+        amount: Coin,
+    },
 }
 
 #[cw_serde]

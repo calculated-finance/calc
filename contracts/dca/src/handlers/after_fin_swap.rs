@@ -218,7 +218,7 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                 deps.storage,
                 EventBuilder::new(
                     vault.id,
-                    env.block,
+                    env.block.to_owned(),
                     EventData::DcaVaultExecutionCompleted {
                         sent: coin_sent.clone(),
                         received: coin_received.clone(),
@@ -284,7 +284,7 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                                 vault_id: vault.id,
                                 configuration: TriggerConfiguration::Time {
                                     target_time: get_next_target_time(
-                                        env.block.time,
+                                        env.block.clone().time,
                                         target_time,
                                         vault.time_interval,
                                     ),
@@ -299,6 +299,18 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
             attributes.push(Attribute::new("status", "skipped"));
         }
     }
+
+    create_event(
+        deps.storage,
+        EventBuilder::new(
+            vault.id,
+            env.block.to_owned(),
+            EventData::DcaSourceConnected {
+                address: vault.owner.clone().to_string(),
+                amount: vault.balance.clone(),
+            },
+        ),
+    )?;
 
     Ok(Response::new()
         .add_attribute("method", "fin_swap_completed")
