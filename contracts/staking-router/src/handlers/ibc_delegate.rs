@@ -1,4 +1,4 @@
-use cosmos_sdk_proto::{ibc::applications::transfer::v2::FungibleTokenPacketData, traits::Message};
+use cosmos_sdk_proto::{ibc::applications::{transfer::v2::FungibleTokenPacketData, interchain_accounts::v1::RegisteredInterchainAccount}, traits::Message};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
     to_binary, Addr, Binary, DepsMut, Env, IbcMsg, IbcTimeout, MessageInfo, Response, Uint128, IbcQuery,

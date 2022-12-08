@@ -15,6 +15,12 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
+    RegisterIca {
+        owner: String,
+        connection_id: String,
+        version: String,
+        type_url: String
+    },
     IbcTransfer {
         channel_id: String,
         port_id: String,

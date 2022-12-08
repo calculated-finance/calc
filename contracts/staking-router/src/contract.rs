@@ -9,6 +9,7 @@ use crate::handlers::get_allowed_z_callers::get_allowed_z_callers;
 use crate::handlers::get_config::get_config;
 use crate::handlers::ibc_delegate::{ibc_send_packet, ibc_send_tokens, ibc_send_fungible};
 use crate::handlers::ibc_message::ibc_transfer;
+use crate::handlers::ica::register_ica;
 use crate::handlers::remove_allowed_z_caller::remove_allowed_z_caller;
 use crate::handlers::zdelegate::zdelegate;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
@@ -58,6 +59,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::RegisterIca { owner, connection_id, version, type_url } => register_ica(owner, connection_id, version, type_url),
         ExecuteMsg::IbcTransfer { channel_id, port_id, to_address, timeout } => ibc_transfer(deps, env, info, channel_id, port_id, to_address, timeout),
         ExecuteMsg::IbcSendTokens {
             channel_id,

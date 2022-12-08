@@ -31,6 +31,9 @@ schemars = "0.8.10"
 serde = { version = "1.0.145", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.31" }
 cosmos-sdk-proto = { version = "0.14.0", default-features = false }
+prost = "0.11"
+prost-types = "0.11"
+tendermint-proto = "0.27"
 
 [dev-dependencies]
 cw-multi-test = "0.15.1"
