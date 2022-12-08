@@ -1,8 +1,7 @@
 use super::state_helpers::fetch_and_increment_counter;
 use crate::error::ContractError;
 use base::events::event::{Event, EventBuilder};
-use bincode::{deserialize_from, serialize};
-use cosmwasm_std::{Response, StdResult, Storage};
+use cosmwasm_std::{from_binary, to_binary, Binary, Response, StdResult, Storage};
 use cw_storage_plus::{Index, IndexList, IndexedMap, Item, UniqueIndex};
 
 const EVENT_COUNTER: Item<u64> = Item::new("event_counter_v20");
@@ -12,7 +11,7 @@ pub struct EventIndexes<'a> {
 }
 
 pub struct SerialisedEventIndexes<'a> {
-    pub resource_id: UniqueIndex<'a, (u128, u64), Vec<u8>, u64>,
+    pub resource_id: UniqueIndex<'a, (u128, u64), Binary, u64>,
 }
 
 impl<'a> IndexList<Event> for EventIndexes<'a> {
@@ -22,9 +21,9 @@ impl<'a> IndexList<Event> for EventIndexes<'a> {
     }
 }
 
-impl<'a> IndexList<Vec<u8>> for SerialisedEventIndexes<'a> {
-    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Vec<u8>>> + '_> {
-        let v: Vec<&dyn Index<Vec<u8>>> = vec![&self.resource_id];
+impl<'a> IndexList<Binary> for SerialisedEventIndexes<'a> {
+    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Binary>> + '_> {
+        let v: Vec<&dyn Index<Binary>> = vec![&self.resource_id];
         Box::new(v.into_iter())
     }
 }
@@ -36,11 +35,11 @@ pub fn event_store<'a>() -> IndexedMap<'a, u64, Event, EventIndexes<'a>> {
     IndexedMap::new("events_v20", indexes)
 }
 
-pub fn serialised_event_store<'a>() -> IndexedMap<'a, u64, Vec<u8>, SerialisedEventIndexes<'a>> {
+pub fn serialised_event_store<'a>() -> IndexedMap<'a, u64, Binary, SerialisedEventIndexes<'a>> {
     let indexes = SerialisedEventIndexes {
         resource_id: UniqueIndex::new(
-            |e| {
-                deserialize_from(&e[..])
+            |event| {
+                from_binary(&event)
                     .map(|event: Event| (event.resource_id.into(), event.id))
                     .expect("deserialised event")
             },
@@ -56,7 +55,7 @@ pub fn create_event(store: &mut dyn Storage, event_builder: EventBuilder) -> Std
     serialised_event_store().save(
         store,
         event.id,
-        &serialize(&event).expect("serialised event"),
+        &to_binary(&event).expect("serialised event"),
     )?;
     Ok(event.id)
 }
@@ -80,7 +79,7 @@ pub fn migrate_previous_events(
     let mut event_to_migrate_id = serialised_event_store()
         .range(store, None, None, cosmwasm_std::Order::Ascending)
         .take(1 as usize)
-        .map(|result| deserialize_from(&*result.unwrap().1).unwrap())
+        .map(|result| from_binary(&result.unwrap().1).unwrap())
         .collect::<Vec<Event>>()
         .first()
         .expect("earliest migrated event id")
@@ -93,7 +92,7 @@ pub fn migrate_previous_events(
         serialised_event_store().save(
             store,
             event_to_migrate.id,
-            &serialize(&event_to_migrate).expect("serialised event"),
+            &to_binary(&event_to_migrate).expect("serialised event"),
         )?;
 
         event_to_migrate_id -= 1;
@@ -135,8 +134,8 @@ mod event_migration_tests {
         create_event(deps.as_mut().storage, event_builder).unwrap();
 
         let old_event = event_store().load(deps.as_ref().storage, 1).unwrap();
-        let new_event: Event = deserialize_from(
-            &*serialised_event_store()
+        let new_event: Event = from_binary(
+            &serialised_event_store()
                 .load(deps.as_ref().storage, 1)
                 .unwrap(),
         )
@@ -173,7 +172,7 @@ mod event_migration_tests {
             .save(
                 deps.as_mut().storage,
                 event_count,
-                &serialize(
+                &to_binary(
                     &EventBuilder::new(
                         Uint128::new(1),
                         env.block.clone(),
@@ -221,7 +220,7 @@ mod event_migration_tests {
             .save(
                 deps.as_mut().storage,
                 event_count,
-                &serialize(
+                &to_binary(
                     &EventBuilder::new(
                         Uint128::new(1),
                         env.block.clone(),
@@ -269,7 +268,7 @@ mod event_migration_tests {
             .save(
                 deps.as_mut().storage,
                 event_count,
-                &serialize(
+                &to_binary(
                     &EventBuilder::new(
                         Uint128::new(1),
                         env.block.clone(),
@@ -329,7 +328,7 @@ mod event_migration_tests {
             .save(
                 deps.as_mut().storage,
                 2,
-                &serialize(
+                &to_binary(
                     &EventBuilder::new(
                         Uint128::new(1),
                         env.block.clone(),
@@ -343,8 +342,8 @@ mod event_migration_tests {
 
         migrate_previous_events(deps.as_mut().storage, &mut 50).unwrap_err();
 
-        let migrated_event: Event = deserialize_from(
-            &*serialised_event_store()
+        let migrated_event: Event = from_binary(
+            &serialised_event_store()
                 .load(deps.as_mut().storage, 1)
                 .unwrap(),
         )
