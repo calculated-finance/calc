@@ -15,6 +15,10 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
+    IbcDelegate {
+        delegator_address: String,
+        validator_address: String
+    },
     ZDelegate {
         delegator_address: Addr,
         validator_address: Addr,

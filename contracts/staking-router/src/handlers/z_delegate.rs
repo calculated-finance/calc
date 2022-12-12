@@ -9,7 +9,7 @@ use cosmwasm_std::{Addr, Binary, CosmosMsg, DepsMut, Env, MessageInfo, Response,
 use crate::validation_helpers::assert_sender_is_allowed_z_caller;
 use crate::ContractError;
 
-pub fn zdelegate(
+pub fn z_delegate(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,

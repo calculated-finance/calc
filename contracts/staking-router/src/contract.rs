@@ -6,8 +6,9 @@ use cw2::set_contract_version;
 use crate::error::ContractError;
 use crate::handlers::add_allowed_z_caller::add_allowed_z_caller;
 use crate::handlers::get_allowed_z_callers::get_allowed_z_callers;
+use crate::handlers::ibc_delegate::ibc_delegate;
 use crate::handlers::remove_allowed_z_caller::remove_allowed_z_caller;
-use crate::handlers::zdelegate::zdelegate;
+use crate::handlers::z_delegate::z_delegate;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::{Config, CONFIG};
 
@@ -54,12 +55,13 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::IbcDelegate { delegator_address, validator_address } => ibc_delegate(delegator_address, validator_address),
         ExecuteMsg::ZDelegate {
             delegator_address,
             validator_address,
             denom,
             amount,
-        } => zdelegate(
+        } => z_delegate(
             deps,
             env,
             info,
