@@ -931,6 +931,7 @@ dependencies = [
 name = "staking-router"
 version = "1.0.0"
 dependencies = [
+ "base",
  "cosmos-sdk-proto",
  "cosmwasm-schema",
  "cosmwasm-std",

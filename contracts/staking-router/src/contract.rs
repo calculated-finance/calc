@@ -55,7 +55,11 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::IbcDelegate { delegator_address, validator_address } => ibc_delegate(delegator_address, validator_address),
+        ExecuteMsg::IbcDelegate {
+            channel_id,
+            delegator_address,
+            validator_address,
+        } => ibc_delegate(env, info, channel_id, delegator_address, validator_address),
         ExecuteMsg::ZDelegate {
             delegator_address,
             validator_address,
