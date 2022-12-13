@@ -4,7 +4,7 @@ use base::events::event::{Event, EventBuilder};
 use cosmwasm_std::{from_binary, to_binary, Binary, Response, StdResult, Storage};
 use cw_storage_plus::{Index, IndexList, IndexedMap, Item, UniqueIndex};
 
-const EVENT_COUNTER: Item<u64> = Item::new("event_counter_v20");
+const EVENT_COUNTER: Item<u64> = Item::new("event_counter_v23");
 
 pub struct EventIndexes<'a> {
     pub resource_id: UniqueIndex<'a, (u128, u64), Event, u64>,
@@ -30,9 +30,9 @@ impl<'a> IndexList<Binary> for SerialisedEventIndexes<'a> {
 
 pub fn event_store<'a>() -> IndexedMap<'a, u64, Event, EventIndexes<'a>> {
     let indexes = EventIndexes {
-        resource_id: UniqueIndex::new(|e| (e.resource_id.into(), e.id), "events_v20__resource_id"),
+        resource_id: UniqueIndex::new(|e| (e.resource_id.into(), e.id), "events_v23__resource_id"),
     };
-    IndexedMap::new("events_v20", indexes)
+    IndexedMap::new("events_v23", indexes)
 }
 
 pub fn serialised_event_store<'a>() -> IndexedMap<'a, u64, Binary, SerialisedEventIndexes<'a>> {
