@@ -1,10 +1,11 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Reply};
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::handlers::add_allowed_z_caller::add_allowed_z_caller;
+use crate::handlers::after_ibc_transfer::after_ibc_transfer;
 use crate::handlers::get_allowed_z_callers::get_allowed_z_callers;
 use crate::handlers::ibc_delegate::ibc_delegate;
 use crate::handlers::remove_allowed_z_caller::remove_allowed_z_caller;
@@ -14,6 +15,8 @@ use crate::state::{Config, CONFIG};
 
 const CONTRACT_NAME: &str = "crates.io:staking-router";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+pub const AFTER_IBC_TRANSFER_REPLY_ID: u64 = 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(_: DepsMut, _: Env, _: MigrateMsg) -> Result<Response, ContractError> {
@@ -80,6 +83,18 @@ pub fn execute(
         ExecuteMsg::RemoveAllowedZCaller { allowed_z_caller } => {
             remove_allowed_z_caller(deps, info, allowed_z_caller)
         }
+    }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, ContractError> {
+    match reply.id {
+        AFTER_IBC_TRANSFER_REPLY_ID => {
+            after_ibc_transfer(deps, env, reply)
+        }
+        id => Err(ContractError::CustomError {
+            val: format!("unknown reply id: {}", id),
+        }),
     }
 }
 
