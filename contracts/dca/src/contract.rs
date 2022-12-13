@@ -24,10 +24,9 @@ use crate::handlers::get_vaults_by_address::get_vaults_by_address;
 use crate::handlers::remove_custom_swap_fee::remove_custom_swap_fee;
 use crate::handlers::update_config::update_config_handler;
 use crate::handlers::update_vault_label::update_vault_label;
-use crate::msg::{DestinationsResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::config::{update_config, Config};
 use crate::state::events::migrate_previous_events;
-use crate::state::vaults::{get_new_destinations, get_old_destinations};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
@@ -223,9 +222,5 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&get_events(deps, start_after, limit)?)
         }
         QueryMsg::GetCustomSwapFees {} => to_binary(&get_custom_swap_fees(deps)?),
-        QueryMsg::GetDestinations { vault_id } => to_binary(&DestinationsResponse {
-            new: get_new_destinations(deps.storage, vault_id)?,
-            old: get_old_destinations(deps.storage, vault_id)?,
-        }),
     }
 }

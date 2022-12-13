@@ -3,10 +3,7 @@ use crate::types::{price_delta_limit::PriceDeltaLimit, vault::Vault, vault_build
 use base::{
     pair::Pair,
     triggers::trigger::{TimeInterval, TriggerConfiguration},
-    vaults::vault::{
-        Destination, DestinationDeprecated, PostExecutionAction, PostExecutionActionDeprecated,
-        VaultStatus,
-    },
+    vaults::vault::{Destination, DestinationDeprecated, VaultStatus},
 };
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{
@@ -70,14 +67,7 @@ fn vault_from(
             .destinations
             .clone()
             .into_iter()
-            .map(|destination| Destination {
-                address: destination.address,
-                allocation: destination.allocation,
-                action: match destination.action {
-                    PostExecutionActionDeprecated::Send => PostExecutionAction::Send,
-                    PostExecutionActionDeprecated::ZDelegate => PostExecutionAction::ZDelegate,
-                },
-            })
+            .map(|destination| destination.into())
             .collect(),
     );
     Vault {
@@ -108,18 +98,6 @@ fn get_destinations(store: &dyn Storage, vault_id: Uint128) -> StdResult<Vec<Des
         Some(destinations) => Ok(from_binary(&destinations)?),
         None => Ok(vec![]),
     }
-}
-
-pub fn get_new_destinations(store: &dyn Storage, vault_id: Uint128) -> StdResult<Vec<Destination>> {
-    Ok(get_destinations(store, vault_id)?)
-}
-
-pub fn get_old_destinations(
-    store: &dyn Storage,
-    vault_id: Uint128,
-) -> StdResult<Vec<DestinationDeprecated>> {
-    let vault = vault_store().load(store, vault_id.into())?;
-    Ok(vault.destinations)
 }
 
 struct VaultIndexes<'a> {
