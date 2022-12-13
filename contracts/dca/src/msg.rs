@@ -1,7 +1,7 @@
 use base::events::event::Event;
 use base::pair::Pair;
 use base::triggers::trigger::TimeInterval;
-use base::vaults::vault::{Destination, PositionType, VaultStatus};
+use base::vaults::vault::{Destination, DestinationDeprecated, PositionType, VaultStatus};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Decimal, Decimal256, Uint128, Uint64};
 
@@ -115,6 +115,8 @@ pub enum QueryMsg {
     },
     #[returns(CustomFeesResponse)]
     GetCustomSwapFees {},
+    #[returns(DestinationsResponse)]
+    GetDestinations { vault_id: Uint128 },
 }
 
 #[cw_serde]
@@ -150,4 +152,10 @@ pub struct EventsResponse {
 #[cw_serde]
 pub struct CustomFeesResponse {
     pub custom_fees: Vec<(String, Decimal)>,
+}
+
+#[cw_serde]
+pub struct DestinationsResponse {
+    pub new: Vec<Destination>,
+    pub old: Vec<DestinationDeprecated>,
 }
