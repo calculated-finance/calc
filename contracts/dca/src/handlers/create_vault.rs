@@ -222,8 +222,7 @@ fn create_fin_limit_order_trigger(
     let fin_limit_order_change_timestamp =
         FIN_LIMIT_ORDER_CHANGE_TIMESTAMP.may_load(deps.storage)?;
 
-    let is_new_fin_limit_order = fin_limit_order_change_timestamp.is_some()
-        && vault.created_at > fin_limit_order_change_timestamp.unwrap();
+    let is_new_fin_limit_order = fin_limit_order_change_timestamp.is_some();
 
     if is_new_fin_limit_order {
         update_vault(deps.storage, vault.id, |stored_vault| match stored_vault {
