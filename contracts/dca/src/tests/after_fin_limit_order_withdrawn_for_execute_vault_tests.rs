@@ -28,8 +28,8 @@ use base::{
 };
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    to_binary, BankMsg, Coin, CosmosMsg, Decimal, Reply, SubMsg, SubMsgResponse, SubMsgResult,
-    Timestamp, Uint128,
+    to_binary, BankMsg, Coin, CosmosMsg, Decimal, Decimal256, Reply, SubMsg, SubMsgResponse,
+    SubMsgResult, Timestamp, Uint128,
 };
 use staking_router::msg::ExecuteMsg;
 use std::cmp::min;
@@ -41,7 +41,6 @@ fn after_succcesful_withdrawal_returns_funds_to_destination() {
     instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
 
     let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
-
     let received_amount = vault.get_swap_amount().amount;
 
     LIMIT_ORDER_CACHE
@@ -52,6 +51,7 @@ fn after_succcesful_withdrawal_returns_funds_to_destination() {
                 offer_amount: Uint128::zero(),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: received_amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -114,6 +114,7 @@ fn after_succcesful_withdrawal_returns_fee_to_fee_collector() {
                 offer_amount: Uint128::zero(),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: received_amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -175,6 +176,7 @@ fn after_succesful_withdrawal_adjusts_vault_balance() {
                 offer_amount: Uint128::zero(),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: vault.get_swap_amount().amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -217,6 +219,7 @@ fn after_successful_withdrawal_creates_a_new_time_trigger() {
                 offer_amount: Uint128::zero(),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: vault.get_swap_amount().amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -266,6 +269,7 @@ fn after_successful_withdrawal_resulting_in_low_funds_does_not_create_a_new_time
                 offer_amount: Uint128::zero(),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: vault.get_swap_amount().amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -305,6 +309,7 @@ fn after_successful_withdrawal_creates_delegation_messages() {
                 offer_amount: Uint128::zero(),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: vault.get_swap_amount().amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -384,6 +389,7 @@ fn after_successful_withdrawal_creates_execution_completed_event() {
                 offer_amount: Uint128::zero(),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: receive_amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -455,6 +461,7 @@ fn with_empty_resulting_vault_sets_vault_to_inactive() {
                 offer_amount: Uint128::zero(),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: vault.get_swap_amount().amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -505,6 +512,7 @@ fn with_custom_fee_for_base_denom_takes_custom_fee() {
                 offer_amount: Uint128::zero(),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: received_amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -577,6 +585,7 @@ fn with_custom_fee_for_quote_denom_takes_custom_fee() {
                 offer_amount: Uint128::zero(),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: received_amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -657,6 +666,7 @@ fn with_custom_fee_for_both_denoms_takes_lower_fee() {
                 offer_amount: Uint128::zero(),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: received_amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )

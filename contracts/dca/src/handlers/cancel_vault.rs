@@ -96,6 +96,7 @@ fn cancel_fin_limit_order_trigger(
         offer_amount: limit_order_details.offer_amount,
         original_offer_amount: limit_order_details.original_offer_amount,
         filled: limit_order_details.filled_amount,
+        quote_price: limit_order_details.quote_price,
         created_at: limit_order_details.created_at,
     };
 

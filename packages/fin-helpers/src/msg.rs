@@ -20,6 +20,7 @@ pub struct FINOrderResponseWithoutDenom {
     pub offer_amount: Uint128,
     pub filled_amount: Uint128,
     pub original_offer_amount: Uint128,
+    pub quote_price: Decimal256,
     pub created_at: Timestamp,
 }
 

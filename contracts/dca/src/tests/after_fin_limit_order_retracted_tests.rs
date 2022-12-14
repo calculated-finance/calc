@@ -20,8 +20,8 @@ use crate::{
 use base::vaults::vault::VaultStatus;
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    to_binary, BankMsg, Coin, CosmosMsg, Event, Reply, SubMsg, SubMsgResponse, SubMsgResult,
-    Uint128, WasmMsg,
+    to_binary, BankMsg, Coin, CosmosMsg, Decimal256, Event, Reply, SubMsg, SubMsgResponse,
+    SubMsgResult, Uint128, WasmMsg,
 };
 use kujira::fin::ExecuteMsg as FINExecuteMsg;
 
@@ -41,6 +41,7 @@ fn with_unfilled_limit_order_should_return_vault_balance() {
                 offer_amount: vault.get_swap_amount().amount,
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: Uint128::zero(),
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -83,6 +84,7 @@ fn with_unfilled_limit_order_and_low_funds_should_return_vault_balance() {
                 offer_amount: vault.get_swap_amount().amount,
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: Uint128::zero(),
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -128,6 +130,7 @@ fn with_unfilled_limit_order_and_low_funds_should_set_vault_balance_to_zero() {
                 offer_amount: vault.get_swap_amount().amount,
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: Uint128::zero(),
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -169,6 +172,7 @@ fn with_unfilled_limit_order_and_low_funds_should_set_vault_status_to_cancelled(
                 offer_amount: vault.get_swap_amount().amount,
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: Uint128::zero(),
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -210,6 +214,7 @@ fn with_unfilled_limit_order_and_low_funds_should_delete_trigger() {
                 offer_amount: vault.get_swap_amount().amount,
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: Uint128::zero(),
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -251,6 +256,7 @@ fn with_partially_filled_limit_order_should_return_vault_balance_minus_filled_am
                 offer_amount: vault.get_swap_amount().amount / Uint128::new(2),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: vault.get_swap_amount().amount / Uint128::new(2),
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -296,6 +302,7 @@ fn with_partially_filled_limit_order_should_return_withdraw_remainder() {
                 offer_amount: vault.get_swap_amount().amount / Uint128::new(2),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: vault.get_swap_amount().amount / Uint128::new(2),
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -345,6 +352,7 @@ fn with_partially_filled_limit_order_and_low_funds_should_return_vault_balance_m
                 offer_amount: vault.get_swap_amount().amount / Uint128::new(2),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: vault.get_swap_amount().amount / Uint128::new(2),
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -390,6 +398,7 @@ fn with_partially_filled_limit_order_and_low_funds_should_withdraw_remainder() {
                 offer_amount: vault.get_swap_amount().amount / Uint128::new(2),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: vault.get_swap_amount().amount / Uint128::new(2),
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -438,6 +447,7 @@ fn with_filled_limit_order_should_return_vault_balance_minus_swap_amount() {
                 offer_amount: Uint128::zero(),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: vault.get_swap_amount().amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -483,6 +493,7 @@ fn with_filled_limit_order_should_withdraw_remainder() {
                 offer_amount: Uint128::zero(),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: vault.get_swap_amount().amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -531,6 +542,7 @@ fn with_filled_limit_order_and_low_funds_should_return_no_funds() {
                 offer_amount: Uint128::zero(),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: vault.get_swap_amount().amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -574,6 +586,7 @@ fn with_filled_limit_order_and_low_funds_should_withdraw_remainder() {
                 offer_amount: Uint128::zero(),
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: vault.get_swap_amount().amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )

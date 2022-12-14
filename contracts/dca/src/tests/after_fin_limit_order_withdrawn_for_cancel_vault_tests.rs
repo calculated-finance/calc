@@ -1,7 +1,7 @@
 use base::vaults::vault::VaultStatus;
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    BankMsg, Coin, Reply, SubMsg, SubMsgResponse, SubMsgResult, Uint128,
+    BankMsg, Coin, Decimal256, Reply, SubMsg, SubMsgResponse, SubMsgResult, Uint128,
 };
 
 use crate::{
@@ -37,6 +37,7 @@ fn with_partially_filled_limit_order_should_return_funds_to_owner() {
                 offer_amount: vault.get_swap_amount().amount,
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: filled_amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -78,6 +79,7 @@ fn with_partially_filled_limit_order_should_set_vault_balance_to_zero() {
                 offer_amount: vault.get_swap_amount().amount,
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: filled_amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -118,6 +120,7 @@ fn with_partially_filled_limit_order_should_set_vault_status_to_cancelled() {
                 offer_amount: vault.get_swap_amount().amount,
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: filled_amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
@@ -158,6 +161,7 @@ fn with_partially_filled_limit_order_should_delete_trigger() {
                 offer_amount: vault.get_swap_amount().amount,
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: filled_amount,
+                quote_price: Decimal256::one(),
                 created_at: env.block.time,
             },
         )
