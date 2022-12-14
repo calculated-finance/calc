@@ -1,6 +1,6 @@
 use base::vaults::vault::VaultStatus;
 use cosmwasm_std::{
-    testing::{mock_dependencies, mock_env},
+    testing::{mock_dependencies, mock_env, mock_info},
     BankMsg, Coin, Reply, SubMsg, SubMsgResponse, SubMsgResult, Uint128,
 };
 
@@ -14,13 +14,17 @@ use crate::{
         cache::{LimitOrderCache, LIMIT_ORDER_CACHE},
         triggers::get_trigger,
     },
-    tests::helpers::setup_active_vault_with_low_funds,
+    tests::{
+        helpers::{instantiate_contract, setup_active_vault_with_low_funds},
+        mocks::ADMIN,
+    },
 };
 
 #[test]
 fn with_partially_filled_limit_order_should_return_funds_to_owner() {
     let mut deps = mock_dependencies();
     let env = mock_env();
+    instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
 
     let vault = setup_active_vault_with_low_funds(deps.as_mut(), env.clone());
     let filled_amount = Uint128::new(100);
@@ -33,6 +37,7 @@ fn with_partially_filled_limit_order_should_return_funds_to_owner() {
                 offer_amount: vault.get_swap_amount().amount,
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: filled_amount,
+                created_at: env.block.time,
             },
         )
         .unwrap();
@@ -60,6 +65,7 @@ fn with_partially_filled_limit_order_should_return_funds_to_owner() {
 fn with_partially_filled_limit_order_should_set_vault_balance_to_zero() {
     let mut deps = mock_dependencies();
     let env = mock_env();
+    instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
 
     let vault = setup_active_vault_with_low_funds(deps.as_mut(), env.clone());
     let filled_amount = Uint128::new(100);
@@ -72,6 +78,7 @@ fn with_partially_filled_limit_order_should_set_vault_balance_to_zero() {
                 offer_amount: vault.get_swap_amount().amount,
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: filled_amount,
+                created_at: env.block.time,
             },
         )
         .unwrap();
@@ -98,6 +105,7 @@ fn with_partially_filled_limit_order_should_set_vault_balance_to_zero() {
 fn with_partially_filled_limit_order_should_set_vault_status_to_cancelled() {
     let mut deps = mock_dependencies();
     let env = mock_env();
+    instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
 
     let vault = setup_active_vault_with_low_funds(deps.as_mut(), env.clone());
     let filled_amount = Uint128::new(100);
@@ -110,6 +118,7 @@ fn with_partially_filled_limit_order_should_set_vault_status_to_cancelled() {
                 offer_amount: vault.get_swap_amount().amount,
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: filled_amount,
+                created_at: env.block.time,
             },
         )
         .unwrap();
@@ -136,6 +145,7 @@ fn with_partially_filled_limit_order_should_set_vault_status_to_cancelled() {
 fn with_partially_filled_limit_order_should_delete_trigger() {
     let mut deps = mock_dependencies();
     let env = mock_env();
+    instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
 
     let vault = setup_active_vault_with_low_funds(deps.as_mut(), env.clone());
     let filled_amount = Uint128::new(100);
@@ -148,6 +158,7 @@ fn with_partially_filled_limit_order_should_delete_trigger() {
                 offer_amount: vault.get_swap_amount().amount,
                 original_offer_amount: vault.get_swap_amount().amount,
                 filled: filled_amount,
+                created_at: env.block.time,
             },
         )
         .unwrap();

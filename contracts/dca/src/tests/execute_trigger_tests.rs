@@ -1,7 +1,10 @@
 use std::str::FromStr;
 
-use super::mocks::{fin_contract_fail_slippage_tolerance, fin_contract_high_swap_price};
-use crate::constants::{ONE, ONE_HUNDRED, ONE_THOUSAND, TEN};
+use super::mocks::{
+    fin_contract_fail_slippage_tolerance, fin_contract_high_swap_price,
+    new_fin_contract_filled_limit_order, new_fin_contract_partially_filled_order,
+};
+use crate::constants::{ONE, ONE_HUNDRED, ONE_THOUSAND, TEN, TWO_MICRONS};
 use crate::msg::{ExecuteMsg, QueryMsg, TriggerIdsResponse, VaultResponse};
 use crate::tests::helpers::{
     assert_address_balances, assert_events_published, assert_vault_balance,
@@ -91,6 +94,98 @@ fn for_filled_fin_limit_order_trigger_should_update_address_balances() {
             (&mock.dca_contract_address, DENOM_UTEST, ONE_THOUSAND),
             (&mock.fin_contract_address, DENOM_UKUJI, ONE_THOUSAND),
             (&mock.fin_contract_address, DENOM_UTEST, ONE_THOUSAND),
+        ],
+    );
+}
+
+#[test]
+fn for_new_filled_fin_limit_order_trigger_should_update_address_balances() {
+    let user_address = Addr::unchecked(USER);
+    let user_balance = TEN;
+    let vault_deposit = TEN;
+    let swap_amount = ONE;
+    let mut mock = MockApp::new(new_fin_contract_filled_limit_order()).with_funds_for(
+        &user_address,
+        user_balance,
+        DENOM_UKUJI,
+    );
+
+    mock.app
+        .execute_contract(
+            Addr::unchecked(ADMIN),
+            mock.dca_contract_address.clone(),
+            &ExecuteMsg::SetFinLimitOrderTimestamp {},
+            &[],
+        )
+        .unwrap();
+
+    mock.elapse_time(10);
+
+    mock = mock.with_vault_with_new_filled_fin_limit_price_trigger(
+        &user_address,
+        None,
+        Coin::new(vault_deposit.into(), DENOM_UKUJI),
+        swap_amount,
+        "fin",
+    );
+
+    let swap_amount_after_fee =
+        swap_amount - checked_mul(swap_amount, mock.fee_percent).ok().unwrap();
+
+    assert_address_balances(
+        &mock,
+        &[
+            (&user_address, DENOM_UKUJI, user_balance - vault_deposit),
+            (&user_address, DENOM_UTEST, Uint128::new(0)),
+            (
+                &mock.dca_contract_address,
+                DENOM_UKUJI,
+                ONE_THOUSAND + vault_deposit - TWO_MICRONS,
+            ),
+            (&mock.dca_contract_address, DENOM_UTEST, ONE_THOUSAND),
+            (&mock.fin_contract_address, DENOM_UKUJI, ONE_THOUSAND),
+            (
+                &mock.fin_contract_address,
+                DENOM_UTEST,
+                ONE_THOUSAND + TWO_MICRONS,
+            ),
+        ],
+    );
+
+    let vault_id = mock.vault_ids.get("fin").unwrap().to_owned();
+
+    mock.app
+        .execute_contract(
+            Addr::unchecked(ADMIN),
+            mock.dca_contract_address.clone(),
+            &ExecuteMsg::ExecuteTrigger {
+                trigger_id: vault_id,
+            },
+            &[],
+        )
+        .unwrap();
+
+    assert_address_balances(
+        &mock,
+        &[
+            (&user_address, DENOM_UKUJI, Uint128::new(0)),
+            (&user_address, DENOM_UTEST, swap_amount_after_fee),
+            (
+                &mock.dca_contract_address,
+                DENOM_UKUJI,
+                ONE_THOUSAND + vault_deposit - swap_amount - TWO_MICRONS,
+            ),
+            (&mock.dca_contract_address, DENOM_UTEST, ONE_THOUSAND),
+            (
+                &mock.fin_contract_address,
+                DENOM_UKUJI,
+                ONE_THOUSAND + swap_amount,
+            ),
+            (
+                &mock.fin_contract_address,
+                DENOM_UTEST,
+                ONE_THOUSAND - swap_amount,
+            ),
         ],
     );
 }
@@ -539,6 +634,107 @@ fn for_partially_filled_limit_order_should_not_change_address_balances() {
                 &mock.fin_contract_address,
                 DENOM_UTEST,
                 ONE_THOUSAND + swap_amount / Uint128::new(2),
+            ),
+        ],
+    );
+}
+
+#[test]
+fn for_new_partially_filled_limit_order_should_not_change_address_balances() {
+    let user_address = Addr::unchecked(USER);
+    let user_balance = TEN;
+    let vault_deposit = TEN;
+    let swap_amount = ONE;
+    let mut mock = MockApp::new(new_fin_contract_partially_filled_order()).with_funds_for(
+        &user_address,
+        user_balance,
+        DENOM_UKUJI,
+    );
+
+    mock.app
+        .execute_contract(
+            Addr::unchecked(ADMIN),
+            mock.dca_contract_address.clone(),
+            &ExecuteMsg::SetFinLimitOrderTimestamp {},
+            &[],
+        )
+        .unwrap();
+
+    mock.elapse_time(10);
+
+    mock = mock.with_vault_with_new_partially_filled_fin_limit_price_trigger(
+        &user_address,
+        Coin::new(vault_deposit.into(), DENOM_UKUJI.to_string()),
+        swap_amount,
+        "fin",
+    );
+
+    assert_address_balances(
+        &mock,
+        &[
+            (&user_address, DENOM_UKUJI, Uint128::new(0)),
+            (&user_address, DENOM_UTEST, Uint128::new(0)),
+            (
+                &mock.dca_contract_address,
+                DENOM_UKUJI,
+                ONE_THOUSAND + vault_deposit - TWO_MICRONS,
+            ),
+            (&mock.dca_contract_address, DENOM_UTEST, ONE_THOUSAND),
+            (
+                &mock.fin_contract_address,
+                DENOM_UKUJI,
+                ONE_THOUSAND + TWO_MICRONS / Uint128::new(2),
+            ),
+            (
+                &mock.fin_contract_address,
+                DENOM_UTEST,
+                ONE_THOUSAND + TWO_MICRONS / Uint128::new(2),
+            ),
+        ],
+    );
+
+    let vault_response: VaultResponse = mock
+        .app
+        .wrap()
+        .query_wasm_smart(
+            &mock.dca_contract_address,
+            &&QueryMsg::GetVault {
+                vault_id: mock.vault_ids.get("fin").unwrap().to_owned(),
+            },
+        )
+        .unwrap();
+
+    mock.app
+        .execute_contract(
+            Addr::unchecked(ADMIN),
+            mock.dca_contract_address.clone(),
+            &ExecuteMsg::ExecuteTrigger {
+                trigger_id: vault_response.vault.id,
+            },
+            &[],
+        )
+        .unwrap_err();
+
+    assert_address_balances(
+        &mock,
+        &[
+            (&user_address, DENOM_UKUJI, Uint128::new(0)),
+            (&user_address, DENOM_UTEST, Uint128::new(0)),
+            (
+                &mock.dca_contract_address,
+                DENOM_UKUJI,
+                ONE_THOUSAND + vault_deposit - TWO_MICRONS,
+            ),
+            (&mock.dca_contract_address, DENOM_UTEST, ONE_THOUSAND),
+            (
+                &mock.fin_contract_address,
+                DENOM_UKUJI,
+                ONE_THOUSAND + TWO_MICRONS / Uint128::new(2),
+            ),
+            (
+                &mock.fin_contract_address,
+                DENOM_UTEST,
+                ONE_THOUSAND + TWO_MICRONS / Uint128::new(2),
             ),
         ],
     );

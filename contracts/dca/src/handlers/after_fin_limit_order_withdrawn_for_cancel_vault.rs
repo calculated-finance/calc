@@ -23,7 +23,6 @@ pub fn after_fin_limit_order_withdrawn_for_cancel_vault(
         SubMsgResult::Ok(_) => {
             let limit_order_cache = LIMIT_ORDER_CACHE.load(deps.storage)?;
 
-            // send assets from partially filled order to owner
             let filled_amount = Coin {
                 denom: vault.get_receive_denom().clone(),
                 amount: limit_order_cache.filled,
@@ -32,12 +31,11 @@ pub fn after_fin_limit_order_withdrawn_for_cancel_vault(
             let mut response = Response::new()
                 .add_attribute("method", "fin_limit_order_withdrawn_for_cancel_vault");
 
-            // i dont think its possible for this to be zero
             if filled_amount.amount.gt(&Uint128::zero()) {
                 response = response.add_message(CosmosMsg::Bank(BankMsg::Send {
                     to_address: vault.owner.to_string(),
-                    amount: vec![filled_amount.clone()],
-                }))
+                    amount: vec![filled_amount],
+                }));
             }
 
             update_vault(

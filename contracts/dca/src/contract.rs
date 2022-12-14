@@ -27,6 +27,8 @@ use crate::handlers::update_vault_label::update_vault_label;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::config::{update_config, Config};
 use crate::state::events::migrate_previous_events;
+use crate::state::fin_limit_order_change_timestamp::FIN_LIMIT_ORDER_CHANGE_TIMESTAMP;
+use crate::validation_helpers::assert_sender_is_admin;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
@@ -45,8 +47,9 @@ pub const AFTER_Z_DELEGATION_REPLY_ID: u64 = 6;
 pub const AFTER_BANK_SWAP_REPLY_ID: u64 = 7;
 
 #[entry_point]
-pub fn migrate(deps: DepsMut, _: Env, _: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, env: Env, _: MigrateMsg) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    FIN_LIMIT_ORDER_CHANGE_TIMESTAMP.save(deps.storage, &env.block.time)?;
     Ok(Response::new())
 }
 
@@ -154,8 +157,14 @@ pub fn execute(
             swap_fee_percent,
         } => create_custom_swap_fee(deps, info, denom, swap_fee_percent),
         ExecuteMsg::RemoveCustomSwapFee { denom } => remove_custom_swap_fee(deps, info, denom),
-        ExecuteMsg::MigrateEvent { limit } => {
+        ExecuteMsg::MigrateEvents { limit } => {
             migrate_previous_events(deps.storage, &mut limit.clone())
+        }
+        ExecuteMsg::SetFinLimitOrderTimestamp {} => {
+            assert_sender_is_admin(deps.storage, info.sender)?;
+            FIN_LIMIT_ORDER_CHANGE_TIMESTAMP.save(deps.storage, &env.block.time)?;
+            Ok(Response::new()
+                .add_attribute("fin_limit_order_timestamp", &env.block.time.to_string()))
         }
     }
 }
