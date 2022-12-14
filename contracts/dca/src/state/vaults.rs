@@ -14,7 +14,7 @@ use cosmwasm_std::{
 };
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, Item, Map, UniqueIndex};
 
-const VAULT_COUNTER: Item<u64> = Item::new("vault_counter_v20");
+const VAULT_COUNTER: Item<u64> = Item::new("vault_counter_v23");
 
 #[cw_serde]
 struct VaultDTO {
@@ -100,7 +100,7 @@ fn vault_from(
     }
 }
 
-const DESTINATIONS: Map<u128, Binary> = Map::new("destinations_v20");
+const DESTINATIONS: Map<u128, Binary> = Map::new("destinations_v23");
 
 fn get_destinations(store: &dyn Storage, vault_id: Uint128) -> StdResult<Vec<Destination>> {
     let destinations = DESTINATIONS.may_load(store, vault_id.into())?;
@@ -124,13 +124,13 @@ impl<'a> IndexList<VaultDTO> for VaultIndexes<'a> {
 
 fn vault_store<'a>() -> IndexedMap<'a, u128, VaultDTO, VaultIndexes<'a>> {
     let indexes = VaultIndexes {
-        owner: UniqueIndex::new(|v| (v.owner.clone(), v.id.into()), "vaults_v20__owner"),
+        owner: UniqueIndex::new(|v| (v.owner.clone(), v.id.into()), "vaults_v23__owner"),
         owner_status: UniqueIndex::new(
             |v| (v.owner.clone(), v.status.clone() as u8, v.id.into()),
-            "vaults_v20__owner_status",
+            "vaults_v23__owner_status",
         ),
     };
-    IndexedMap::new("vaults_v20", indexes)
+    IndexedMap::new("vaults_v23", indexes)
 }
 
 pub fn save_vault(store: &mut dyn Storage, vault_builder: VaultBuilder) -> StdResult<Vault> {
