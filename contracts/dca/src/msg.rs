@@ -115,6 +115,11 @@ pub enum QueryMsg {
     },
     #[returns(CustomFeesResponse)]
     GetCustomSwapFees {},
+    #[returns(Decimal256)]
+    GetPrice {
+        swap_amount: Uint128,
+        target_receive_amount: Uint128,
+    },
 }
 
 #[cw_serde]

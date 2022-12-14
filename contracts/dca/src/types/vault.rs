@@ -56,10 +56,10 @@ impl Vault {
         }
     }
 
-    pub fn get_target_price(&self, minimum_receive_amount: Uint128) -> Decimal256 {
+    pub fn get_target_price(&self, target_receive_amount: Uint128) -> Decimal256 {
         let exact_target_price = match self.get_position_type() {
-            PositionType::Enter => Decimal256::from_ratio(self.swap_amount, minimum_receive_amount),
-            PositionType::Exit => Decimal256::from_ratio(minimum_receive_amount, self.swap_amount),
+            PositionType::Enter => Decimal256::from_ratio(self.swap_amount, target_receive_amount),
+            PositionType::Exit => Decimal256::from_ratio(target_receive_amount, self.swap_amount),
         };
 
         exact_target_price.round(&Precision::DecimalPlaces(3))

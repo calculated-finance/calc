@@ -27,6 +27,7 @@ use crate::handlers::update_vault_label::update_vault_label;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::config::{update_config, Config};
 use crate::state::events::migrate_previous_events;
+use cosmwasm_std::Decimal256;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
@@ -222,5 +223,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&get_events(deps, start_after, limit)?)
         }
         QueryMsg::GetCustomSwapFees {} => to_binary(&get_custom_swap_fees(deps)?),
+        QueryMsg::GetPrice {
+            swap_amount,
+            target_receive_amount,
+        } => to_binary(&Decimal256::from_ratio(swap_amount, target_receive_amount)),
     }
 }
