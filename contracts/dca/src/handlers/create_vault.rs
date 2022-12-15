@@ -23,7 +23,7 @@ use base::vaults::vault::{Destination, PostExecutionAction, VaultStatus};
 use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, StdError};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Timestamp, Uint128, Uint64};
-use fin_helpers::limit_orders::create_limit_order_sub_msg;
+use fin_helpers::limit_orders::create_submit_order_sub_msg;
 use fin_helpers::position_type::PositionType;
 use fin_helpers::queries::query_pair_config;
 
@@ -236,7 +236,7 @@ fn create_fin_limit_order_trigger(
         })?;
     }
 
-    let fin_limit_order_sub_msg = create_limit_order_sub_msg(
+    let fin_limit_order_sub_msg = create_submit_order_sub_msg(
         vault.pair.address.clone(),
         target_price,
         if is_new_fin_limit_order {

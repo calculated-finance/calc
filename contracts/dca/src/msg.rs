@@ -79,6 +79,9 @@ pub enum ExecuteMsg {
         limit: u64,
     },
     SetFinLimitOrderTimestamp {},
+    MigratePriceTrigger {
+        vault_id: Uint128,
+    },
 }
 
 #[cw_serde]

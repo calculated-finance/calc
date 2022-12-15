@@ -931,6 +931,13 @@ pub fn new_fin_contract_unfilled_limit_order() -> Box<dyn Contract<Empty>> {
             match msg {
                 FINQueryMsg::Book { .. } => default_book_response_handler(),
                 FINQueryMsg::Order { .. } => unfilled_order_response(env),
+                FINQueryMsg::Config { .. } => to_binary(&ConfigResponse {
+                    owner: Addr::unchecked(ADMIN),
+                    denoms: [Denom::from(DENOM_UKUJI), Denom::from(DENOM_UTEST)],
+                    price_precision: Precision::DecimalPlaces(3),
+                    decimal_delta: 0,
+                    is_bootstrapping: false,
+                }),
                 _ => default_query_response(),
             }
         },
@@ -988,6 +995,13 @@ pub fn new_fin_contract_partially_filled_order() -> Box<dyn Contract<Empty>> {
             match msg {
                 FINQueryMsg::Book { .. } => default_book_response_handler(),
                 FINQueryMsg::Order { .. } => new_partially_filled_order_response(env),
+                FINQueryMsg::Config { .. } => to_binary(&ConfigResponse {
+                    owner: Addr::unchecked(ADMIN),
+                    denoms: [Denom::from(DENOM_UKUJI), Denom::from(DENOM_UTEST)],
+                    price_precision: Precision::DecimalPlaces(3),
+                    decimal_delta: 0,
+                    is_bootstrapping: false,
+                }),
                 _ => default_query_response(),
             }
         },
@@ -1045,6 +1059,13 @@ pub fn new_fin_contract_filled_limit_order() -> Box<dyn Contract<Empty>> {
             match msg {
                 FINQueryMsg::Book { .. } => default_book_response_handler(),
                 FINQueryMsg::Order { .. } => new_filled_order_response(env),
+                FINQueryMsg::Config { .. } => to_binary(&ConfigResponse {
+                    owner: Addr::unchecked(ADMIN),
+                    denoms: [Denom::from(DENOM_UKUJI), Denom::from(DENOM_UTEST)],
+                    price_precision: Precision::DecimalPlaces(3),
+                    decimal_delta: 0,
+                    is_bootstrapping: false,
+                }),
                 _ => default_query_response(),
             }
         },

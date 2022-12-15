@@ -698,7 +698,7 @@ fn for_new_partially_filled_limit_order_should_not_change_address_balances() {
         .wrap()
         .query_wasm_smart(
             &mock.dca_contract_address,
-            &&QueryMsg::GetVault {
+            &QueryMsg::GetVault {
                 vault_id: mock.vault_ids.get("fin").unwrap().to_owned(),
             },
         )
