@@ -8,7 +8,10 @@ pub fn after_ibc_transfer(
     _reply: Reply,
 ) -> Result<Response, ContractError> {
     match _reply.result {
-        SubMsgResult::Ok(_) => Ok(Response::new()),
+        SubMsgResult::Ok(_) => Ok(
+            Response::new()
+                .add_attribute("method", "after_ibc_transfer")
+        ),
         SubMsgResult::Err(e) => Err(ContractError::CustomError {
             val: format!("failed to submit ibc transfer: {}", e),
         }),

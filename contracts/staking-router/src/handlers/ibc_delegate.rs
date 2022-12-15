@@ -1,4 +1,4 @@
-use crate::ContractError;
+use crate::{ContractError, contract::AFTER_IBC_TRANSFER_REPLY_ID};
 use base::ibc::delegation::DelegationPacket;
 use cosmwasm_std::{to_binary, Coin, CosmosMsg, Env, IbcTimeout, MessageInfo, Response, SubMsg};
 
@@ -35,7 +35,7 @@ fn create_transfer_msg(env: Env, channel_id: String, to_address: String, amount:
             amount: amount.clone(),
             timeout: IbcTimeout::with_timestamp(env.block.time.plus_seconds(300)),
         }),
-        1,
+        AFTER_IBC_TRANSFER_REPLY_ID,
     )
 }
 
