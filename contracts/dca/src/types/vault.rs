@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use base::{
     pair::Pair,
     triggers::trigger::{TimeInterval, TriggerConfiguration},
@@ -56,15 +58,6 @@ impl Vault {
         }
     }
 
-    pub fn get_target_price(&self, minimum_receive_amount: Uint128) -> Decimal256 {
-        let exact_target_price = match self.get_position_type() {
-            PositionType::Enter => Decimal256::from_ratio(self.swap_amount, minimum_receive_amount),
-            PositionType::Exit => Decimal256::from_ratio(minimum_receive_amount, self.swap_amount),
-        };
-
-        exact_target_price.round(&Precision::DecimalPlaces(3))
-    }
-
     pub fn price_threshold_exceeded(&self, price: Decimal256) -> bool {
         if let Some(minimum_receive_amount) = self.minimum_receive_amount {
             let target_swap_amount_as_decimal =
@@ -106,6 +99,38 @@ impl Vault {
 
     pub fn is_inactive(&self) -> bool {
         self.status == VaultStatus::Inactive
+    }
+
+    pub fn get_target_price(
+        &self,
+        target_receive_amount: Uint128,
+        decimal_delta: i8,
+        precision: Precision,
+    ) -> Decimal256 {
+        let exact_target_price = match self.get_position_type() {
+            PositionType::Enter => Decimal256::from_ratio(self.swap_amount, target_receive_amount),
+            PositionType::Exit => Decimal256::from_ratio(target_receive_amount, self.swap_amount),
+        };
+
+        if decimal_delta == 0 {
+            return exact_target_price.round(&precision);
+        }
+
+        let adjustment =
+            Decimal256::from_str(&10u128.pow(decimal_delta.abs() as u32).to_string()).unwrap();
+
+        let rounded_price = if decimal_delta > 0 {
+            exact_target_price.checked_mul(adjustment).unwrap()
+        } else {
+            exact_target_price.checked_div(adjustment).unwrap()
+        }
+        .round(&precision);
+
+        if decimal_delta > 0 {
+            rounded_price.checked_div(adjustment).unwrap()
+        } else {
+            rounded_price.checked_mul(adjustment).unwrap()
+        }
     }
 }
 
@@ -286,23 +311,115 @@ mod get_target_price_tests {
     #[test]
     fn should_be_correct_when_buying_on_fin() {
         let vault = vault_with(Uint128::new(100), PositionType::Enter);
-        assert_eq!(vault.get_target_price(Uint128::new(20)).to_string(), "5");
+        assert_eq!(
+            vault
+                .get_target_price(Uint128::new(20), 0, Precision::DecimalPlaces(3))
+                .to_string(),
+            "5"
+        );
     }
 
     #[test]
     fn should_be_correct_when_selling_on_fin() {
         let vault = vault_with(Uint128::new(100), PositionType::Exit);
-        assert_eq!(vault.get_target_price(Uint128::new(20)).to_string(), "0.2");
+        assert_eq!(
+            vault
+                .get_target_price(Uint128::new(20), 0, Precision::DecimalPlaces(3))
+                .to_string(),
+            "0.2"
+        );
     }
 
     #[test]
     fn should_truncate_price_to_three_decimal_places() {
         let vault = vault_with(Uint128::new(30), PositionType::Exit);
         assert_eq!(
-            vault.get_target_price(Uint128::new(10)).to_string(),
+            vault
+                .get_target_price(Uint128::new(10), 0, Precision::DecimalPlaces(3))
+                .to_string(),
             "0.333"
         );
     }
+
+    #[test]
+    fn for_fin_buy_with_decimal_delta_should_truncate() {
+        let position_type = PositionType::Enter;
+        let swap_amount = Uint128::new(1000000);
+        let target_receive_amount = Uint128::new(747943156999999);
+        let decimal_delta = 12;
+        let precision = Precision::DecimalPlaces(2);
+        let vault = vault_with(swap_amount, position_type);
+        assert_eq!(
+            Decimal256::from_ratio(swap_amount, target_receive_amount).to_string(),
+            "0.000000001336999998"
+        );
+        assert_eq!(
+            vault
+                .get_target_price(target_receive_amount, decimal_delta, precision)
+                .to_string(),
+            "0.00000000133699"
+        );
+    }
+
+    #[test]
+    fn for_fin_sell_with_decimal_delta_should_truncate() {
+        let position_type = PositionType::Exit;
+        let swap_amount = Uint128::new(747943156999999);
+        let target_receive_amount = Uint128::new(1000000);
+        let decimal_delta = 12;
+        let precision = Precision::DecimalPlaces(2);
+        let vault = vault_with(swap_amount, position_type);
+        assert_eq!(
+            Decimal256::from_ratio(target_receive_amount, swap_amount).to_string(),
+            "0.000000001336999998"
+        );
+        assert_eq!(
+            vault
+                .get_target_price(target_receive_amount, decimal_delta, precision)
+                .to_string(),
+            "0.00000000133699"
+        );
+    }
+
+    // #[test]
+    // fn for_fin_buy_with_negative_decimal_delta_should_truncate() {
+    //     let position_type = PositionType::Enter;
+    //     let swap_amount = Uint128::new(1);
+    //     let target_receive_amount = Uint128::new(1000);
+    //     let decimal_delta = -6;
+    //     let precision = Precision::DecimalPlaces(2);
+    //     let vault = vault_with(swap_amount, position_type);
+    //     assert_eq!(
+    //         Decimal256::from_ratio(swap_amount, target_receive_amount).to_string(),
+    //         "0.001"
+    //     );
+    //     assert_eq!(
+    //         vault
+    //             .get_target_price(target_receive_amount, decimal_delta, precision)
+    //             .to_string(),
+    //         "0"
+    //     );
+    // }
+
+    // #[test]
+    // fn for_fin_sell_with_negative_decimal_delta_should_truncate() {
+    //     let position_type = PositionType::Exit;
+    //     let swap_amount = Uint128::new(1);
+    //     let target_receive_amount = Uint128::new(1000);
+    //     let decimal_delta = -6;
+    //     let precision = Precision::DecimalPlaces(2);
+    //     let vault = vault_with(swap_amount, position_type);
+    //     assert_eq!(
+    //         Decimal256::from_ratio(swap_amount, target_receive_amount).to_string(),
+    //         "0.001"
+    //     );
+    //     assert_eq!(
+    //         vault
+    //             .get_target_price(target_receive_amount, decimal_delta, precision)
+    //             .to_string(),
+    //         "0"
+    //     );
+    // }
 
     fn vault_with(swap_amount: Uint128, position_type: PositionType) -> Vault {
         Vault {

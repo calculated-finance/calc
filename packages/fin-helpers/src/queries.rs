@@ -1,5 +1,5 @@
 use cosmwasm_std::{Addr, Decimal256, QuerierWrapper, StdResult, Uint128};
-use kujira::fin::QueryMsg as FINQueryMsg;
+use kujira::fin::{ConfigResponse, QueryMsg as FINQueryMsg};
 
 use crate::msg::{FINBookResponse, FINOrderResponseWithoutDenom};
 
@@ -44,4 +44,13 @@ pub fn query_order_details(
         order_response.original_offer_amount,
         order_response.filled_amount,
     ))
+}
+
+pub fn query_pair_config(querier: QuerierWrapper, pair_address: Addr) -> StdResult<ConfigResponse> {
+    let fin_pair_config_query_msg = FINQueryMsg::Config {};
+
+    let pair_config_response: ConfigResponse =
+        querier.query_wasm_smart(pair_address, &fin_pair_config_query_msg)?;
+
+    Ok(pair_config_response)
 }
