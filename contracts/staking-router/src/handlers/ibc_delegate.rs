@@ -20,19 +20,14 @@ pub fn ibc_delegate(
         info.funds[0].clone(),
     );
     //let ibc_delegation_msg = create_delegation_msg(env, channel_id.clone(), validator_address);
-    Ok(Response::new()
-        .add_attribute("method", "ibc_delegate")
-        .add_submessage(ibc_transfer_msg)
-        //.add_message(ibc_delegation_msg)
+    Ok(
+        Response::new()
+            .add_attribute("method", "ibc_delegate")
+            .add_submessage(ibc_transfer_msg), //.add_message(ibc_delegation_msg)
     )
 }
 
-fn create_transfer_msg(
-    env: Env,
-    channel_id: String,
-    to_address: String,
-    amount: Coin,
-) -> SubMsg {
+fn create_transfer_msg(env: Env, channel_id: String, to_address: String, amount: Coin) -> SubMsg {
     SubMsg::reply_always(
         CosmosMsg::Ibc(cosmwasm_std::IbcMsg::Transfer {
             channel_id,
@@ -40,7 +35,7 @@ fn create_transfer_msg(
             amount: amount.clone(),
             timeout: IbcTimeout::with_timestamp(env.block.time.plus_seconds(300)),
         }),
-        1
+        1,
     )
 }
 
