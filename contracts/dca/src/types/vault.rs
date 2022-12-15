@@ -1,13 +1,12 @@
-use std::str::FromStr;
-
 use base::{
     pair::Pair,
     triggers::trigger::{TimeInterval, TriggerConfiguration},
     vaults::vault::{Destination, PositionType, VaultStatus},
 };
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Coin, Decimal256, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Coin, Decimal256, StdError, StdResult, Timestamp, Uint128};
 use kujira::precision::{Precise, Precision};
+use std::str::FromStr;
 
 #[cw_serde]
 pub struct Vault {
@@ -58,6 +57,38 @@ impl Vault {
         }
     }
 
+    pub fn get_target_price(
+        &self,
+        target_receive_amount: Uint128,
+        decimal_delta: i8,
+        precision: Precision,
+    ) -> StdResult<Decimal256> {
+        if decimal_delta < 0 {
+            return Err(StdError::GenericErr {
+                msg: "Negative decimal deltas are not supported".to_string(),
+            });
+        }
+
+        let exact_target_price = match self.get_position_type() {
+            PositionType::Enter => Decimal256::from_ratio(self.swap_amount, target_receive_amount),
+            PositionType::Exit => Decimal256::from_ratio(target_receive_amount, self.swap_amount),
+        };
+
+        if decimal_delta == 0 {
+            return Ok(exact_target_price.round(&precision));
+        }
+
+        let adjustment =
+            Decimal256::from_str(&10u128.pow(decimal_delta.abs() as u32).to_string()).unwrap();
+
+        let rounded_price = exact_target_price
+            .checked_mul(adjustment)
+            .unwrap()
+            .round(&precision);
+
+        Ok(rounded_price.checked_div(adjustment).unwrap())
+    }
+
     pub fn price_threshold_exceeded(&self, price: Decimal256) -> bool {
         if let Some(minimum_receive_amount) = self.minimum_receive_amount {
             let target_swap_amount_as_decimal =
@@ -99,38 +130,6 @@ impl Vault {
 
     pub fn is_inactive(&self) -> bool {
         self.status == VaultStatus::Inactive
-    }
-
-    pub fn get_target_price(
-        &self,
-        target_receive_amount: Uint128,
-        decimal_delta: i8,
-        precision: Precision,
-    ) -> Decimal256 {
-        let exact_target_price = match self.get_position_type() {
-            PositionType::Enter => Decimal256::from_ratio(self.swap_amount, target_receive_amount),
-            PositionType::Exit => Decimal256::from_ratio(target_receive_amount, self.swap_amount),
-        };
-
-        if decimal_delta == 0 {
-            return exact_target_price.round(&precision);
-        }
-
-        let adjustment =
-            Decimal256::from_str(&10u128.pow(decimal_delta.abs() as u32).to_string()).unwrap();
-
-        let rounded_price = if decimal_delta > 0 {
-            exact_target_price.checked_mul(adjustment).unwrap()
-        } else {
-            exact_target_price.checked_div(adjustment).unwrap()
-        }
-        .round(&precision);
-
-        if decimal_delta > 0 {
-            rounded_price.checked_div(adjustment).unwrap()
-        } else {
-            rounded_price.checked_mul(adjustment).unwrap()
-        }
     }
 }
 
@@ -314,6 +313,7 @@ mod get_target_price_tests {
         assert_eq!(
             vault
                 .get_target_price(Uint128::new(20), 0, Precision::DecimalPlaces(3))
+                .unwrap()
                 .to_string(),
             "5"
         );
@@ -325,6 +325,7 @@ mod get_target_price_tests {
         assert_eq!(
             vault
                 .get_target_price(Uint128::new(20), 0, Precision::DecimalPlaces(3))
+                .unwrap()
                 .to_string(),
             "0.2"
         );
@@ -336,6 +337,7 @@ mod get_target_price_tests {
         assert_eq!(
             vault
                 .get_target_price(Uint128::new(10), 0, Precision::DecimalPlaces(3))
+                .unwrap()
                 .to_string(),
             "0.333"
         );
@@ -356,6 +358,7 @@ mod get_target_price_tests {
         assert_eq!(
             vault
                 .get_target_price(target_receive_amount, decimal_delta, precision)
+                .unwrap()
                 .to_string(),
             "0.00000000133699"
         );
@@ -376,6 +379,7 @@ mod get_target_price_tests {
         assert_eq!(
             vault
                 .get_target_price(target_receive_amount, decimal_delta, precision)
+                .unwrap()
                 .to_string(),
             "0.00000000133699"
         );

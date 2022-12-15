@@ -203,7 +203,7 @@ fn create_fin_limit_order_trigger(
         target_receive_amount,
         pair_config.decimal_delta.unwrap_or(0),
         pair_config.price_precision,
-    );
+    )?;
 
     save_trigger(
         deps.storage,
