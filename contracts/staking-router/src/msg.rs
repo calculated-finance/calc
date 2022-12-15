@@ -16,7 +16,7 @@ pub struct InstantiateMsg {
 #[cw_serde]
 pub enum ExecuteMsg {
     IbcDelegate {
-        channel_id: String,
+        channel_id: String, // frontend should know about denom trace - but keep flexible for others to send in any channel id
         delegator_address: String,
         validator_address: String,
     },
