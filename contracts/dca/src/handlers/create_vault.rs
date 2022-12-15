@@ -201,7 +201,7 @@ fn create_fin_limit_order_trigger(
 
     let target_price = vault.get_target_price(
         target_receive_amount,
-        pair_config.decimal_delta,
+        pair_config.decimal_delta.unwrap_or(0),
         pair_config.price_precision,
     );
 

@@ -1,7 +1,7 @@
 use cosmwasm_std::{Addr, Decimal256, QuerierWrapper, StdResult, Uint128};
-use kujira::fin::{ConfigResponse, QueryMsg as FINQueryMsg};
+use kujira::fin::{QueryMsg as FINQueryMsg};
 
-use crate::msg::{FINBookResponse, FINOrderResponseWithoutDenom};
+use crate::msg::{FINBookResponse, FINOrderResponseWithoutDenom, FINConfigResponse};
 
 pub fn query_base_price(querier: QuerierWrapper, pair_address: Addr) -> Decimal256 {
     let book_query_msg = FINQueryMsg::Book {
@@ -46,10 +46,10 @@ pub fn query_order_details(
     ))
 }
 
-pub fn query_pair_config(querier: QuerierWrapper, pair_address: Addr) -> StdResult<ConfigResponse> {
+pub fn query_pair_config(querier: QuerierWrapper, pair_address: Addr) -> StdResult<FINConfigResponse> {
     let fin_pair_config_query_msg = FINQueryMsg::Config {};
 
-    let pair_config_response: ConfigResponse =
+    let pair_config_response: FINConfigResponse =
         querier.query_wasm_smart(pair_address, &fin_pair_config_query_msg)?;
 
     Ok(pair_config_response)
