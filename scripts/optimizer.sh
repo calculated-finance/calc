@@ -41,7 +41,6 @@ then
       LATEST_VERSION=${BASH_REMATCH[1]}
       LATEST_RC=${BASH_REMATCH[2]}
       LATEST_RC_PLUS_ONE=$(($LATEST_RC + 1))
-      echo "new rc $LATEST_RC_PLUS_ONE"
       TAG=$LATEST_VERSION-rc.$LATEST_RC_PLUS_ONE+$BUILD_HASH
       echo "latest version: $LATEST_VERSION"
       echo "latest rc: $LATEST_RC"
