@@ -1,6 +1,12 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 
 #[cw_serde]
+pub struct MigrateMsg {
+
+}
+
+
+#[cw_serde]
 pub struct InstantiateMsg {
     pub native_denom: String,
 }
