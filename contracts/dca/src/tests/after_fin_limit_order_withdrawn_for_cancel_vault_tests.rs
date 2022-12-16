@@ -1,7 +1,7 @@
 use base::vaults::vault::VaultStatus;
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    BankMsg, Coin, Decimal256, Reply, SubMsg, SubMsgResponse, SubMsgResult, Uint128,
+    BankMsg, Coin, Decimal256, Event, Reply, SubMsg, SubMsgResponse, SubMsgResult, Uint128,
 };
 
 use crate::{
@@ -27,7 +27,9 @@ fn with_partially_filled_limit_order_should_return_funds_to_owner() {
     instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
 
     let vault = setup_active_vault_with_low_funds(deps.as_mut(), env.clone());
-    let filled_amount = Uint128::new(100);
+
+    let filled_amount = Uint128::new(32472323);
+    let received_amount = filled_amount - filled_amount * Uint128::new(3) / Uint128::new(4000);
 
     LIMIT_ORDER_CACHE
         .save(
@@ -49,7 +51,10 @@ fn with_partially_filled_limit_order_should_return_funds_to_owner() {
         Reply {
             id: AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_CANCEL_VAULT_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![],
+                events: vec![Event::new("transfer").add_attribute(
+                    "amount",
+                    format!("{}{}", received_amount, vault.get_receive_denom()),
+                )],
                 data: None,
             }),
         },
@@ -58,7 +63,7 @@ fn with_partially_filled_limit_order_should_return_funds_to_owner() {
 
     assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
         to_address: vault.owner.to_string(),
-        amount: vec![Coin::new(filled_amount.into(), vault.get_receive_denom())]
+        amount: vec![Coin::new(received_amount.into(), vault.get_receive_denom())]
     })));
 }
 
@@ -69,7 +74,9 @@ fn with_partially_filled_limit_order_should_set_vault_balance_to_zero() {
     instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
 
     let vault = setup_active_vault_with_low_funds(deps.as_mut(), env.clone());
-    let filled_amount = Uint128::new(100);
+
+    let filled_amount = Uint128::new(32472323);
+    let received_amount = filled_amount - filled_amount * Uint128::new(3) / Uint128::new(4000);
 
     LIMIT_ORDER_CACHE
         .save(
@@ -91,7 +98,10 @@ fn with_partially_filled_limit_order_should_set_vault_balance_to_zero() {
         Reply {
             id: AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_CANCEL_VAULT_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![],
+                events: vec![Event::new("transfer").add_attribute(
+                    "amount",
+                    format!("{}{}", received_amount, vault.get_receive_denom()),
+                )],
                 data: None,
             }),
         },
@@ -110,7 +120,9 @@ fn with_partially_filled_limit_order_should_set_vault_status_to_cancelled() {
     instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
 
     let vault = setup_active_vault_with_low_funds(deps.as_mut(), env.clone());
-    let filled_amount = Uint128::new(100);
+
+    let filled_amount = Uint128::new(32472323);
+    let received_amount = filled_amount - filled_amount * Uint128::new(3) / Uint128::new(4000);
 
     LIMIT_ORDER_CACHE
         .save(
@@ -132,7 +144,10 @@ fn with_partially_filled_limit_order_should_set_vault_status_to_cancelled() {
         Reply {
             id: AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_CANCEL_VAULT_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![],
+                events: vec![Event::new("transfer").add_attribute(
+                    "amount",
+                    format!("{}{}", received_amount, vault.get_receive_denom()),
+                )],
                 data: None,
             }),
         },
@@ -151,7 +166,9 @@ fn with_partially_filled_limit_order_should_delete_trigger() {
     instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
 
     let vault = setup_active_vault_with_low_funds(deps.as_mut(), env.clone());
-    let filled_amount = Uint128::new(100);
+
+    let filled_amount = Uint128::new(32472323);
+    let received_amount = filled_amount - filled_amount * Uint128::new(3) / Uint128::new(4000);
 
     LIMIT_ORDER_CACHE
         .save(
@@ -173,7 +190,10 @@ fn with_partially_filled_limit_order_should_delete_trigger() {
         Reply {
             id: AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_CANCEL_VAULT_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![],
+                events: vec![Event::new("transfer").add_attribute(
+                    "amount",
+                    format!("{}{}", received_amount, vault.get_receive_denom()),
+                )],
                 data: None,
             }),
         },

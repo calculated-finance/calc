@@ -12,6 +12,7 @@ use crate::types::vault::Vault;
 use base::events::event::{EventBuilder, EventData};
 use base::helpers::coin_helpers::add_to_coin;
 use base::helpers::math_helpers::checked_mul;
+use base::helpers::message_helpers::get_attribute_in_event;
 use base::helpers::time_helpers::get_next_target_time;
 use base::triggers::trigger::{Trigger, TriggerConfiguration};
 use base::vaults::vault::{PostExecutionAction, VaultStatus};
@@ -32,15 +33,21 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
     let vault = get_vault(deps.storage, cache.vault_id.into())?;
 
     match reply.result {
-        // if created before the change, use existing impl
-        // else send returned denom to the fee collector
         cosmwasm_std::SubMsgResult::Ok(_) => {
             let mut messages: Vec<CosmosMsg> = Vec::new();
             let mut sub_msgs: Vec<SubMsg> = Vec::new();
 
+            let withdraw_order_response = reply.result.into_result().unwrap();
+
+            let received_amount =
+                get_attribute_in_event(&withdraw_order_response.events, "transfer", "amount")?
+                    .trim_end_matches(&vault.get_receive_denom().to_string())
+                    .parse::<Uint128>()
+                    .expect("limit order withdrawn amount");
+
             let coin_received = Coin {
                 denom: vault.get_receive_denom().clone(),
-                amount: limit_order_cache.filled,
+                amount: received_amount,
             };
 
             let config = get_config(deps.storage)?;
@@ -90,6 +97,8 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
                         .map(|destination| destination.allocation)
                         .sum(),
                 )?;
+
+                println!("fee percent: {}", fee_percent);
 
                 let swap_fee = checked_mul(coin_received.amount, fee_percent)?;
                 let total_after_swap_fee = coin_received.amount - swap_fee;

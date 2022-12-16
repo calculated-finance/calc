@@ -54,7 +54,14 @@ pub const AFTER_FIN_LIMIT_ORDER_SUBMITTED_FOR_MIGRATE_REPLY_ID: u64 = 9;
 #[entry_point]
 pub fn migrate(deps: DepsMut, env: Env, _: MigrateMsg) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    FIN_LIMIT_ORDER_CHANGE_TIMESTAMP.save(deps.storage, &env.block.time)?;
+
+    if FIN_LIMIT_ORDER_CHANGE_TIMESTAMP
+        .may_load(deps.storage)?
+        .is_none()
+    {
+        FIN_LIMIT_ORDER_CHANGE_TIMESTAMP.save(deps.storage, &env.block.time)?;
+    }
+
     Ok(Response::new())
 }
 
@@ -162,7 +169,7 @@ pub fn execute(
             swap_fee_percent,
         } => create_custom_swap_fee(deps, info, denom, swap_fee_percent),
         ExecuteMsg::RemoveCustomSwapFee { denom } => remove_custom_swap_fee(deps, info, denom),
-        ExecuteMsg::MigrateEvents { limit } => {
+        ExecuteMsg::MigrateEvent { limit } => {
             migrate_previous_events(deps.storage, &mut limit.clone())
         }
         ExecuteMsg::SetFinLimitOrderTimestamp {} => {
@@ -171,7 +178,10 @@ pub fn execute(
             Ok(Response::new()
                 .add_attribute("fin_limit_order_timestamp", &env.block.time.to_string()))
         }
-        ExecuteMsg::MigratePriceTrigger { vault_id } => migrate_price_trigger(deps, vault_id),
+        ExecuteMsg::MigratePriceTrigger { vault_id } => {
+            assert_sender_is_admin(deps.storage, info.sender)?;
+            migrate_price_trigger(deps, vault_id)
+        }
     }
 }
 

@@ -140,6 +140,37 @@ mod migrate_price_trigger_tests {
     use cw_multi_test::Executor;
 
     #[test]
+    fn fails_when_called_by_non_admin_address() {
+        let user_address = Addr::unchecked(USER);
+        let user_balance = TEN;
+        let vault_deposit = TEN;
+        let swap_amount = ONE;
+        let mut mock = MockApp::new(fin_contract_unfilled_limit_order())
+            .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
+            .with_vault_with_unfilled_fin_limit_price_trigger(
+                &user_address,
+                None,
+                Coin::new(vault_deposit.into(), DENOM_UKUJI),
+                swap_amount,
+                "fin",
+            );
+
+        let vault_id = mock.vault_ids.get("fin").unwrap().to_owned();
+
+        let err = mock
+            .app
+            .execute_contract(
+                Addr::unchecked("bad-actor"),
+                mock.dca_contract_address.clone(),
+                &ExecuteMsg::MigratePriceTrigger { vault_id },
+                &[],
+            )
+            .unwrap_err();
+
+        assert_eq!(err.root_cause().to_string(), "Unauthorized")
+    }
+
+    #[test]
     fn updates_the_account_balances() {
         let user_address = Addr::unchecked(USER);
         let user_balance = TEN;

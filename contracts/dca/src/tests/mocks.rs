@@ -72,7 +72,7 @@ impl MockApp {
             &InstantiateMsg {
                 admin: Addr::unchecked(ADMIN),
                 fee_collector: Addr::unchecked(FEE_COLLECTOR),
-                swap_fee_percent: Decimal::from_str("0.015").unwrap(),
+                swap_fee_percent: Decimal::from_str("0.0165").unwrap(),
                 delegation_fee_percent: Decimal::from_str("0.0075").unwrap(),
                 staking_router_address: Addr::unchecked("staking-router"),
                 page_limit: 1000,
@@ -148,7 +148,7 @@ impl MockApp {
             dca_contract_address,
             fin_contract_address,
             vault_ids: HashMap::new(),
-            fee_percent: Decimal::from_str("0.015").unwrap(),
+            fee_percent: Decimal::from_str("0.0165").unwrap(),
         }
     }
 
@@ -661,15 +661,23 @@ fn withdraw_filled_order_handler(
     order_ids: Option<Vec<Uint128>>,
 ) -> StdResult<Response> {
     let mut response = Response::new();
+    let disbursement_after_maker_fee = ONE - ONE * Uint128::new(3) / Uint128::new(4000);
     if let Some(order_ids) = order_ids {
         for _ in order_ids {
             response = response.add_message(BankMsg::Send {
                 to_address: info.sender.to_string(),
-                amount: vec![Coin::new(ONE.into(), DENOM_UTEST.to_string())],
+                amount: vec![Coin::new(
+                    disbursement_after_maker_fee.into(),
+                    DENOM_UTEST.to_string(),
+                )],
             })
         }
     }
-    Ok(response)
+
+    Ok(response.add_event(Event::new("transfer").add_attribute(
+        "amount",
+        format!("{}{}", disbursement_after_maker_fee, DENOM_UTEST),
+    )))
 }
 
 fn new_withdraw_filled_order_handler(
@@ -677,15 +685,24 @@ fn new_withdraw_filled_order_handler(
     order_ids: Option<Vec<Uint128>>,
 ) -> StdResult<Response> {
     let mut response = Response::new();
+    let disbursement_after_maker_fee =
+        TWO_MICRONS - TWO_MICRONS * Uint128::new(3) / Uint128::new(4000);
     if let Some(order_ids) = order_ids {
         for _ in order_ids {
             response = response.add_message(BankMsg::Send {
                 to_address: info.sender.to_string(),
-                amount: vec![Coin::new(TWO_MICRONS.into(), DENOM_UTEST.to_string())],
+                amount: vec![Coin::new(
+                    disbursement_after_maker_fee.into(),
+                    DENOM_UTEST.to_string(),
+                )],
             })
         }
     }
-    Ok(response)
+
+    Ok(response.add_event(Event::new("transfer").add_attribute(
+        "amount",
+        format!("{}{}", disbursement_after_maker_fee, DENOM_UTEST),
+    )))
 }
 
 fn withdraw_partially_filled_order_handler(

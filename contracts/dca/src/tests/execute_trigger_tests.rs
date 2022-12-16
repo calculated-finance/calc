@@ -36,9 +36,6 @@ fn for_filled_fin_limit_order_trigger_should_update_address_balances() {
             "fin",
         );
 
-    let swap_amount_after_fee =
-        swap_amount - checked_mul(swap_amount, mock.fee_percent).ok().unwrap();
-
     assert_address_balances(
         &mock,
         &[
@@ -81,11 +78,16 @@ fn for_filled_fin_limit_order_trigger_should_update_address_balances() {
         )
         .unwrap();
 
+    let maker_fee = swap_amount * Uint128::new(3) / Uint128::new(4000);
+    let received_amount_after_maker_fee = swap_amount - maker_fee;
+    let received_amount_after_swap_fee =
+        received_amount_after_maker_fee - received_amount_after_maker_fee * mock.fee_percent;
+
     assert_address_balances(
         &mock,
         &[
             (&user_address, DENOM_UKUJI, Uint128::new(0)),
-            (&user_address, DENOM_UTEST, swap_amount_after_fee),
+            (&user_address, DENOM_UTEST, received_amount_after_swap_fee),
             (
                 &mock.dca_contract_address,
                 DENOM_UKUJI,
@@ -93,7 +95,11 @@ fn for_filled_fin_limit_order_trigger_should_update_address_balances() {
             ),
             (&mock.dca_contract_address, DENOM_UTEST, ONE_THOUSAND),
             (&mock.fin_contract_address, DENOM_UKUJI, ONE_THOUSAND),
-            (&mock.fin_contract_address, DENOM_UTEST, ONE_THOUSAND),
+            (
+                &mock.fin_contract_address,
+                DENOM_UTEST,
+                ONE_THOUSAND + maker_fee,
+            ),
         ],
     );
 }
@@ -275,11 +281,16 @@ fn for_filled_fin_limit_order_trigger_should_update_vault_stats() {
         )
         .unwrap();
 
+    let maker_fee = swap_amount * Uint128::new(3) / Uint128::new(4000);
+    let received_amount_after_maker_fee = swap_amount - maker_fee;
+    let received_amount_after_swap_fee =
+        received_amount_after_maker_fee - received_amount_after_maker_fee * mock.fee_percent;
+
     assert_eq!(vault_response.vault.swapped_amount.amount, swap_amount);
     assert_eq!(vault_response.vault.swapped_amount.denom, DENOM_UKUJI);
     assert_eq!(
         vault_response.vault.received_amount.amount,
-        swap_amount - checked_mul(swap_amount, mock.fee_percent).ok().unwrap()
+        received_amount_after_swap_fee
     );
     assert_eq!(vault_response.vault.received_amount.denom, DENOM_UTEST);
 }
@@ -299,9 +310,6 @@ fn for_filled_fin_limit_order_trigger_should_publish_events() {
             swap_amount,
             "fin",
         );
-
-    let swap_amount_after_fee =
-        swap_amount - checked_mul(swap_amount, mock.fee_percent).ok().unwrap();
 
     let vault_id = mock.vault_ids.get("fin").unwrap().to_owned();
 
@@ -325,6 +333,11 @@ fn for_filled_fin_limit_order_trigger_should_publish_events() {
         )
         .unwrap();
 
+    let maker_fee = swap_amount * Uint128::new(3) / Uint128::new(4000);
+    let received_amount_after_maker_fee = swap_amount - maker_fee;
+    let received_amount_after_swap_fee =
+        received_amount_after_maker_fee - received_amount_after_maker_fee * mock.fee_percent;
+
     assert_events_published(
         &mock,
         vault_id,
@@ -344,8 +357,11 @@ fn for_filled_fin_limit_order_trigger_should_publish_events() {
                 mock.app.block_info(),
                 EventData::DcaVaultExecutionCompleted {
                     sent: Coin::new(swap_amount.into(), DENOM_UKUJI),
-                    received: Coin::new(swap_amount.into(), DENOM_UTEST),
-                    fee: Coin::new((swap_amount - swap_amount_after_fee).into(), DENOM_UTEST),
+                    received: Coin::new(received_amount_after_maker_fee.into(), DENOM_UTEST),
+                    fee: Coin::new(
+                        (received_amount_after_maker_fee - received_amount_after_swap_fee).into(),
+                        DENOM_UTEST,
+                    ),
                 },
             )
             .build(4),
@@ -491,8 +507,10 @@ fn for_filled_fin_limit_order_trigger_should_distribute_to_multiple_destinations
         )
         .unwrap();
 
-    let swap_amount_after_fee =
-        swap_amount - checked_mul(swap_amount, mock.fee_percent).ok().unwrap();
+    let maker_fee = swap_amount * Uint128::new(3) / Uint128::new(4000);
+    let received_amount_after_maker_fee = swap_amount - maker_fee;
+    let received_amount_after_swap_fee =
+        received_amount_after_maker_fee - received_amount_after_maker_fee * mock.fee_percent;
 
     assert_address_balances(
         &mock,
@@ -502,7 +520,7 @@ fn for_filled_fin_limit_order_trigger_should_distribute_to_multiple_destinations
                 (
                     &destination.address,
                     DENOM_UTEST,
-                    swap_amount_after_fee * destination.allocation,
+                    received_amount_after_swap_fee * destination.allocation,
                 )
             })
             .collect::<Vec<_>>(),
@@ -1621,9 +1639,6 @@ fn until_vault_is_empty_should_update_address_balances() {
             "fin",
         );
 
-    let vault_deposit_after_fee =
-        vault_deposit - checked_mul(vault_deposit, mock.fee_percent).ok().unwrap();
-
     assert_address_balances(
         &mock,
         &[
@@ -1688,11 +1703,16 @@ fn until_vault_is_empty_should_update_address_balances() {
         )
         .unwrap();
 
+    let maker_fee = swap_amount * Uint128::new(3) / Uint128::new(4000);
+    let vault_deposit_after_maker_fee = vault_deposit - maker_fee;
+    let vault_depoit_after_swap_fee =
+        vault_deposit_after_maker_fee - vault_deposit_after_maker_fee * mock.fee_percent;
+
     assert_address_balances(
         &mock,
         &[
             (&user_address, DENOM_UKUJI, ONE_HUNDRED - vault_deposit),
-            (&user_address, DENOM_UTEST, vault_deposit_after_fee),
+            (&user_address, DENOM_UTEST, vault_depoit_after_swap_fee),
             (&mock.dca_contract_address, DENOM_UKUJI, ONE_THOUSAND),
             (&mock.dca_contract_address, DENOM_UTEST, ONE_THOUSAND),
             (
@@ -1703,7 +1723,7 @@ fn until_vault_is_empty_should_update_address_balances() {
             (
                 &mock.fin_contract_address,
                 DENOM_UTEST,
-                ONE_THOUSAND - swap_amount / Uint128::new(2),
+                ONE_THOUSAND - swap_amount / Uint128::new(2) + maker_fee,
             ),
         ],
     );
@@ -1868,9 +1888,6 @@ fn until_vault_is_empty_should_update_vault_stats() {
             "fin",
         );
 
-    let vault_deposit_after_fee =
-        vault_deposit - checked_mul(vault_deposit, mock.fee_percent).ok().unwrap();
-
     let vault_response: VaultResponse = mock
         .app
         .wrap()
@@ -1926,11 +1943,16 @@ fn until_vault_is_empty_should_update_vault_stats() {
         )
         .unwrap();
 
+    let maker_fee = swap_amount * Uint128::new(3) / Uint128::new(4000);
+    let vault_deposit_after_maker_fee = vault_deposit - maker_fee;
+    let vault_deposit_after_swap_fees =
+        vault_deposit_after_maker_fee - vault_deposit_after_maker_fee * mock.fee_percent;
+
     assert_eq!(vault_response.vault.swapped_amount.amount, vault_deposit);
     assert_eq!(vault_response.vault.swapped_amount.denom, DENOM_UKUJI);
     assert_eq!(
         vault_response.vault.received_amount.amount,
-        vault_deposit_after_fee
+        vault_deposit_after_swap_fees
     );
     assert_eq!(vault_response.vault.received_amount.denom, DENOM_UTEST);
 }
@@ -1988,14 +2010,11 @@ fn until_vault_is_empty_should_create_events() {
         )
         .unwrap();
 
-    let swap_amount_after_fee =
-        swap_amount - checked_mul(swap_amount, mock.fee_percent).ok().unwrap();
-
+    let maker_fee = swap_amount * Uint128::new(3) / Uint128::new(4000);
+    let received_amount_after_maker_fee = swap_amount - maker_fee;
+    let received_amount_after_swap_fee =
+        received_amount_after_maker_fee - received_amount_after_maker_fee * mock.fee_percent;
     let remaining_swap_amount = vault_response.vault.balance.amount;
-    let remaining_swap_amount_after_fee = remaining_swap_amount
-        - checked_mul(remaining_swap_amount, mock.fee_percent)
-            .ok()
-            .unwrap();
 
     assert_events_published(
         &mock,
@@ -2016,8 +2035,11 @@ fn until_vault_is_empty_should_create_events() {
                 initial_block_info.clone(),
                 EventData::DcaVaultExecutionCompleted {
                     sent: Coin::new(swap_amount.into(), DENOM_UKUJI),
-                    received: Coin::new(swap_amount.into(), DENOM_UTEST),
-                    fee: Coin::new((swap_amount - swap_amount_after_fee).into(), DENOM_UTEST),
+                    received: Coin::new(received_amount_after_maker_fee.into(), DENOM_UTEST),
+                    fee: Coin::new(
+                        (received_amount_after_maker_fee - received_amount_after_swap_fee).into(),
+                        DENOM_UTEST,
+                    ),
                 },
             )
             .build(4),
@@ -2038,7 +2060,7 @@ fn until_vault_is_empty_should_create_events() {
                     sent: Coin::new(remaining_swap_amount.into(), DENOM_UKUJI),
                     received: Coin::new(remaining_swap_amount.into(), DENOM_UTEST),
                     fee: Coin::new(
-                        (remaining_swap_amount - remaining_swap_amount_after_fee).into(),
+                        (remaining_swap_amount * mock.fee_percent).into(),
                         DENOM_UTEST,
                     ),
                 },

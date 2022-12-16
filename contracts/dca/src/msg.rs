@@ -75,7 +75,7 @@ pub enum ExecuteMsg {
     RemoveCustomSwapFee {
         denom: String,
     },
-    MigrateEvents {
+    MigrateEvent {
         limit: u64,
     },
     SetFinLimitOrderTimestamp {},
