@@ -5,6 +5,7 @@ use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult}
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::state::{Config, CONFIG};
 
 /*
 // version info for migration info
@@ -14,12 +15,20 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    _msg: InstantiateMsg,
+    msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    unimplemented!()
+    let config = Config {
+        native_denom: msg.native_denom,
+    };
+
+    CONFIG.save(deps.storage, &config)?;
+
+    Ok(Response::new()
+        .add_attribute("method", "instantiate")
+        .add_attribute("native_denom", config.native_denom))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

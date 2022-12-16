@@ -65,7 +65,14 @@ pub fn execute(
             packet_channel_id,
             delegator_address,
             validator_address,
-        } => ibc_delegate(env, info, transfer_channel_id, packet_channel_id, delegator_address, validator_address),
+        } => ibc_delegate(
+            env,
+            info,
+            transfer_channel_id,
+            packet_channel_id,
+            delegator_address,
+            validator_address,
+        ),
         ExecuteMsg::ZDelegate {
             delegator_address,
             validator_address,
