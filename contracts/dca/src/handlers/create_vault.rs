@@ -226,9 +226,9 @@ fn create_fin_limit_order_trigger(
 
     if is_new_fin_limit_order {
         update_vault(deps.storage, vault.id, |stored_vault| match stored_vault {
-            Some(mut vault) => {
-                vault.balance.amount -= TWO_MICRONS;
-                Ok(vault)
+            Some(mut stored_vault) => {
+                stored_vault.balance.amount -= TWO_MICRONS;
+                Ok(stored_vault)
             }
             None => Err(StdError::GenericErr {
                 msg: format!("Vault ({}) not found", vault.id).to_string(),

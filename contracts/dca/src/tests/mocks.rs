@@ -756,13 +756,15 @@ fn default_retract_order_handler(info: MessageInfo) -> StdResult<Response> {
 }
 
 fn new_default_retract_order_handler(info: MessageInfo) -> StdResult<Response> {
+    let disbursement_after_maker_fee =
+        TWO_MICRONS - TWO_MICRONS * Uint128::new(3) / Uint128::new(4000);
     Ok(Response::new()
-        .add_attribute("amount", (ONE).to_string())
+        .add_attribute("amount", disbursement_after_maker_fee.to_string())
         .add_message(BankMsg::Send {
             to_address: info.sender.to_string(),
             amount: vec![Coin {
                 denom: String::from(DENOM_UKUJI),
-                amount: TWO_MICRONS,
+                amount: disbursement_after_maker_fee,
             }],
         }))
 }
@@ -832,6 +834,20 @@ fn unfilled_order_response(env: Env) -> StdResult<Binary> {
         filled_amount: Uint256::from_str("0").unwrap(),
         offer_denom: Denom::from(DENOM_UKUJI),
         offer_amount: Uint256::from_str(&ONE.to_string()).unwrap(),
+    };
+    Ok(to_binary(&response)?)
+}
+
+fn new_unfilled_order_response(env: Env) -> StdResult<Binary> {
+    let response = OrderResponse {
+        created_at: env.block.time,
+        owner: Addr::unchecked(USER),
+        idx: Uint128::new(1),
+        quote_price: Decimal256::from_str("1.0").unwrap(),
+        original_offer_amount: Uint256::from_str(&TWO_MICRONS.to_string()).unwrap(),
+        filled_amount: Uint256::from_str("0").unwrap(),
+        offer_denom: Denom::from(DENOM_UKUJI),
+        offer_amount: Uint256::from_str(&TWO_MICRONS.to_string()).unwrap(),
     };
     Ok(to_binary(&response)?)
 }
@@ -947,7 +963,7 @@ pub fn new_fin_contract_unfilled_limit_order() -> Box<dyn Contract<Empty>> {
         |_, env, msg: FINQueryMsg| -> StdResult<Binary> {
             match msg {
                 FINQueryMsg::Book { .. } => default_book_response_handler(),
-                FINQueryMsg::Order { .. } => unfilled_order_response(env),
+                FINQueryMsg::Order { .. } => new_unfilled_order_response(env),
                 FINQueryMsg::Config { .. } => to_binary(&ConfigResponse {
                     owner: Addr::unchecked(ADMIN),
                     denoms: [Denom::from(DENOM_UKUJI), Denom::from(DENOM_UTEST)],

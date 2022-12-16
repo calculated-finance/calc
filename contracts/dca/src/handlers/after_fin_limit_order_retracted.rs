@@ -1,4 +1,3 @@
-use crate::constants::TWO_MICRONS;
 use crate::contract::AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_CANCEL_VAULT_REPLY_ID;
 use crate::error::ContractError;
 use crate::state::cache::{CACHE, LIMIT_ORDER_CACHE};
@@ -70,7 +69,7 @@ pub fn after_fin_limit_order_retracted(
                 if is_new_fin_limit_order {
                     response = response.add_message(CosmosMsg::Bank(BankMsg::Send {
                         to_address: vault.owner.to_string(),
-                        amount: vec![Coin::new(TWO_MICRONS.into(), vault.get_swap_denom())],
+                        amount: vec![Coin::new(amount_retracted.into(), vault.get_swap_denom())],
                     }));
                 }
 
