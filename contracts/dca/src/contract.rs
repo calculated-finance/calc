@@ -43,6 +43,7 @@ pub const AFTER_FIN_LIMIT_ORDER_RETRACTED_REPLY_ID: u64 = 4;
 pub const AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_CANCEL_VAULT_REPLY_ID: u64 = 5;
 pub const AFTER_Z_DELEGATION_REPLY_ID: u64 = 6;
 pub const AFTER_BANK_SWAP_REPLY_ID: u64 = 7;
+pub const AFTER_IBC_DELEGATION_REPLY_ID: u64 = 8;
 
 #[entry_point]
 pub fn migrate(deps: DepsMut, _: Env, _: MigrateMsg) -> Result<Response, ContractError> {

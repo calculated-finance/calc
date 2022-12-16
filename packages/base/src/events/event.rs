@@ -39,6 +39,8 @@ pub enum EventData {
         validator_address: String,
         delegation: Coin,
     },
+    DcaVaultIbcDelegationSucceeded {
+    },
     DcaVaultDelegationFailed {},
 }
 

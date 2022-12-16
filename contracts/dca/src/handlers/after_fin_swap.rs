@@ -1,6 +1,8 @@
 use std::cmp::min;
 
-use crate::contract::{AFTER_BANK_SWAP_REPLY_ID, AFTER_Z_DELEGATION_REPLY_ID};
+use crate::contract::{
+    AFTER_BANK_SWAP_REPLY_ID, AFTER_IBC_DELEGATION_REPLY_ID, AFTER_Z_DELEGATION_REPLY_ID,
+};
 use crate::error::ContractError;
 use crate::state::cache::CACHE;
 use crate::state::config::{get_config, get_custom_fee};
@@ -124,7 +126,7 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                 );
 
                 if allocation_amount.amount.gt(&Uint128::zero()) {
-                    match destination.action {
+                    match destination.action.clone() {
                         PostExecutionAction::Send => {
                             messages.push(CosmosMsg::Bank(BankMsg::Send {
                                 to_address: destination.address.to_string(),
@@ -152,6 +154,26 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                                     funds: vec![],
                                 }),
                                 AFTER_Z_DELEGATION_REPLY_ID,
+                            ));
+                        }
+                        PostExecutionAction::IbcDelegate {
+                            transfer_channel_id,
+                            packet_channel_id,
+                            validator_address,
+                        } => {
+                            sub_msgs.push(SubMsg::reply_always(
+                                CosmosMsg::Wasm(WasmMsg::Execute {
+                                    contract_addr: config.staking_router_address.to_string(),
+                                    msg: to_binary(&StakingRouterExecuteMsg::IbcDelegate {
+                                        transfer_channel_id,
+                                        packet_channel_id,
+                                        delegator_address: destination.address.to_string(),
+                                        validator_address,
+                                    })
+                                    .unwrap(),
+                                    funds: vec![allocation_amount.clone()],
+                                }),
+                                AFTER_IBC_DELEGATION_REPLY_ID,
                             ));
                         }
                     }

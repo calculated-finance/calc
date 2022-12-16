@@ -25,6 +25,11 @@ pub enum PostExecutionActionDeprecated {
 pub enum PostExecutionAction {
     Send,
     ZDelegate,
+    IbcDelegate {
+        transfer_channel_id: String,
+        packet_channel_id: String,
+        validator_address: String
+    }
 }
 
 #[cw_serde]
@@ -36,7 +41,7 @@ pub struct DestinationDeprecated {
 
 #[cw_serde]
 pub struct Destination {
-    pub address: Addr,
+    pub address: Addr, // for ibc staking this will be the users wallet on the destination chain
     pub allocation: Decimal,
     pub action: PostExecutionAction,
 }
