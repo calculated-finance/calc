@@ -1,1 +1,1 @@
-pub mod delegation;
+pub mod msg;

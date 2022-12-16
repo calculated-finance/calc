@@ -6,3 +6,4 @@ pub mod triggers;
 pub mod vaults;
 pub use crate::error::ContractError;
 pub mod ibc;
+pub mod authz;
