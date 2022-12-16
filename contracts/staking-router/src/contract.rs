@@ -61,10 +61,11 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::IbcDelegate {
-            channel_id,
+            transfer_channel_id,
+            packet_channel_id,
             delegator_address,
             validator_address,
-        } => ibc_delegate(env, info, channel_id, delegator_address, validator_address),
+        } => ibc_delegate(env, info, transfer_channel_id, packet_channel_id, delegator_address, validator_address),
         ExecuteMsg::ZDelegate {
             delegator_address,
             validator_address,
