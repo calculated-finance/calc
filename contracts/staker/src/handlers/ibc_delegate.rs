@@ -1,5 +1,5 @@
 use crate::{state::CONFIG, ContractError};
-use cosmwasm_std::{to_binary, DepsMut, Env, IbcReceiveResponse, Uint128, Addr};
+use cosmwasm_std::{to_binary, Addr, DepsMut, Env, IbcReceiveResponse, Uint128};
 
 use base::authz::helpers::{create_exec_message, create_protobuf_delegate_msg};
 use base::ibc::msg::IbcAcks;

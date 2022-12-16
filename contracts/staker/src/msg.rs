@@ -1,10 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 
 #[cw_serde]
-pub struct MigrateMsg {
-
-}
-
+pub struct MigrateMsg {}
 
 #[cw_serde]
 pub struct InstantiateMsg {
