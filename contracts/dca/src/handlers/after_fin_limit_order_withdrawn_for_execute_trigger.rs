@@ -98,8 +98,6 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
                         .sum(),
                 )?;
 
-                println!("fee percent: {}", fee_percent);
-
                 let swap_fee = checked_mul(coin_received.amount, fee_percent)?;
                 let total_after_swap_fee = coin_received.amount - swap_fee;
                 let automation_fee = checked_mul(total_after_swap_fee, automation_fee_rate)?;

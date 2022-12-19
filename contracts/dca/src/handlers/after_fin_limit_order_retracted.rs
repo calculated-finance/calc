@@ -30,7 +30,7 @@ pub fn after_fin_limit_order_retracted(
             let amount_retracted =
                 get_attribute_in_event(&fin_retract_order_response.events, "wasm", "amount")?
                     .parse::<Uint128>()
-                    .expect("returned amount should be a valid u128");
+                    .expect("limit order retracted amount");
 
             let fin_limit_order_change_timestamp =
                 FIN_LIMIT_ORDER_CHANGE_TIMESTAMP.may_load(deps.storage)?;
