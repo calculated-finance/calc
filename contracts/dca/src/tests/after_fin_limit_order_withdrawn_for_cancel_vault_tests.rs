@@ -7,8 +7,7 @@ use cosmwasm_std::{
 use crate::{
     contract::AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_CANCEL_VAULT_REPLY_ID,
     handlers::{
-        after_fin_limit_order_withdrawn_for_cancel_vault::after_fin_limit_order_withdrawn_for_cancel_vault,
-        get_vault::get_vault,
+        cancel_vault::after_fin_limit_order_withdrawn_for_cancel_vault, get_vault::get_vault,
     },
     state::{
         cache::{LimitOrderCache, LIMIT_ORDER_CACHE},

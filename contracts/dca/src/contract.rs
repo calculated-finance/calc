@@ -1,17 +1,16 @@
 use crate::error::ContractError;
-use crate::handlers::after_fin_limit_order_retracted::after_fin_limit_order_retracted;
-use crate::handlers::after_fin_limit_order_submitted::after_fin_limit_order_submitted;
-use crate::handlers::after_fin_limit_order_withdrawn_for_cancel_vault::after_fin_limit_order_withdrawn_for_cancel_vault;
-use crate::handlers::after_fin_limit_order_withdrawn_for_execute_trigger::after_fin_limit_order_withdrawn_for_execute_vault;
-use crate::handlers::after_fin_swap::after_fin_swap;
-use crate::handlers::after_z_delegation::after_z_delegation;
-use crate::handlers::cancel_vault::cancel_vault;
+use crate::handlers::cancel_vault::{
+    after_fin_limit_order_retracted, after_fin_limit_order_withdrawn_for_cancel_vault, cancel_vault,
+};
 use crate::handlers::create_custom_swap_fee::create_custom_swap_fee;
 use crate::handlers::create_pair::create_pair;
-use crate::handlers::create_vault::create_vault;
+use crate::handlers::create_vault::{after_fin_limit_order_submitted, create_vault};
 use crate::handlers::delete_pair::delete_pair;
 use crate::handlers::deposit::deposit;
-use crate::handlers::execute_trigger::execute_trigger_handler;
+use crate::handlers::execute_trigger::{
+    after_fin_limit_order_withdrawn_for_execute_vault, after_fin_swap, after_z_delegation,
+    execute_trigger_handler,
+};
 use crate::handlers::get_custom_swap_fees::get_custom_swap_fees;
 use crate::handlers::get_events::get_events;
 use crate::handlers::get_events_by_resource_id::get_events_by_resource_id;

@@ -4,7 +4,7 @@ use crate::{
         AFTER_Z_DELEGATION_REPLY_ID,
     },
     handlers::{
-        after_fin_limit_order_withdrawn_for_execute_trigger::after_fin_limit_order_withdrawn_for_execute_vault,
+        execute_trigger::after_fin_limit_order_withdrawn_for_execute_vault,
         get_events_by_resource_id::get_events_by_resource_id, get_vault::get_vault,
     },
     state::{

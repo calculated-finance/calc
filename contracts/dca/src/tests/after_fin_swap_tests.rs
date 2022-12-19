@@ -16,7 +16,7 @@ use crate::{
     constants::TEN,
     contract::{AFTER_BANK_SWAP_REPLY_ID, AFTER_FIN_SWAP_REPLY_ID},
     handlers::{
-        after_fin_swap::after_fin_swap, get_events_by_resource_id::get_events_by_resource_id,
+        execute_trigger::after_fin_swap, get_events_by_resource_id::get_events_by_resource_id,
     },
     state::{
         config::{create_custom_fee, get_config},

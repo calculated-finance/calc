@@ -3,9 +3,7 @@ use crate::{
         AFTER_FIN_LIMIT_ORDER_RETRACTED_REPLY_ID,
         AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_CANCEL_VAULT_REPLY_ID,
     },
-    handlers::{
-        after_fin_limit_order_retracted::after_fin_limit_order_retracted, get_vault::get_vault,
-    },
+    handlers::{cancel_vault::after_fin_limit_order_retracted, get_vault::get_vault},
     state::{
         cache::{LimitOrderCache, LIMIT_ORDER_CACHE},
         triggers::get_trigger,
