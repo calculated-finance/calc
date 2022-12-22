@@ -40,6 +40,13 @@ pub enum EventData {
         delegation: Coin,
     },
     DcaVaultDelegationFailed {},
+    DcaFixVaultAmounts {
+        expected_swapped_amount: Coin,
+        actual_swapped_amount: Coin,
+        expected_received_amount: Coin,
+        actual_received_amount: Coin,
+        fee: Coin
+    }
 }
 
 #[cw_serde]

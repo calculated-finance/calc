@@ -1,9 +1,9 @@
 use base::events::event::Event;
 use base::pair::Pair;
 use base::triggers::trigger::TimeInterval;
-use base::vaults::vault::{Destination, PositionType, VaultStatus};
+use base::vaults::vault::{Destination, VaultStatus, PositionType};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Decimal, Decimal256, Uint128, Uint64};
+use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, Uint128, Uint64};
 
 use crate::types::vault::Vault;
 
@@ -76,6 +76,11 @@ pub enum ExecuteMsg {
     },
     MigrateEvent {
         limit: u64,
+    },
+    FixVaultAmounts {
+        vault_id: Uint128,
+        expected_swapped_amount: Coin,
+        expected_received_amount: Coin,
     },
 }
 

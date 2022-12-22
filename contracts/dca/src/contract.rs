@@ -12,6 +12,7 @@ use crate::handlers::create_vault::create_vault;
 use crate::handlers::delete_pair::delete_pair;
 use crate::handlers::deposit::deposit;
 use crate::handlers::execute_trigger::execute_trigger_handler;
+use crate::handlers::fix_vault_amounts::fix_vault_amounts;
 use crate::handlers::get_custom_swap_fees::get_custom_swap_fees;
 use crate::handlers::get_events::get_events;
 use crate::handlers::get_events_by_resource_id::get_events_by_resource_id;
@@ -157,6 +158,18 @@ pub fn execute(
         ExecuteMsg::MigrateEvent { limit } => {
             migrate_previous_events(deps.storage, &mut limit.clone())
         }
+        ExecuteMsg::FixVaultAmounts {
+            vault_id,
+            expected_swapped_amount,
+            expected_received_amount,
+        } => fix_vault_amounts(
+            deps,
+            env,
+            info,
+            vault_id,
+            expected_swapped_amount,
+            expected_received_amount,
+        ),
     }
 }
 
