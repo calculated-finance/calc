@@ -2,7 +2,9 @@ use crate::contract::{
     AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_EXECUTE_VAULT_REPLY_ID, AFTER_FIN_SWAP_REPLY_ID,
 };
 use crate::error::ContractError;
-use crate::state::cache::{Cache, LimitOrderCache, CACHE, LIMIT_ORDER_CACHE};
+use crate::state::cache::{
+    Cache, LimitOrderCache, SwapCache, CACHE, LIMIT_ORDER_CACHE, SWAP_CACHE,
+};
 use crate::state::events::create_event;
 use crate::state::triggers::{delete_trigger, save_trigger};
 use crate::state::vaults::{get_vault, update_vault};
@@ -129,6 +131,18 @@ pub fn execute_trigger(
                     .checked_div(fin_price)
                     .expect("should return a valid inverted price for fin sell"),
             };
+
+            SWAP_CACHE.save(
+                deps.storage,
+                &SwapCache {
+                    swap_denom_balance: deps
+                        .querier
+                        .query_balance(&env.contract.address, &vault.get_swap_denom())?,
+                    receive_denom_balance: deps
+                        .querier
+                        .query_balance(&env.contract.address, &vault.get_receive_denom())?,
+                },
+            )?;
 
             let fin_swap_msg = match vault.slippage_tolerance {
                 Some(tolerance) => create_fin_swap_with_slippage(

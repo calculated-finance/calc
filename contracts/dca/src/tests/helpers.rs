@@ -32,7 +32,9 @@ pub fn instantiate_contract(deps: DepsMut, env: Env, info: MessageInfo) {
         paused: false,
     };
 
-    instantiate(deps, env.clone(), info.clone(), instantiate_message).unwrap();
+    let response = instantiate(deps, env.clone(), info.clone(), instantiate_message).unwrap();
+
+    println!("Response: {:?}", response);
 }
 
 pub fn setup_vault(deps: DepsMut, env: Env, balance: Coin, swap_amount: Uint128) -> Vault {

@@ -19,6 +19,7 @@ use crate::{
         after_fin_swap::after_fin_swap, get_events_by_resource_id::get_events_by_resource_id,
     },
     state::{
+        cache::{SwapCache, SWAP_CACHE},
         config::{create_custom_fee, get_config},
         triggers::get_trigger,
         vaults::get_vault,
@@ -41,14 +42,29 @@ fn with_succcesful_swap_returns_funds_to_destination() {
     let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
     let receive_amount = Uint128::new(10000);
 
+    SWAP_CACHE
+        .save(
+            deps.as_mut().storage,
+            &SwapCache {
+                swap_denom_balance: vault.balance.clone(),
+                receive_denom_balance: Coin::new(0, vault.get_receive_denom()),
+            },
+        )
+        .unwrap();
+
+    deps.querier.update_balance(
+        "cosmos2contract",
+        vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
+    );
+
     let response = after_fin_swap(
         deps.as_mut(),
         env,
         Reply {
             id: AFTER_FIN_SWAP_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![Event::new("wasm-trade")
-                    .add_attribute("base_amount", vault.get_swap_amount().amount.to_string())
+                events: vec![Event::new("transfer")
+                    .add_attribute("amount", vault.get_swap_amount().amount.to_string())
                     .add_attribute("quote_amount", receive_amount.to_string())],
                 data: None,
             }),
@@ -95,7 +111,22 @@ fn with_succcesful_swap_returns_fee_to_fee_collector() {
     instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
 
     let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
-    let received_amount = Uint128::new(234312312);
+    let receive_amount = Uint128::new(234312312);
+
+    SWAP_CACHE
+        .save(
+            deps.as_mut().storage,
+            &SwapCache {
+                swap_denom_balance: vault.balance.clone(),
+                receive_denom_balance: Coin::new(0, vault.get_receive_denom()),
+            },
+        )
+        .unwrap();
+
+    deps.querier.update_balance(
+        "cosmos2contract",
+        vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
+    );
 
     let response = after_fin_swap(
         deps.as_mut(),
@@ -105,7 +136,7 @@ fn with_succcesful_swap_returns_fee_to_fee_collector() {
             result: SubMsgResult::Ok(SubMsgResponse {
                 events: vec![Event::new("wasm-trade")
                     .add_attribute("base_amount", vault.get_swap_amount().amount.to_string())
-                    .add_attribute("quote_amount", received_amount.to_string())],
+                    .add_attribute("quote_amount", receive_amount.to_string())],
                 data: None,
             }),
         },
@@ -113,8 +144,8 @@ fn with_succcesful_swap_returns_fee_to_fee_collector() {
     .unwrap();
 
     let config = get_config(&deps.storage).unwrap();
-    let swap_fee = config.swap_fee_percent * received_amount;
-    let total_after_swap_fee = received_amount - swap_fee;
+    let swap_fee = config.swap_fee_percent * receive_amount;
+    let total_after_swap_fee = receive_amount - swap_fee;
 
     let automation_fee = vault
         .destinations
@@ -148,6 +179,21 @@ fn with_succcesful_swap_adjusts_vault_balance() {
     let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
     let receive_amount = Uint128::new(234312312);
 
+    SWAP_CACHE
+        .save(
+            deps.as_mut().storage,
+            &SwapCache {
+                swap_denom_balance: vault.balance.clone(),
+                receive_denom_balance: Coin::new(0, vault.get_receive_denom()),
+            },
+        )
+        .unwrap();
+
+    deps.querier.update_balance(
+        "cosmos2contract",
+        vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
+    );
+
     after_fin_swap(
         deps.as_mut(),
         env,
@@ -180,15 +226,34 @@ fn with_succcesful_swap_adjusts_swapped_amount_stat() {
     let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
     let receive_amount = Uint128::new(234312312);
 
+    SWAP_CACHE
+        .save(
+            deps.as_mut().storage,
+            &SwapCache {
+                swap_denom_balance: vault.balance.clone(),
+                receive_denom_balance: Coin::new(0, vault.get_receive_denom()),
+            },
+        )
+        .unwrap();
+
+    deps.querier.update_balance(
+        "cosmos2contract",
+        vec![
+            Coin::new(
+                (vault.balance.amount - vault.get_swap_amount().amount).into(),
+                vault.get_swap_denom(),
+            ),
+            Coin::new(receive_amount.into(), vault.get_receive_denom()),
+        ],
+    );
+
     after_fin_swap(
         deps.as_mut(),
         env,
         Reply {
             id: AFTER_FIN_SWAP_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![Event::new("wasm-trade")
-                    .add_attribute("base_amount", vault.get_swap_amount().amount.to_string())
-                    .add_attribute("quote_amount", receive_amount.to_string())],
+                events: vec![],
                 data: None,
             }),
         },
@@ -211,6 +276,21 @@ fn with_succcesful_swap_adjusts_received_amount_stat() {
 
     let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
     let receive_amount = Uint128::new(234312312);
+
+    SWAP_CACHE
+        .save(
+            deps.as_mut().storage,
+            &SwapCache {
+                swap_denom_balance: vault.balance.clone(),
+                receive_denom_balance: Coin::new(0, vault.get_receive_denom()),
+            },
+        )
+        .unwrap();
+
+    deps.querier.update_balance(
+        "cosmos2contract",
+        vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
+    );
 
     after_fin_swap(
         deps.as_mut(),
@@ -256,6 +336,21 @@ fn with_successful_swap_creates_a_new_time_trigger() {
     let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
     let receive_amount = Uint128::new(234312312);
 
+    SWAP_CACHE
+        .save(
+            deps.as_mut().storage,
+            &SwapCache {
+                swap_denom_balance: vault.balance.clone(),
+                receive_denom_balance: Coin::new(0, vault.get_receive_denom()),
+            },
+        )
+        .unwrap();
+
+    deps.querier.update_balance(
+        "cosmos2contract",
+        vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
+    );
+
     after_fin_swap(
         deps.as_mut(),
         env.clone(),
@@ -296,6 +391,21 @@ fn with_successful_swap_resulting_in_low_funds_sets_vault_to_inactive() {
 
     let receive_amount = Uint128::new(234312312);
 
+    SWAP_CACHE
+        .save(
+            deps.as_mut().storage,
+            &SwapCache {
+                swap_denom_balance: vault.balance.clone(),
+                receive_denom_balance: Coin::new(0, vault.get_receive_denom()),
+            },
+        )
+        .unwrap();
+
+    deps.querier.update_balance(
+        "cosmos2contract",
+        vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
+    );
+
     after_fin_swap(
         deps.as_mut(),
         env.clone(),
@@ -330,6 +440,21 @@ fn with_successful_swap_resulting_in_low_funds_does_not_create_time_trigger() {
     );
 
     let receive_amount = Uint128::new(234312312);
+
+    SWAP_CACHE
+        .save(
+            deps.as_mut().storage,
+            &SwapCache {
+                swap_denom_balance: vault.balance.clone(),
+                receive_denom_balance: Coin::new(0, vault.get_receive_denom()),
+            },
+        )
+        .unwrap();
+
+    deps.querier.update_balance(
+        "cosmos2contract",
+        vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
+    );
 
     after_fin_swap(
         deps.as_mut(),
@@ -555,7 +680,22 @@ fn with_custom_fee_for_base_denom_takes_custom_fee() {
     )
     .unwrap();
 
-    let received_amount = Uint128::new(234312312);
+    let receive_amount = Uint128::new(234312312);
+
+    SWAP_CACHE
+        .save(
+            deps.as_mut().storage,
+            &SwapCache {
+                swap_denom_balance: vault.balance.clone(),
+                receive_denom_balance: Coin::new(0, vault.get_receive_denom()),
+            },
+        )
+        .unwrap();
+
+    deps.querier.update_balance(
+        "cosmos2contract",
+        vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
+    );
 
     let response = after_fin_swap(
         deps.as_mut(),
@@ -565,7 +705,7 @@ fn with_custom_fee_for_base_denom_takes_custom_fee() {
             result: SubMsgResult::Ok(SubMsgResponse {
                 events: vec![Event::new("wasm-trade")
                     .add_attribute("base_amount", vault.get_swap_amount().amount.to_string())
-                    .add_attribute("quote_amount", received_amount.to_string())],
+                    .add_attribute("quote_amount", receive_amount.to_string())],
                 data: None,
             }),
         },
@@ -573,8 +713,8 @@ fn with_custom_fee_for_base_denom_takes_custom_fee() {
     .unwrap();
 
     let config = get_config(&deps.storage).unwrap();
-    let swap_fee = custom_fee_percent * received_amount;
-    let total_after_swap_fee = received_amount - swap_fee;
+    let swap_fee = custom_fee_percent * receive_amount;
+    let total_after_swap_fee = receive_amount - swap_fee;
 
     let automation_fee = vault
         .destinations
@@ -616,7 +756,22 @@ fn with_custom_fee_for_quote_denom_takes_custom_fee() {
     )
     .unwrap();
 
-    let received_amount = Uint128::new(234312312);
+    let receive_amount = Uint128::new(234312312);
+
+    SWAP_CACHE
+        .save(
+            deps.as_mut().storage,
+            &SwapCache {
+                swap_denom_balance: vault.balance.clone(),
+                receive_denom_balance: Coin::new(0, vault.get_receive_denom()),
+            },
+        )
+        .unwrap();
+
+    deps.querier.update_balance(
+        "cosmos2contract",
+        vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
+    );
 
     let response = after_fin_swap(
         deps.as_mut(),
@@ -626,7 +781,7 @@ fn with_custom_fee_for_quote_denom_takes_custom_fee() {
             result: SubMsgResult::Ok(SubMsgResponse {
                 events: vec![Event::new("wasm-trade")
                     .add_attribute("base_amount", vault.get_swap_amount().amount.to_string())
-                    .add_attribute("quote_amount", received_amount.to_string())],
+                    .add_attribute("quote_amount", receive_amount.to_string())],
                 data: None,
             }),
         },
@@ -634,8 +789,8 @@ fn with_custom_fee_for_quote_denom_takes_custom_fee() {
     .unwrap();
 
     let config = get_config(&deps.storage).unwrap();
-    let swap_fee = custom_fee_percent * received_amount;
-    let total_after_swap_fee = received_amount - swap_fee;
+    let swap_fee = custom_fee_percent * receive_amount;
+    let total_after_swap_fee = receive_amount - swap_fee;
 
     let automation_fee = vault
         .destinations
@@ -685,7 +840,22 @@ fn with_custom_fee_for_both_denoms_takes_lower_fee() {
     )
     .unwrap();
 
-    let received_amount = Uint128::new(234312312);
+    let receive_amount = Uint128::new(234312312);
+
+    SWAP_CACHE
+        .save(
+            deps.as_mut().storage,
+            &SwapCache {
+                swap_denom_balance: vault.balance.clone(),
+                receive_denom_balance: Coin::new(0, vault.get_receive_denom()),
+            },
+        )
+        .unwrap();
+
+    deps.querier.update_balance(
+        "cosmos2contract",
+        vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
+    );
 
     let response = after_fin_swap(
         deps.as_mut(),
@@ -695,7 +865,7 @@ fn with_custom_fee_for_both_denoms_takes_lower_fee() {
             result: SubMsgResult::Ok(SubMsgResponse {
                 events: vec![Event::new("wasm-trade")
                     .add_attribute("base_amount", vault.get_swap_amount().amount.to_string())
-                    .add_attribute("quote_amount", received_amount.to_string())],
+                    .add_attribute("quote_amount", receive_amount.to_string())],
                 data: None,
             }),
         },
@@ -703,8 +873,8 @@ fn with_custom_fee_for_both_denoms_takes_lower_fee() {
     .unwrap();
 
     let config = get_config(&deps.storage).unwrap();
-    let swap_fee = min(swap_denom_fee_percent, receive_denom_fee_percent) * received_amount;
-    let total_after_swap_fee = received_amount - swap_fee;
+    let swap_fee = min(swap_denom_fee_percent, receive_denom_fee_percent) * receive_amount;
+    let total_after_swap_fee = receive_amount - swap_fee;
 
     let automation_fee = vault
         .destinations
