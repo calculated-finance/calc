@@ -37,12 +37,18 @@ pub fn fix_vault_amounts(
 
     let vault = get_vault(deps.storage, vault_id)?;
 
+    let coin_swapped = Coin::new(
+        (expected_swapped_amount.amount.clone() - vault.swapped_amount.amount).into(),
+        vault.get_swap_denom(),
+    );
+
     let coin_received = Coin::new(
         (expected_received_amount.amount.clone() - vault.received_amount.amount).into(),
         expected_received_amount.denom.clone(),
     );
 
-    if coin_received.amount.is_zero() {
+    // if these are both zero the vault is correct as determined by the values passed in
+    if coin_received.amount.is_zero() && coin_swapped.amount.is_zero() {
         return Ok(Response::new().add_attribute("method", "fix_vault_amounts"));
     }
 
@@ -142,7 +148,8 @@ pub fn fix_vault_amounts(
             match stored_value {
                 Some(mut existing_vault) => {
                     existing_vault.swapped_amount = expected_swapped_amount.clone();
-                    existing_vault.received_amount = expected_received_amount.clone();
+                    existing_vault.received_amount =
+                        Coin::new(total_after_total_fee.into(), vault.get_receive_denom());
                     Ok(existing_vault)
                 }
                 None => Err(StdError::NotFound {
@@ -166,7 +173,7 @@ pub fn fix_vault_amounts(
                 actual_swapped_amount: vault.swapped_amount.clone(),
                 expected_received_amount,
                 actual_received_amount: vault.received_amount.clone(),
-                fee: Coin::new(swap_fee.into(), vault.get_receive_denom()),
+                fee: Coin::new(total_fee.into(), vault.get_receive_denom()),
             },
         ),
     )?;
