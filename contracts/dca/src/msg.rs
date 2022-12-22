@@ -83,8 +83,7 @@ pub enum ExecuteMsg {
         expected_received_amount: Coin,
     },
     FixEventAmounts {
-        vault_id: Uint128,
-        event_id: Uint64,
+        event_id: u64,
         expected_sent: Coin,
         expected_received: Coin,
         expected_fee: Coin,

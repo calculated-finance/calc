@@ -172,7 +172,6 @@ pub fn execute(
             expected_received_amount,
         ),
         ExecuteMsg::FixEventAmounts {
-            vault_id,
             event_id,
             expected_sent,
             expected_received,
@@ -181,7 +180,6 @@ pub fn execute(
             deps,
             env,
             info,
-            vault_id,
             event_id,
             expected_sent,
             expected_received,

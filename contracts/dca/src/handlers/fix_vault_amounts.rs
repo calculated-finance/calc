@@ -4,17 +4,13 @@ use crate::{
     state::{
         cache::{Cache, CACHE},
         config::{get_config, get_custom_fee},
-        events::create_event,
+        data_fixes::{save_data_fix, DataFixBuilder, DataFixData},
         vaults::{get_vault, update_vault},
     },
     types::vault::Vault,
     validation_helpers::assert_sender_is_admin,
 };
-use base::{
-    events::event::{EventBuilder, EventData},
-    helpers::math_helpers::checked_mul,
-    vaults::vault::PostExecutionAction,
-};
+use base::{helpers::math_helpers::checked_mul, vaults::vault::PostExecutionAction};
 use cosmwasm_std::{
     to_binary, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
     SubMsg, Uint128, WasmMsg,
@@ -27,8 +23,8 @@ pub fn fix_vault_amounts(
     env: Env,
     info: MessageInfo,
     vault_id: Uint128,
-    expected_swapped_amount: Coin,
-    expected_received_amount: Coin,
+    expected_swapped: Coin,
+    expected_received: Coin,
 ) -> Result<Response, ContractError> {
     assert_sender_is_admin(deps.storage, info.sender)?;
 
@@ -38,13 +34,13 @@ pub fn fix_vault_amounts(
     let vault = get_vault(deps.storage, vault_id)?;
 
     let coin_swapped = Coin::new(
-        (expected_swapped_amount.amount.clone() - vault.swapped_amount.amount).into(),
+        (expected_swapped.amount.clone() - vault.swapped_amount.amount).into(),
         vault.get_swap_denom(),
     );
 
     let coin_received = Coin::new(
-        (expected_received_amount.amount.clone() - vault.received_amount.amount).into(),
-        expected_received_amount.denom.clone(),
+        (expected_received.amount.clone() - vault.received_amount.amount).into(),
+        expected_received.denom.clone(),
     );
 
     // if these are both zero the vault is correct as determined by the values passed in
@@ -147,7 +143,7 @@ pub fn fix_vault_amounts(
         |stored_value: Option<Vault>| -> StdResult<Vault> {
             match stored_value {
                 Some(mut existing_vault) => {
-                    existing_vault.swapped_amount = expected_swapped_amount.clone();
+                    existing_vault.swapped_amount = expected_swapped.clone();
                     existing_vault.received_amount =
                         Coin::new(total_after_total_fee.into(), vault.get_receive_denom());
                     Ok(existing_vault)
@@ -163,22 +159,19 @@ pub fn fix_vault_amounts(
         },
     )?;
 
-    create_event(
+    save_data_fix(
         deps.storage,
-        EventBuilder::new(
+        DataFixBuilder::new(
             vault.id,
-            env.block,
-            EventData::DcaFixVaultAmounts {
-                expected_swapped_amount,
-                actual_swapped_amount: vault.swapped_amount.clone(),
-                expected_received_amount,
-                actual_received_amount: vault.received_amount.clone(),
-                fee: Coin::new(total_fee.into(), vault.get_receive_denom()),
+            env.block.time,
+            env.block.height,
+            DataFixData::VaultAmounts {
+                expected_swapped,
+                expected_received,
             },
         ),
     )?;
 
-    // save cache to allow after handlers to run correctly
     CACHE.save(
         deps.storage,
         &Cache {

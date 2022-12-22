@@ -1,36 +1,26 @@
-use std::cmp::min;
-
 use base::{
-    events::event::{EventBuilder, EventData, ExecutionSkippedReason},
+    events::event::{EventBuilder, EventData},
     helpers::math_helpers::checked_mul,
-    triggers::trigger::TriggerConfiguration,
-    vaults::vault::{PostExecutionAction, VaultStatus},
+    vaults::vault::PostExecutionAction,
 };
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    BankMsg, Coin, Decimal, Event, Reply, SubMsg, SubMsgResponse, SubMsgResult, Timestamp, Uint128,
+    BankMsg, Coin, SubMsg, Uint128,
 };
-use fin_helpers::codes::ERROR_SWAP_SLIPPAGE_EXCEEDED;
 
 use crate::{
-    constants::TEN,
-    contract::{AFTER_BANK_SWAP_REPLY_ID, AFTER_FIN_SWAP_REPLY_ID},
+    contract::AFTER_BANK_SWAP_REPLY_ID,
     handlers::{
-        after_fin_swap::after_fin_swap, fix_vault_amounts::fix_vault_amounts,
-        get_events_by_resource_id::get_events_by_resource_id,
+        fix_vault_amounts::fix_vault_amounts, get_events_by_resource_id::get_events_by_resource_id,
     },
     state::{
         cache::{SwapCache, SWAP_CACHE},
-        config::{create_custom_fee, get_config},
-        triggers::get_trigger,
+        config::get_config,
         vaults::get_vault,
     },
     tests::{
-        helpers::{
-            instantiate_contract, setup_active_vault_with_funds, setup_active_vault_with_low_funds,
-            setup_active_vault_with_slippage_funds, setup_vault,
-        },
-        mocks::{ADMIN, DENOM_UKUJI},
+        helpers::{instantiate_contract, setup_active_vault_with_funds},
+        mocks::ADMIN,
     },
 };
 
