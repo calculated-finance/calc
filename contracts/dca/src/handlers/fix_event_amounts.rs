@@ -62,7 +62,9 @@ pub fn fix_event_amounts(
         ),
     )?;
 
-    Ok(Response::new())
+    Ok(Response::new()
+        .add_attribute("method", "fix_event_amounts")
+        .add_attribute("event_id", event.id.to_string()))
 }
 
 #[cfg(test)]
