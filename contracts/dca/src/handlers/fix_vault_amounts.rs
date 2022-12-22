@@ -16,8 +16,8 @@ use base::{
     vaults::vault::PostExecutionAction,
 };
 use cosmwasm_std::{
-    to_binary, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, StdError,
-    StdResult, SubMsg, Uint128, WasmMsg,
+    to_binary, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
+    SubMsg, Uint128, WasmMsg,
 };
 use staking_router::msg::ExecuteMsg as StakingRouterExecuteMsg;
 use std::cmp::min;
@@ -41,6 +41,10 @@ pub fn fix_vault_amounts(
         (expected_received_amount.amount.clone() - vault.received_amount.amount).into(),
         expected_received_amount.denom.clone(),
     );
+
+    if coin_received.amount.is_zero() {
+        return Ok(Response::new().add_attribute("method", "fix_vault_amounts"));
+    }
 
     let config = get_config(deps.storage)?;
 
@@ -176,12 +180,10 @@ pub fn fix_vault_amounts(
         },
     )?;
 
-    Ok(
-        Response::new()
+    Ok(Response::new()
         .add_attribute("method", "fix_vault_amounts")
         .add_attribute("owner", vault.owner.to_string())
         .add_attribute("vault_id", vault.id)
         .add_messages(messages)
-        .add_submessages(sub_msgs)
-    )
+        .add_submessages(sub_msgs))
 }

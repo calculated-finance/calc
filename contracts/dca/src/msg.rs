@@ -1,7 +1,7 @@
 use base::events::event::Event;
 use base::pair::Pair;
 use base::triggers::trigger::TimeInterval;
-use base::vaults::vault::{Destination, VaultStatus, PositionType};
+use base::vaults::vault::{Destination, PositionType, VaultStatus};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, Uint128, Uint64};
 
@@ -81,6 +81,13 @@ pub enum ExecuteMsg {
         vault_id: Uint128,
         expected_swapped_amount: Coin,
         expected_received_amount: Coin,
+    },
+    FixEventAmounts {
+        vault_id: Uint128,
+        event_id: Uint64,
+        expected_sent: Coin,
+        expected_received: Coin,
+        expected_fee: Coin,
     },
 }
 
