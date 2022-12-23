@@ -63,9 +63,7 @@ fn with_succcesful_swap_returns_funds_to_destination() {
         Reply {
             id: AFTER_FIN_SWAP_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![Event::new("transfer")
-                    .add_attribute("amount", vault.get_swap_amount().amount.to_string())
-                    .add_attribute("quote_amount", receive_amount.to_string())],
+                events: vec![],
                 data: None,
             }),
         },
@@ -134,9 +132,7 @@ fn with_succcesful_swap_returns_fee_to_fee_collector() {
         Reply {
             id: AFTER_FIN_SWAP_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![Event::new("wasm-trade")
-                    .add_attribute("base_amount", vault.get_swap_amount().amount.to_string())
-                    .add_attribute("quote_amount", receive_amount.to_string())],
+                events: vec![],
                 data: None,
             }),
         },
@@ -200,9 +196,7 @@ fn with_succcesful_swap_adjusts_vault_balance() {
         Reply {
             id: AFTER_FIN_SWAP_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![Event::new("wasm-trade")
-                    .add_attribute("base_amount", vault.get_swap_amount().amount.to_string())
-                    .add_attribute("quote_amount", receive_amount.to_string())],
+                events: vec![],
                 data: None,
             }),
         },
@@ -298,9 +292,7 @@ fn with_succcesful_swap_adjusts_received_amount_stat() {
         Reply {
             id: AFTER_FIN_SWAP_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![Event::new("wasm-trade")
-                    .add_attribute("base_amount", vault.get_swap_amount().amount.to_string())
-                    .add_attribute("quote_amount", receive_amount.to_string())],
+                events: vec![],
                 data: None,
             }),
         },
@@ -357,9 +349,7 @@ fn with_successful_swap_creates_a_new_time_trigger() {
         Reply {
             id: AFTER_FIN_SWAP_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![Event::new("wasm-trade")
-                    .add_attribute("base_amount", vault.get_swap_amount().amount.to_string())
-                    .add_attribute("quote_amount", receive_amount.to_string())],
+                events: vec![],
                 data: None,
             }),
         },
@@ -412,9 +402,7 @@ fn with_successful_swap_resulting_in_low_funds_sets_vault_to_inactive() {
         Reply {
             id: AFTER_FIN_SWAP_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![Event::new("wasm-trade")
-                    .add_attribute("base_amount", vault.get_swap_amount().amount.to_string())
-                    .add_attribute("quote_amount", receive_amount.to_string())],
+                events: vec![],
                 data: None,
             }),
         },
@@ -462,9 +450,7 @@ fn with_successful_swap_resulting_in_low_funds_does_not_create_time_trigger() {
         Reply {
             id: AFTER_FIN_SWAP_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![Event::new("wasm-trade")
-                    .add_attribute("base_amount", vault.get_swap_amount().amount.to_string())
-                    .add_attribute("quote_amount", receive_amount.to_string())],
+                events: vec![],
                 data: None,
             }),
         },
@@ -703,9 +689,7 @@ fn with_custom_fee_for_base_denom_takes_custom_fee() {
         Reply {
             id: AFTER_FIN_SWAP_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![Event::new("wasm-trade")
-                    .add_attribute("base_amount", vault.get_swap_amount().amount.to_string())
-                    .add_attribute("quote_amount", receive_amount.to_string())],
+                events: vec![],
                 data: None,
             }),
         },
@@ -779,9 +763,7 @@ fn with_custom_fee_for_quote_denom_takes_custom_fee() {
         Reply {
             id: AFTER_FIN_SWAP_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![Event::new("wasm-trade")
-                    .add_attribute("base_amount", vault.get_swap_amount().amount.to_string())
-                    .add_attribute("quote_amount", receive_amount.to_string())],
+                events: vec![],
                 data: None,
             }),
         },
@@ -863,9 +845,7 @@ fn with_custom_fee_for_both_denoms_takes_lower_fee() {
         Reply {
             id: AFTER_FIN_SWAP_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![Event::new("wasm-trade")
-                    .add_attribute("base_amount", vault.get_swap_amount().amount.to_string())
-                    .add_attribute("quote_amount", receive_amount.to_string())],
+                events: vec![],
                 data: None,
             }),
         },
