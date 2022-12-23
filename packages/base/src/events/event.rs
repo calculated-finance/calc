@@ -45,8 +45,8 @@ pub enum EventData {
         actual_swapped_amount: Coin,
         expected_received_amount: Coin,
         actual_received_amount: Coin,
-        fee: Coin
-    }
+        fee: Coin,
+    },
 }
 
 #[cw_serde]

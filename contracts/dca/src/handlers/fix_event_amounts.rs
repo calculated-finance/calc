@@ -43,6 +43,21 @@ pub fn fix_event_amounts(
                     val: "Expected fee denom does not match event fee denom".to_string(),
                 });
             }
+            save_data_fix(
+                deps.storage,
+                DataFixBuilder::new(
+                    event.resource_id,
+                    env.block,
+                    DataFixData::ExecutionCompletedEventAmounts {
+                        sent,
+                        received,
+                        fee,
+                        expected_sent: expected_sent.clone(),
+                        expected_received: expected_received.clone(),
+                        expected_fee: expected_fee.clone(),
+                    },
+                ),
+            )?;
         }
         _ => {
             return Err(ContractError::CustomError {
@@ -67,19 +82,6 @@ pub fn fix_event_amounts(
             }),
         }
     })?;
-
-    save_data_fix(
-        deps.storage,
-        DataFixBuilder::new(
-            event.resource_id,
-            env.block,
-            DataFixData::ExecutionCompletedEventAmounts {
-                expected_sent,
-                expected_received,
-                expected_fee,
-            },
-        ),
-    )?;
 
     Ok(Response::new()
         .add_attribute("method", "fix_event_amounts")

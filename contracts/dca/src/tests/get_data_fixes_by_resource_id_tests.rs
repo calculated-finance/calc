@@ -46,6 +46,8 @@ fn with_one_event_should_return_event() {
             vault_id,
             env.block.clone(),
             DataFixData::VaultAmounts {
+                swapped: Coin::new(0, DENOM_UKUJI),
+                received: Coin::new(0, DENOM_UTEST),
                 expected_swapped: Coin::new(0, DENOM_UKUJI),
                 expected_received: Coin::new(0, DENOM_UTEST),
             },
@@ -62,6 +64,8 @@ fn with_one_event_should_return_event() {
             timestamp: env.block.time,
             block_height: env.block.height,
             data: DataFixData::VaultAmounts {
+                swapped: Coin::new(0, DENOM_UKUJI),
+                received: Coin::new(0, DENOM_UTEST),
                 expected_swapped: Coin::new(0, DENOM_UKUJI),
                 expected_received: Coin::new(0, DENOM_UTEST),
             },
@@ -88,6 +92,8 @@ fn with_data_fixes_for_different_resources_should_return_one_event() {
                 vault_id_1,
                 env.block.clone(),
                 DataFixData::VaultAmounts {
+                    swapped: Coin::new(0, DENOM_UKUJI),
+                    received: Coin::new(0, DENOM_UTEST),
                     expected_swapped: Coin::new(0, DENOM_UKUJI),
                     expected_received: Coin::new(0, DENOM_UTEST),
                 },
@@ -96,6 +102,8 @@ fn with_data_fixes_for_different_resources_should_return_one_event() {
                 vault_id_2,
                 env.block.clone(),
                 DataFixData::VaultAmounts {
+                    swapped: Coin::new(0, DENOM_UKUJI),
+                    received: Coin::new(0, DENOM_UTEST),
                     expected_swapped: Coin::new(0, DENOM_UKUJI),
                     expected_received: Coin::new(0, DENOM_UTEST),
                 },
@@ -113,6 +121,8 @@ fn with_data_fixes_for_different_resources_should_return_one_event() {
             timestamp: env.block.time,
             block_height: env.block.height,
             data: DataFixData::VaultAmounts {
+                swapped: Coin::new(0, DENOM_UKUJI),
+                received: Coin::new(0, DENOM_UTEST),
                 expected_swapped: Coin::new(0, DENOM_UKUJI),
                 expected_received: Coin::new(0, DENOM_UTEST),
             },
@@ -138,6 +148,8 @@ fn with_two_data_fixes_should_return_data_fixes() {
                 vault_id,
                 env.block.clone(),
                 DataFixData::VaultAmounts {
+                    swapped: Coin::new(0, DENOM_UKUJI),
+                    received: Coin::new(0, DENOM_UTEST),
                     expected_swapped: Coin::new(0, DENOM_UKUJI),
                     expected_received: Coin::new(0, DENOM_UTEST),
                 },
@@ -146,6 +158,8 @@ fn with_two_data_fixes_should_return_data_fixes() {
                 vault_id,
                 env.block.clone(),
                 DataFixData::VaultAmounts {
+                    swapped: Coin::new(0, DENOM_UKUJI),
+                    received: Coin::new(0, DENOM_UTEST),
                     expected_swapped: Coin::new(0, DENOM_UKUJI),
                     expected_received: Coin::new(0, DENOM_UTEST),
                 },
@@ -164,6 +178,8 @@ fn with_two_data_fixes_should_return_data_fixes() {
                 timestamp: env.block.time,
                 block_height: env.block.height,
                 data: DataFixData::VaultAmounts {
+                    swapped: Coin::new(0, DENOM_UKUJI),
+                    received: Coin::new(0, DENOM_UTEST),
                     expected_swapped: Coin::new(0, DENOM_UKUJI),
                     expected_received: Coin::new(0, DENOM_UTEST),
                 },
@@ -174,6 +190,8 @@ fn with_two_data_fixes_should_return_data_fixes() {
                 timestamp: env.block.time,
                 block_height: env.block.height,
                 data: DataFixData::VaultAmounts {
+                    swapped: Coin::new(0, DENOM_UKUJI),
+                    received: Coin::new(0, DENOM_UTEST),
                     expected_swapped: Coin::new(0, DENOM_UKUJI),
                     expected_received: Coin::new(0, DENOM_UTEST),
                 },
@@ -200,6 +218,8 @@ fn with_start_after_should_return_later_data_fixes() {
                 vault_id,
                 env.block.clone(),
                 DataFixData::VaultAmounts {
+                    swapped: Coin::new(0, DENOM_UKUJI),
+                    received: Coin::new(0, DENOM_UTEST),
                     expected_swapped: Coin::new(0, DENOM_UKUJI),
                     expected_received: Coin::new(0, DENOM_UTEST),
                 },
@@ -208,6 +228,8 @@ fn with_start_after_should_return_later_data_fixes() {
                 vault_id,
                 env.block.clone(),
                 DataFixData::VaultAmounts {
+                    swapped: Coin::new(0, DENOM_UKUJI),
+                    received: Coin::new(0, DENOM_UTEST),
                     expected_swapped: Coin::new(0, DENOM_UKUJI),
                     expected_received: Coin::new(0, DENOM_UTEST),
                 },
@@ -225,6 +247,8 @@ fn with_start_after_should_return_later_data_fixes() {
             timestamp: env.block.time,
             block_height: env.block.height,
             data: DataFixData::VaultAmounts {
+                swapped: Coin::new(0, DENOM_UKUJI),
+                received: Coin::new(0, DENOM_UTEST),
                 expected_swapped: Coin::new(0, DENOM_UKUJI),
                 expected_received: Coin::new(0, DENOM_UTEST),
             },
@@ -250,6 +274,8 @@ fn with_limit_should_return_limited_data_fixes() {
                 vault_id,
                 env.block.clone(),
                 DataFixData::VaultAmounts {
+                    swapped: Coin::new(0, DENOM_UKUJI),
+                    received: Coin::new(0, DENOM_UTEST),
                     expected_swapped: Coin::new(0, DENOM_UKUJI),
                     expected_received: Coin::new(0, DENOM_UTEST),
                 },
@@ -258,6 +284,8 @@ fn with_limit_should_return_limited_data_fixes() {
                 vault_id,
                 env.block.clone(),
                 DataFixData::VaultAmounts {
+                    swapped: Coin::new(0, DENOM_UKUJI),
+                    received: Coin::new(0, DENOM_UTEST),
                     expected_swapped: Coin::new(0, DENOM_UKUJI),
                     expected_received: Coin::new(0, DENOM_UTEST),
                 },
@@ -275,6 +303,8 @@ fn with_limit_should_return_limited_data_fixes() {
             timestamp: env.block.time,
             block_height: env.block.height,
             data: DataFixData::VaultAmounts {
+                swapped: Coin::new(0, DENOM_UKUJI),
+                received: Coin::new(0, DENOM_UTEST),
                 expected_swapped: Coin::new(0, DENOM_UKUJI),
                 expected_received: Coin::new(0, DENOM_UTEST),
             },
@@ -300,6 +330,8 @@ fn with_start_after_and_limit_should_return_limited_later_data_fixes() {
                 vault_id,
                 env.block.clone(),
                 DataFixData::VaultAmounts {
+                    swapped: Coin::new(0, DENOM_UKUJI),
+                    received: Coin::new(0, DENOM_UTEST),
                     expected_swapped: Coin::new(0, DENOM_UKUJI),
                     expected_received: Coin::new(0, DENOM_UTEST),
                 },
@@ -308,6 +340,8 @@ fn with_start_after_and_limit_should_return_limited_later_data_fixes() {
                 vault_id,
                 env.block.clone(),
                 DataFixData::VaultAmounts {
+                    swapped: Coin::new(0, DENOM_UKUJI),
+                    received: Coin::new(0, DENOM_UTEST),
                     expected_swapped: Coin::new(0, DENOM_UKUJI),
                     expected_received: Coin::new(0, DENOM_UTEST),
                 },
@@ -316,6 +350,8 @@ fn with_start_after_and_limit_should_return_limited_later_data_fixes() {
                 vault_id,
                 env.block.clone(),
                 DataFixData::VaultAmounts {
+                    swapped: Coin::new(0, DENOM_UKUJI),
+                    received: Coin::new(0, DENOM_UTEST),
                     expected_swapped: Coin::new(0, DENOM_UKUJI),
                     expected_received: Coin::new(0, DENOM_UTEST),
                 },
@@ -333,6 +369,8 @@ fn with_start_after_and_limit_should_return_limited_later_data_fixes() {
             timestamp: env.block.time,
             block_height: env.block.height,
             data: DataFixData::VaultAmounts {
+                swapped: Coin::new(0, DENOM_UKUJI),
+                received: Coin::new(0, DENOM_UTEST),
                 expected_swapped: Coin::new(0, DENOM_UKUJI),
                 expected_received: Coin::new(0, DENOM_UTEST),
             },

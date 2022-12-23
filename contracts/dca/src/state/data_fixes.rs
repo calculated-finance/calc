@@ -18,10 +18,15 @@ pub struct DataFix {
 #[cw_serde]
 pub enum DataFixData {
     VaultAmounts {
+        swapped: Coin,
+        received: Coin,
         expected_swapped: Coin,
         expected_received: Coin,
     },
     ExecutionCompletedEventAmounts {
+        sent: Coin,
+        received: Coin,
+        fee: Coin,
         expected_sent: Coin,
         expected_received: Coin,
         expected_fee: Coin,
