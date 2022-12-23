@@ -5,6 +5,7 @@ use base::vaults::vault::{Destination, PositionType, VaultStatus};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, Uint128, Uint64};
 
+use crate::state::config::Config;
 use crate::state::data_fixes::DataFix;
 use crate::types::vault::Vault;
 
@@ -133,6 +134,13 @@ pub enum QueryMsg {
         start_after: Option<u64>,
         limit: Option<u16>,
     },
+    #[returns(ConfigResponse)]
+    GetConfig {},
+}
+
+#[cw_serde]
+pub struct ConfigResponse {
+    pub config: Config,
 }
 
 #[cw_serde]

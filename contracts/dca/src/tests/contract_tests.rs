@@ -6,8 +6,8 @@ use cosmwasm_std::{attr, from_binary, Addr, Coin, Decimal, Uint128, Uint64};
 
 use crate::contract::{execute, instantiate, query};
 use crate::msg::{
-    EventsResponse, ExecuteMsg, InstantiateMsg, PairsResponse, QueryMsg, VaultResponse,
-    VaultsResponse,
+    ConfigResponse, EventsResponse, ExecuteMsg, InstantiateMsg, PairsResponse, QueryMsg,
+    VaultResponse, VaultsResponse,
 };
 pub const INVALID_ADDRESS: &str = "";
 pub const VALID_ADDRESS_ONE: &str = "kujira16q6jpx7ns0ugwghqay73uxd5aq30du3uqgxf0d";
@@ -765,4 +765,52 @@ fn get_all_events_by_vault_id_for_non_existent_vault_should_should_succeed() {
     .unwrap();
 
     assert_eq!(response.events, vec![]);
+}
+
+#[test]
+fn get_config_should_succeed() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(VALID_ADDRESS_ONE, &vec![]);
+
+    let instantiate_message = InstantiateMsg {
+        admin: Addr::unchecked(VALID_ADDRESS_ONE),
+        fee_collector: Addr::unchecked(VALID_ADDRESS_ONE),
+        swap_fee_percent: Decimal::from_str("0.015").unwrap(),
+        delegation_fee_percent: Decimal::from_str("0.0075").unwrap(),
+        staking_router_address: Addr::unchecked(VALID_ADDRESS_ONE),
+        page_limit: 1000,
+        paused: false,
+    };
+
+    let _instantiate_result = instantiate(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        instantiate_message,
+    )
+    .unwrap();
+
+    let get_config_query_msg = QueryMsg::GetConfig {};
+    let binary = query(deps.as_ref(), env, get_config_query_msg).unwrap();
+    let response: ConfigResponse = from_binary(&binary).unwrap();
+    assert_eq!(response.config.admin, Addr::unchecked(VALID_ADDRESS_ONE));
+    assert_eq!(
+        response.config.fee_collector,
+        Addr::unchecked(VALID_ADDRESS_ONE)
+    );
+    assert_eq!(
+        response.config.swap_fee_percent,
+        Decimal::from_str("0.015").unwrap()
+    );
+    assert_eq!(
+        response.config.delegation_fee_percent,
+        Decimal::from_str("0.0075").unwrap()
+    );
+    assert_eq!(
+        response.config.staking_router_address,
+        Addr::unchecked(VALID_ADDRESS_ONE)
+    );
+    assert_eq!(response.config.page_limit, 1000);
+    assert_eq!(response.config.paused, false);
 }
