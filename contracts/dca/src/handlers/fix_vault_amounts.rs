@@ -168,7 +168,7 @@ pub fn fix_vault_amounts(
         }
     });
 
-    update_vault(
+    let updated_vault = update_vault(
         deps.storage,
         vault_id,
         |stored_value: Option<Vault>| -> StdResult<Vault> {
@@ -199,9 +199,10 @@ pub fn fix_vault_amounts(
             env.block,
             DataFixData::VaultAmounts {
                 old_swapped: vault.swapped_amount,
-                old_received: vault.received_amount,
+                old_received_after_fees: vault.received_amount,
                 new_swapped: expected_swapped,
-                new_received: expected_received,
+                new_received_before_fees: expected_received,
+                new_received_after_fees: updated_vault.received_amount,
             },
         ),
     )?;

@@ -19,9 +19,10 @@ pub struct DataFix {
 pub enum DataFixData {
     VaultAmounts {
         old_swapped: Coin,
-        old_received: Coin,
+        old_received_after_fees: Coin,
         new_swapped: Coin,
-        new_received: Coin,
+        new_received_before_fees: Coin,
+        new_received_after_fees: Coin,
     },
     ExecutionCompletedEventAmounts {
         old_sent: Coin,
