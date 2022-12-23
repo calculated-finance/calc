@@ -14,6 +14,7 @@ pub mod execute_trigger;
 pub mod fix_event_amounts;
 pub mod fix_vault_amounts;
 pub mod get_custom_swap_fees;
+pub mod get_data_fixes_by_resource_id;
 pub mod get_events;
 pub mod get_events_by_resource_id;
 pub mod get_pairs;

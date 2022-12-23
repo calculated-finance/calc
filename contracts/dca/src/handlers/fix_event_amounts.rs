@@ -72,8 +72,7 @@ pub fn fix_event_amounts(
         deps.storage,
         DataFixBuilder::new(
             event.resource_id,
-            env.block.time,
-            env.block.height,
+            env.block,
             DataFixData::ExecutionCompletedEventAmounts {
                 expected_sent,
                 expected_received,

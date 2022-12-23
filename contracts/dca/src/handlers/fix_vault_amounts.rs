@@ -196,8 +196,7 @@ pub fn fix_vault_amounts(
         deps.storage,
         DataFixBuilder::new(
             vault.id,
-            env.block.time,
-            env.block.height,
+            env.block,
             DataFixData::VaultAmounts {
                 expected_swapped,
                 expected_received,

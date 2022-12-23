@@ -5,6 +5,7 @@ use base::vaults::vault::{Destination, PositionType, VaultStatus};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, Uint128, Uint64};
 
+use crate::state::data_fixes::DataFix;
 use crate::types::vault::Vault;
 
 #[cw_serde]
@@ -161,4 +162,9 @@ pub struct EventsResponse {
 #[cw_serde]
 pub struct CustomFeesResponse {
     pub custom_fees: Vec<(String, Decimal)>,
+}
+
+#[cw_serde]
+pub struct DataFixesResponse {
+    pub fixes: Vec<DataFix>,
 }

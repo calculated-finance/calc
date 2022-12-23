@@ -60,3 +60,6 @@ pub mod get_vaults_tests;
 
 #[cfg(test)]
 pub mod fix_vault_amounts_tests;
+
+#[cfg(test)]
+pub mod get_data_fixes_by_resource_id_tests;
