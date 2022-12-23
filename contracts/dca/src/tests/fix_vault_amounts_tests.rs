@@ -5,18 +5,17 @@ use base::{
 };
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    BankMsg, Coin, SubMsg, Uint128,
+    Attribute, BankMsg, Coin, SubMsg, Uint128,
 };
 
 use crate::{
     contract::AFTER_BANK_SWAP_REPLY_ID,
-    handlers::{
-        fix_vault_amounts::fix_vault_amounts, get_events_by_resource_id::get_events_by_resource_id,
-    },
+    handlers::fix_vault_amounts::fix_vault_amounts,
     state::{
         cache::{SwapCache, SWAP_CACHE},
         config::get_config,
-        vaults::get_vault,
+        events::create_events,
+        vaults::{get_vault, update_vault},
     },
     tests::{
         helpers::{instantiate_contract, setup_active_vault_with_funds},
@@ -87,24 +86,40 @@ fn should_adjust_received_amount_stat() {
     instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
 
     let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
-    let receive_amount = Uint128::new(234312312);
-    let updated_swapped_amount = Uint128::new(11000);
-    let updated_receive_amount = Uint128::new(11000);
 
-    SWAP_CACHE
-        .save(
-            deps.as_mut().storage,
-            &SwapCache {
-                swap_denom_balance: vault.balance.clone(),
-                receive_denom_balance: Coin::new(0, vault.get_receive_denom()),
+    let existing_swapped_amount = Uint128::new(1000000);
+    let existing_receive_amount = Uint128::new(1000000);
+    let existing_fee_amount = Uint128::new(1000);
+    let updated_swapped_amount = Uint128::new(11000000);
+    let updated_receive_amount = Uint128::new(11000000);
+
+    update_vault(
+        deps.as_mut().storage,
+        vault.id,
+        |stored_vault| match stored_vault.clone() {
+            Some(mut vault) => {
+                vault.swapped_amount.amount = existing_swapped_amount;
+                vault.received_amount.amount = existing_receive_amount;
+                Ok(vault)
+            }
+            None => panic!("Vault not found"),
+        },
+    )
+    .unwrap();
+
+    create_events(
+        deps.as_mut().storage,
+        vec![EventBuilder::new(
+            vault.id,
+            env.block.clone(),
+            EventData::DcaVaultExecutionCompleted {
+                sent: Coin::new(existing_swapped_amount.into(), vault.get_swap_denom()),
+                received: Coin::new(existing_receive_amount.into(), vault.get_receive_denom()),
+                fee: Coin::new(existing_fee_amount.into(), vault.get_receive_denom()),
             },
-        )
-        .unwrap();
-
-    deps.querier.update_balance(
-        "cosmos2contract",
-        vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
-    );
+        )],
+    )
+    .unwrap();
 
     fix_vault_amounts(
         deps.as_mut(),
@@ -119,7 +134,9 @@ fn should_adjust_received_amount_stat() {
     let updated_vault = get_vault(&deps.storage, vault.id).unwrap();
     let config = get_config(&deps.storage).unwrap();
 
-    let mut fee = config.swap_fee_percent * updated_receive_amount;
+    let amount_to_disburse_before_fees =
+        updated_receive_amount - (existing_receive_amount + existing_fee_amount);
+    let mut fee = config.swap_fee_percent * amount_to_disburse_before_fees;
 
     vault
         .destinations
@@ -127,11 +144,13 @@ fn should_adjust_received_amount_stat() {
         .filter(|d| d.action == PostExecutionAction::ZDelegate)
         .for_each(|destination| {
             let allocation_amount =
-                checked_mul(updated_receive_amount - fee, destination.allocation).unwrap();
+                checked_mul(amount_to_disburse_before_fees - fee, destination.allocation).unwrap();
             let allocation_automation_fee =
                 checked_mul(allocation_amount, config.delegation_fee_percent).unwrap();
             fee = fee.checked_add(allocation_automation_fee).unwrap();
         });
+
+    fee += existing_fee_amount;
 
     assert_eq!(
         updated_vault.received_amount.amount,
@@ -140,20 +159,46 @@ fn should_adjust_received_amount_stat() {
 }
 
 #[test]
-fn should_disperse_funds() {
+fn should_disburse_funds() {
     let mut deps = mock_dependencies();
     let env = mock_env();
     instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
 
     let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
-    let receive_amount = Uint128::new(1000);
-    let updated_swapped_amount = Uint128::new(11000);
-    let updated_receive_amount = Uint128::new(11000);
 
-    deps.querier.update_balance(
-        "cosmos2contract",
-        vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
-    );
+    let existing_swapped_amount = Uint128::new(1000000);
+    let existing_receive_amount = Uint128::new(1000000);
+    let existing_fee_amount = Uint128::new(1000);
+    let updated_swapped_amount = Uint128::new(11000000);
+    let updated_receive_amount = Uint128::new(11000000);
+
+    update_vault(
+        deps.as_mut().storage,
+        vault.id,
+        |stored_vault| match stored_vault.clone() {
+            Some(mut vault) => {
+                vault.swapped_amount.amount = existing_swapped_amount;
+                vault.received_amount.amount = existing_receive_amount;
+                Ok(vault)
+            }
+            None => panic!("Vault not found"),
+        },
+    )
+    .unwrap();
+
+    create_events(
+        deps.as_mut().storage,
+        vec![EventBuilder::new(
+            vault.id,
+            env.block.clone(),
+            EventData::DcaVaultExecutionCompleted {
+                sent: Coin::new(existing_swapped_amount.into(), vault.get_swap_denom()),
+                received: Coin::new(existing_receive_amount.into(), vault.get_receive_denom()),
+                fee: Coin::new(existing_fee_amount.into(), vault.get_receive_denom()),
+            },
+        )],
+    )
+    .unwrap();
 
     let response = fix_vault_amounts(
         deps.as_mut(),
@@ -167,29 +212,29 @@ fn should_disperse_funds() {
 
     let config = get_config(&deps.storage).unwrap();
 
-    let automation_fee_rate = config
-        .delegation_fee_percent
-        .checked_mul(
-            vault
-                .destinations
-                .iter()
-                .filter(|destination| destination.action == PostExecutionAction::ZDelegate)
-                .map(|destination| destination.allocation)
-                .sum(),
-        )
-        .unwrap();
+    let amount_to_disburse_before_fees =
+        updated_receive_amount - (existing_receive_amount + existing_fee_amount);
+    let mut fee = config.swap_fee_percent * amount_to_disburse_before_fees;
 
-    let swap_fee = config.swap_fee_percent * updated_receive_amount;
-    let total_after_swap_fee = updated_receive_amount - swap_fee;
-    let automation_fee = checked_mul(total_after_swap_fee, automation_fee_rate).unwrap();
-    let total_fee = swap_fee + automation_fee;
-    let total_after_total_fee = updated_receive_amount - total_fee;
+    vault
+        .destinations
+        .iter()
+        .filter(|d| d.action == PostExecutionAction::ZDelegate)
+        .for_each(|destination| {
+            let allocation_amount =
+                checked_mul(amount_to_disburse_before_fees - fee, destination.allocation).unwrap();
+            let allocation_automation_fee =
+                checked_mul(allocation_amount, config.delegation_fee_percent).unwrap();
+            fee = fee.checked_add(allocation_automation_fee).unwrap();
+        });
+
+    let amount_to_disburse = amount_to_disburse_before_fees - fee;
 
     assert!(response.messages.contains(&SubMsg::reply_on_success(
         BankMsg::Send {
             to_address: vault.destinations.first().unwrap().address.to_string(),
             amount: vec![Coin::new(
-                total_after_total_fee.into(),
+                amount_to_disburse.into(),
                 vault.get_receive_denom(),
             )],
         },
@@ -198,83 +243,45 @@ fn should_disperse_funds() {
 }
 
 #[test]
-fn publishes_fix_amount_event() {
-    let mut deps = mock_dependencies();
-    let env = mock_env();
-    instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
-    let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
-    let receive_amount = Uint128::new(1000);
-    let updated_swapped_amount = Uint128::new(11000);
-    let updated_receive_amount = Uint128::new(11000);
-
-    deps.querier.update_balance(
-        "cosmos2contract",
-        vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
-    );
-
-    fix_vault_amounts(
-        deps.as_mut(),
-        env.clone(),
-        mock_info(ADMIN, &vec![]),
-        vault.id,
-        Coin::new(updated_swapped_amount.into(), vault.get_swap_denom()),
-        Coin::new(updated_receive_amount.into(), vault.get_receive_denom()),
-    )
-    .unwrap();
-
-    let events = get_events_by_resource_id(deps.as_ref(), vault.id.clone(), None, None)
-        .unwrap()
-        .events;
-
-    let config = get_config(&deps.storage).unwrap();
-
-    let automation_fee_rate = config
-        .delegation_fee_percent
-        .checked_mul(
-            vault
-                .destinations
-                .iter()
-                .filter(|destination| destination.action == PostExecutionAction::ZDelegate)
-                .map(|destination| destination.allocation)
-                .sum(),
-        )
-        .unwrap();
-
-    let swap_fee = config.swap_fee_percent * updated_receive_amount;
-    let total_after_swap_fee = updated_receive_amount - swap_fee;
-    let automation_fee = checked_mul(total_after_swap_fee, automation_fee_rate).unwrap();
-    let total_fee = swap_fee + automation_fee;
-
-    assert!(events.contains(
-        &EventBuilder::new(
-            vault.id,
-            env.block.clone(),
-            EventData::DcaFixVaultAmounts {
-                expected_swapped_amount: Coin::new(updated_swapped_amount.into(), "base"),
-                actual_swapped_amount: Coin::new(0, "base"),
-                expected_received_amount: Coin::new(updated_receive_amount.into(), "quote"),
-                actual_received_amount: Coin::new(0, "quote"),
-                fee: Coin::new(total_fee.into(), "quote")
-            }
-        )
-        .build(1)
-    ));
-}
-
-#[test]
 fn returns_fee_to_fee_collector() {
     let mut deps = mock_dependencies();
     let env = mock_env();
     instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
     let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
-    let receive_amount = Uint128::new(1000);
-    let updated_swapped_amount = Uint128::new(11000);
-    let updated_receive_amount = Uint128::new(11000);
 
-    deps.querier.update_balance(
-        "cosmos2contract",
-        vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
-    );
+    let existing_swapped_amount = Uint128::new(1000000);
+    let existing_receive_amount = Uint128::new(1000000);
+    let existing_fee_amount = Uint128::new(1000);
+    let updated_swapped_amount = Uint128::new(11000000);
+    let updated_receive_amount = Uint128::new(11000000);
+
+    update_vault(
+        deps.as_mut().storage,
+        vault.id,
+        |stored_vault| match stored_vault.clone() {
+            Some(mut vault) => {
+                vault.swapped_amount.amount = existing_swapped_amount;
+                vault.received_amount.amount = existing_receive_amount;
+                Ok(vault)
+            }
+            None => panic!("Vault not found"),
+        },
+    )
+    .unwrap();
+
+    create_events(
+        deps.as_mut().storage,
+        vec![EventBuilder::new(
+            vault.id,
+            env.block.clone(),
+            EventData::DcaVaultExecutionCompleted {
+                sent: Coin::new(existing_swapped_amount.into(), vault.get_swap_denom()),
+                received: Coin::new(existing_receive_amount.into(), vault.get_receive_denom()),
+                fee: Coin::new(existing_fee_amount.into(), vault.get_receive_denom()),
+            },
+        )],
+    )
+    .unwrap();
 
     let response = fix_vault_amounts(
         deps.as_mut(),
@@ -288,6 +295,10 @@ fn returns_fee_to_fee_collector() {
 
     let config = get_config(&deps.storage).unwrap();
 
+    let amount_to_disburse_before_fees =
+        updated_receive_amount - (existing_receive_amount + existing_fee_amount);
+    let swap_fee = config.swap_fee_percent * amount_to_disburse_before_fees;
+
     let automation_fee_rate = config
         .delegation_fee_percent
         .checked_mul(
@@ -300,9 +311,7 @@ fn returns_fee_to_fee_collector() {
         )
         .unwrap();
 
-    let swap_fee = config.swap_fee_percent * updated_receive_amount;
-    let total_after_swap_fee = updated_receive_amount - swap_fee;
-    let automation_fee = checked_mul(total_after_swap_fee, automation_fee_rate).unwrap();
+    let automation_fee = (amount_to_disburse_before_fees - swap_fee) * automation_fee_rate;
 
     assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
         to_address: config.fee_collector.to_string(),
@@ -315,22 +324,50 @@ fn returns_fee_to_fee_collector() {
     })));
 }
 
-// this tests read poorly
 #[test]
 fn with_correct_received_amount_should_do_nothing() {
     let mut deps = mock_dependencies();
     let env = mock_env();
     instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
-    let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
-    let receive_amount = Uint128::new(11000);
-    let updated_swapped_amount = Uint128::new(0);
-    let updated_receive_amount = Uint128::new(0);
+    let mut vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
 
-    assert_eq!(vault.received_amount.amount, Uint128::zero());
+    let existing_swapped_amount = Uint128::new(1000000);
+    let existing_receive_amount = Uint128::new(1000000);
+    let existing_fee_amount = Uint128::new(1000);
+    let updated_swapped_amount = Uint128::new(1000000);
+    let updated_receive_amount = Uint128::new(1001000);
 
-    deps.querier.update_balance(
-        "cosmos2contract",
-        vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
+    vault = update_vault(
+        deps.as_mut().storage,
+        vault.id,
+        |stored_vault| match stored_vault.clone() {
+            Some(mut vault) => {
+                vault.swapped_amount.amount = existing_swapped_amount;
+                vault.received_amount.amount = existing_receive_amount;
+                Ok(vault)
+            }
+            None => panic!("Vault not found"),
+        },
+    )
+    .unwrap();
+
+    create_events(
+        deps.as_mut().storage,
+        vec![EventBuilder::new(
+            vault.id,
+            env.block.clone(),
+            EventData::DcaVaultExecutionCompleted {
+                sent: Coin::new(existing_swapped_amount.into(), vault.get_swap_denom()),
+                received: Coin::new(existing_receive_amount.into(), vault.get_receive_denom()),
+                fee: Coin::new(existing_fee_amount.into(), vault.get_receive_denom()),
+            },
+        )],
+    )
+    .unwrap();
+
+    assert_eq!(
+        vault.received_amount.amount,
+        updated_receive_amount - existing_fee_amount
     );
 
     let response = fix_vault_amounts(
@@ -343,11 +380,8 @@ fn with_correct_received_amount_should_do_nothing() {
     )
     .unwrap();
 
-    let events = get_events_by_resource_id(deps.as_ref(), vault.id.clone(), None, None)
-        .unwrap()
-        .events;
-
-    assert!(events.is_empty());
-
-    assert!(response.messages.is_empty())
+    assert!(response.attributes.contains(&Attribute {
+        key: "result".to_string(),
+        value: "no-op".to_string()
+    }));
 }

@@ -18,6 +18,8 @@ use cosmwasm_std::{
 use staking_router::msg::ExecuteMsg as StakingRouterExecuteMsg;
 use std::cmp::min;
 
+use super::get_events_by_resource_id::get_events_by_resource_id;
+
 pub fn fix_vault_amounts(
     deps: DepsMut,
     env: Env,
@@ -38,14 +40,31 @@ pub fn fix_vault_amounts(
         vault.get_swap_denom(),
     );
 
+    let events = get_events_by_resource_id(deps.as_ref(), vault.id, None, Some(1000))?;
+
+    let total_fees_taken_before_fix =
+        events
+            .events
+            .iter()
+            .fold(Uint128::zero(), |acc, event| match &event.data {
+                base::events::event::EventData::DcaVaultExecutionCompleted { fee, .. } => {
+                    acc.checked_add(fee.amount).unwrap()
+                }
+                _ => acc,
+            });
+
     let coin_received = Coin::new(
-        (expected_received.amount.clone() - vault.received_amount.amount).into(),
+        (expected_received.amount.clone()
+            - (vault.received_amount.amount + total_fees_taken_before_fix))
+            .into(),
         expected_received.denom.clone(),
     );
 
     // if these are both zero the vault is correct as determined by the values passed in
     if coin_received.amount.is_zero() && coin_swapped.amount.is_zero() {
-        return Ok(Response::new().add_attribute("method", "fix_vault_amounts"));
+        return Ok(Response::new()
+            .add_attribute("method", "fix_vault_amounts")
+            .add_attribute("result", "no-op"));
     }
 
     let config = get_config(deps.storage)?;
@@ -144,8 +163,10 @@ pub fn fix_vault_amounts(
             match stored_value {
                 Some(mut existing_vault) => {
                     existing_vault.swapped_amount = expected_swapped.clone();
-                    existing_vault.received_amount =
-                        Coin::new(total_after_total_fee.into(), vault.get_receive_denom());
+                    existing_vault.received_amount = Coin::new(
+                        (existing_vault.received_amount.amount + total_after_total_fee).into(),
+                        vault.get_receive_denom(),
+                    );
                     Ok(existing_vault)
                 }
                 None => Err(StdError::NotFound {
@@ -184,6 +205,7 @@ pub fn fix_vault_amounts(
         .add_attribute("method", "fix_vault_amounts")
         .add_attribute("owner", vault.owner.to_string())
         .add_attribute("vault_id", vault.id)
+        .add_attribute("result", "updated")
         .add_messages(messages)
         .add_submessages(sub_msgs))
 }
