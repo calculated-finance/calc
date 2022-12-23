@@ -39,14 +39,7 @@ pub enum EventData {
         validator_address: String,
         delegation: Coin,
     },
-    DcaVaultDelegationFailed {},
-    DcaFixVaultAmounts {
-        expected_swapped_amount: Coin,
-        actual_swapped_amount: Coin,
-        expected_received_amount: Coin,
-        actual_received_amount: Coin,
-        fee: Coin,
-    },
+    DcaVaultDelegationFailed {}
 }
 
 #[cw_serde]

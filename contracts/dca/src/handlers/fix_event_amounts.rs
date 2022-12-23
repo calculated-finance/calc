@@ -49,12 +49,12 @@ pub fn fix_event_amounts(
                     event.resource_id,
                     env.block,
                     DataFixData::ExecutionCompletedEventAmounts {
-                        sent,
-                        received,
-                        fee,
-                        expected_sent: expected_sent.clone(),
-                        expected_received: expected_received.clone(),
-                        expected_fee: expected_fee.clone(),
+                        old_sent: sent,
+                        old_received: received,
+                        old_fee: fee,
+                        new_sent: expected_sent.clone(),
+                        new_received: expected_received.clone(),
+                        new_fee: expected_fee.clone(),
                     },
                 ),
             )?;

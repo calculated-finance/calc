@@ -198,10 +198,10 @@ pub fn fix_vault_amounts(
             vault.id,
             env.block,
             DataFixData::VaultAmounts {
-                swapped: vault.swapped_amount,
-                received: vault.received_amount,
-                expected_swapped,
-                expected_received,
+                old_swapped: vault.swapped_amount,
+                old_received: vault.received_amount,
+                new_swapped: expected_swapped,
+                new_received: expected_received,
             },
         ),
     )?;
