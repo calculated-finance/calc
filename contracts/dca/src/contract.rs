@@ -15,6 +15,7 @@ use crate::handlers::execute_trigger::execute_trigger_handler;
 use crate::handlers::fix_event_amounts::fix_event_amounts;
 use crate::handlers::fix_vault_amounts::fix_vault_amounts;
 use crate::handlers::get_custom_swap_fees::get_custom_swap_fees;
+use crate::handlers::get_data_fixes_by_resource_id::get_data_fixes_by_resource_id;
 use crate::handlers::get_events::get_events;
 use crate::handlers::get_events_by_resource_id::get_events_by_resource_id;
 use crate::handlers::get_pairs::get_pairs;
@@ -250,5 +251,15 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&get_events(deps, start_after, limit)?)
         }
         QueryMsg::GetCustomSwapFees {} => to_binary(&get_custom_swap_fees(deps)?),
+        QueryMsg::GetDataFixesByResourceId {
+            resource_id,
+            start_after,
+            limit,
+        } => to_binary(&get_data_fixes_by_resource_id(
+            deps,
+            resource_id,
+            start_after,
+            limit,
+        )?),
     }
 }

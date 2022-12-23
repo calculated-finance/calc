@@ -127,6 +127,12 @@ pub enum QueryMsg {
     },
     #[returns(CustomFeesResponse)]
     GetCustomSwapFees {},
+    #[returns(DataFixesResponse)]
+    GetDataFixesByResourceId {
+        resource_id: Uint128,
+        start_after: Option<u64>,
+        limit: Option<u16>,
+    },
 }
 
 #[cw_serde]
