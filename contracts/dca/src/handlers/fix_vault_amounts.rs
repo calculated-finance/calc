@@ -35,6 +35,18 @@ pub fn fix_vault_amounts(
 
     let vault = get_vault(deps.storage, vault_id)?;
 
+    if vault.get_swap_denom() != expected_swapped.denom {
+        return Err(ContractError::CustomError {
+            val: "Expected swapped denom does not match vault swap denom".to_string(),
+        });
+    }
+
+    if vault.get_receive_denom() != expected_received.denom {
+        return Err(ContractError::CustomError {
+            val: "Expected received denom does not match vault received denom".to_string(),
+        });
+    }
+
     let coin_swapped = Coin::new(
         (expected_swapped.amount.clone() - vault.swapped_amount.amount).into(),
         vault.get_swap_denom(),

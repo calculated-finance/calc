@@ -23,7 +23,27 @@ pub fn fix_event_amounts(
     let event = event_store().load(deps.storage, event_id)?;
 
     match event.data {
-        EventData::DcaVaultExecutionCompleted { .. } => {}
+        EventData::DcaVaultExecutionCompleted {
+            sent,
+            received,
+            fee,
+        } => {
+            if expected_sent.denom != sent.denom {
+                return Err(ContractError::CustomError {
+                    val: "Expected sent denom does not match event sent denom".to_string(),
+                });
+            }
+            if expected_received.denom != received.denom {
+                return Err(ContractError::CustomError {
+                    val: "Expected received denom does not match event received denom".to_string(),
+                });
+            }
+            if expected_fee.denom != fee.denom {
+                return Err(ContractError::CustomError {
+                    val: "Expected fee denom does not match event fee denom".to_string(),
+                });
+            }
+        }
         _ => {
             return Err(ContractError::CustomError {
                 val: "Event is not a DcaVaultExecutionCompleted".to_string(),
@@ -87,9 +107,9 @@ mod tests {
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
 
         let event_id = 1;
-        let sent = Coin::new(100, "uusd");
-        let received = Coin::new(100, "uusd");
-        let fee = Coin::new(1, "uusd");
+        let sent = Coin::new(100, "ukuji");
+        let received = Coin::new(100, "uusk");
+        let fee = Coin::new(1, "uusk");
 
         let event = EventBuilder::new(
             Uint128::one(),
