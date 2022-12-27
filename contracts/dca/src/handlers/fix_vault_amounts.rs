@@ -47,11 +47,6 @@ pub fn fix_vault_amounts(
         });
     }
 
-    let coin_swapped = Coin::new(
-        (expected_swapped.amount.clone() - vault.swapped_amount.amount).into(),
-        vault.get_swap_denom(),
-    );
-
     let events = get_events_by_resource_id(deps.as_ref(), vault.id, None, Some(1000))?;
 
     let total_fees_taken_before_fix =
@@ -65,132 +60,151 @@ pub fn fix_vault_amounts(
                 _ => acc,
             });
 
-    let coin_received = Coin::new(
-        (expected_received.amount.clone()
-            - (vault.received_amount.amount + total_fees_taken_before_fix))
-            .into(),
-        expected_received.denom.clone(),
-    );
-
-    // if these are both zero the vault is correct as determined by the values passed in
-    if coin_received.amount.is_zero() && coin_swapped.amount.is_zero() {
-        return Ok(Response::new()
-            .add_attribute("method", "fix_vault_amounts")
-            .add_attribute("result", "no-op"));
-    }
-
-    let config = get_config(deps.storage)?;
-
-    let fee_percent = match (
-        get_custom_fee(deps.storage, vault.get_swap_denom()),
-        get_custom_fee(deps.storage, vault.get_receive_denom()),
-    ) {
-        (Some(swap_denom_fee_percent), Some(receive_denom_fee_percent)) => {
-            min(swap_denom_fee_percent, receive_denom_fee_percent)
-        }
-        (Some(swap_denom_fee_percent), None) => swap_denom_fee_percent,
-        (None, Some(receive_denom_fee_percent)) => receive_denom_fee_percent,
-        (None, None) => config.swap_fee_percent,
-    };
-
-    let automation_fee_rate = config.delegation_fee_percent.checked_mul(
-        vault
-            .destinations
-            .iter()
-            .filter(|destination| destination.action == PostExecutionAction::ZDelegate)
-            .map(|destination| destination.allocation)
-            .sum(),
-    )?;
-
-    let swap_fee = checked_mul(coin_received.amount, fee_percent)?;
-    let total_after_swap_fee = coin_received.amount - swap_fee;
-    let automation_fee = checked_mul(total_after_swap_fee, automation_fee_rate)?;
-
-    if swap_fee.gt(&Uint128::zero()) {
-        messages.push(CosmosMsg::Bank(BankMsg::Send {
-            to_address: config.fee_collector.to_string(),
-            amount: vec![Coin::new(swap_fee.into(), coin_received.denom.clone())],
-        }));
-    }
-
-    if automation_fee.gt(&Uint128::zero()) {
-        messages.push(CosmosMsg::Bank(BankMsg::Send {
-            to_address: config.fee_collector.to_string(),
-            amount: vec![Coin::new(
-                automation_fee.into(),
-                coin_received.denom.clone(),
-            )],
-        }));
-    }
-
-    let total_fee = swap_fee + automation_fee;
-    let total_after_total_fee = coin_received.amount - total_fee;
-
-    vault.destinations.iter().for_each(|destination| {
-        let allocation_amount = Coin::new(
-            checked_mul(total_after_total_fee, destination.allocation)
-                .ok()
-                .expect("amount to be distributed should be valid")
+    if expected_received.amount > vault.received_amount.amount + total_fees_taken_before_fix {
+        let coin_received = Coin::new(
+            (expected_received.amount.clone()
+                - (vault.received_amount.amount + total_fees_taken_before_fix))
                 .into(),
-            coin_received.denom.clone(),
+            expected_received.denom.clone(),
         );
 
-        if allocation_amount.amount.gt(&Uint128::zero()) {
-            match destination.action {
-                PostExecutionAction::Send => messages.push(CosmosMsg::Bank(BankMsg::Send {
-                    to_address: destination.address.to_string(),
-                    amount: vec![allocation_amount],
-                })),
-                PostExecutionAction::ZDelegate => {
-                    sub_msgs.push(SubMsg::reply_on_success(
-                        BankMsg::Send {
-                            to_address: vault.owner.to_string(),
-                            amount: vec![allocation_amount.clone()],
-                        },
-                        AFTER_BANK_SWAP_REPLY_ID,
-                    ));
-                    sub_msgs.push(SubMsg::reply_always(
-                        CosmosMsg::Wasm(WasmMsg::Execute {
-                            contract_addr: config.staking_router_address.to_string(),
-                            msg: to_binary(&StakingRouterExecuteMsg::ZDelegate {
-                                delegator_address: vault.owner.clone(),
-                                validator_address: destination.address.clone(),
-                                denom: allocation_amount.denom.clone(),
-                                amount: allocation_amount.amount.clone(),
-                            })
-                            .unwrap(),
-                            funds: vec![],
-                        }),
-                        AFTER_Z_DELEGATION_REPLY_ID,
-                    ));
-                }
-            }
-        }
-    });
+        let config = get_config(deps.storage)?;
 
-    update_vault(
-        deps.storage,
-        vault_id,
-        |stored_value: Option<Vault>| -> StdResult<Vault> {
-            match stored_value {
-                Some(mut existing_vault) => {
-                    existing_vault.swapped_amount = expected_swapped.clone();
-                    existing_vault.received_amount = Coin::new(
-                        (existing_vault.received_amount.amount + total_after_total_fee).into(),
-                        vault.get_receive_denom(),
-                    );
-                    Ok(existing_vault)
-                }
-                None => Err(StdError::NotFound {
-                    kind: format!(
-                        "vault for address: {} with id: {}",
-                        vault.owner.clone(),
-                        vault.id
-                    ),
-                }),
+        let fee_percent = match (
+            get_custom_fee(deps.storage, vault.get_swap_denom()),
+            get_custom_fee(deps.storage, vault.get_receive_denom()),
+        ) {
+            (Some(swap_denom_fee_percent), Some(receive_denom_fee_percent)) => {
+                min(swap_denom_fee_percent, receive_denom_fee_percent)
             }
-        },
-    )?;
+            (Some(swap_denom_fee_percent), None) => swap_denom_fee_percent,
+            (None, Some(receive_denom_fee_percent)) => receive_denom_fee_percent,
+            (None, None) => config.swap_fee_percent,
+        };
+
+        let automation_fee_rate = config.delegation_fee_percent.checked_mul(
+            vault
+                .destinations
+                .iter()
+                .filter(|destination| destination.action == PostExecutionAction::ZDelegate)
+                .map(|destination| destination.allocation)
+                .sum(),
+        )?;
+
+        let swap_fee = checked_mul(coin_received.amount, fee_percent)?;
+        let total_after_swap_fee = coin_received.amount - swap_fee;
+        let automation_fee = checked_mul(total_after_swap_fee, automation_fee_rate)?;
+
+        if swap_fee.gt(&Uint128::zero()) {
+            messages.push(CosmosMsg::Bank(BankMsg::Send {
+                to_address: config.fee_collector.to_string(),
+                amount: vec![Coin::new(swap_fee.into(), coin_received.denom.clone())],
+            }));
+        }
+
+        if automation_fee.gt(&Uint128::zero()) {
+            messages.push(CosmosMsg::Bank(BankMsg::Send {
+                to_address: config.fee_collector.to_string(),
+                amount: vec![Coin::new(
+                    automation_fee.into(),
+                    coin_received.denom.clone(),
+                )],
+            }));
+        }
+
+        let total_fee = swap_fee + automation_fee;
+        let total_after_total_fee = coin_received.amount - total_fee;
+
+        vault.destinations.iter().for_each(|destination| {
+            let allocation_amount = Coin::new(
+                checked_mul(total_after_total_fee, destination.allocation)
+                    .ok()
+                    .expect("amount to be distributed should be valid")
+                    .into(),
+                coin_received.denom.clone(),
+            );
+
+            if allocation_amount.amount.gt(&Uint128::zero()) {
+                match destination.action {
+                    PostExecutionAction::Send => messages.push(CosmosMsg::Bank(BankMsg::Send {
+                        to_address: destination.address.to_string(),
+                        amount: vec![allocation_amount],
+                    })),
+                    PostExecutionAction::ZDelegate => {
+                        sub_msgs.push(SubMsg::reply_on_success(
+                            BankMsg::Send {
+                                to_address: vault.owner.to_string(),
+                                amount: vec![allocation_amount.clone()],
+                            },
+                            AFTER_BANK_SWAP_REPLY_ID,
+                        ));
+                        sub_msgs.push(SubMsg::reply_always(
+                            CosmosMsg::Wasm(WasmMsg::Execute {
+                                contract_addr: config.staking_router_address.to_string(),
+                                msg: to_binary(&StakingRouterExecuteMsg::ZDelegate {
+                                    delegator_address: vault.owner.clone(),
+                                    validator_address: destination.address.clone(),
+                                    denom: allocation_amount.denom.clone(),
+                                    amount: allocation_amount.amount.clone(),
+                                })
+                                .unwrap(),
+                                funds: vec![],
+                            }),
+                            AFTER_Z_DELEGATION_REPLY_ID,
+                        ));
+                    }
+                }
+            }
+        });
+
+        update_vault(
+            deps.storage,
+            vault_id,
+            |stored_value: Option<Vault>| -> StdResult<Vault> {
+                match stored_value {
+                    Some(mut existing_vault) => {
+                        existing_vault.swapped_amount = expected_swapped.clone();
+                        existing_vault.received_amount = Coin::new(
+                            (existing_vault.received_amount.amount + total_after_total_fee).into(),
+                            vault.get_receive_denom(),
+                        );
+                        Ok(existing_vault)
+                    }
+                    None => Err(StdError::NotFound {
+                        kind: format!(
+                            "vault for address: {} with id: {}",
+                            vault.owner.clone(),
+                            vault.id
+                        ),
+                    }),
+                }
+            },
+        )?;
+    } else {
+        update_vault(
+            deps.storage,
+            vault_id,
+            |stored_value: Option<Vault>| -> StdResult<Vault> {
+                match stored_value {
+                    Some(mut existing_vault) => {
+                        existing_vault.swapped_amount = expected_swapped.clone();
+                        existing_vault.received_amount = Coin::new(
+                            (expected_received.amount - total_fees_taken_before_fix).into(),
+                            vault.get_receive_denom(),
+                        );
+                        Ok(existing_vault)
+                    }
+                    None => Err(StdError::NotFound {
+                        kind: format!(
+                            "vault for address: {} with id: {}",
+                            vault.owner.clone(),
+                            vault.id
+                        ),
+                    }),
+                }
+            },
+        )?;
+    }
 
     save_data_fix(
         deps.storage,
