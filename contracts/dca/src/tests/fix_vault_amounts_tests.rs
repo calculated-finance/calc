@@ -24,7 +24,63 @@ use crate::{
 };
 
 #[test]
-fn should_adjust_swapped_amount_stat() {
+fn should_adjust_swapped_amount_stat_upwards() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
+
+    let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
+    let receive_amount = Uint128::new(234312312);
+    let updated_swapped_amount = Uint128::new(11000);
+    let updated_receive_amount = Uint128::new(11000);
+
+    SWAP_CACHE
+        .save(
+            deps.as_mut().storage,
+            &SwapCache {
+                swap_denom_balance: vault.balance.clone(),
+                receive_denom_balance: Coin::new(0, vault.get_receive_denom()),
+            },
+        )
+        .unwrap();
+
+    deps.querier.update_balance(
+        "cosmos2contract",
+        vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
+    );
+
+    fix_vault_amounts(
+        deps.as_mut(),
+        env.clone(),
+        mock_info(ADMIN, &vec![]),
+        vault.id,
+        Coin::new(updated_swapped_amount.into(), vault.get_swap_denom()),
+        Coin::new(updated_receive_amount.into(), vault.get_receive_denom()),
+    )
+    .unwrap();
+
+    let updated_vault = get_vault(&deps.storage, vault.id).unwrap();
+    let config = get_config(&deps.storage).unwrap();
+
+    let mut fee = config.swap_fee_percent * updated_receive_amount;
+
+    vault
+        .destinations
+        .iter()
+        .filter(|d| d.action == PostExecutionAction::ZDelegate)
+        .for_each(|destination| {
+            let allocation_amount =
+                checked_mul(updated_receive_amount - fee, destination.allocation).unwrap();
+            let allocation_automation_fee =
+                checked_mul(allocation_amount, config.delegation_fee_percent).unwrap();
+            fee = fee.checked_add(allocation_automation_fee).unwrap();
+        });
+
+    assert_eq!(updated_vault.swapped_amount.amount, updated_swapped_amount);
+}
+
+#[test]
+fn should_adjust_swapped_amount_stat_downwards() {
     let mut deps = mock_dependencies();
     let env = mock_env();
     instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
