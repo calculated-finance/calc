@@ -247,7 +247,7 @@ fn after_succcesful_withdrawal_of_new_limit_order_returns_limit_order_to_fee_col
     let config = get_config(deps.as_ref().storage).unwrap();
 
     assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
-        to_address: config.fee_collector.to_string(),
+        to_address: config.fee_collectors[0].address.to_string(),
         amount: vec![Coin::new(TWO_MICRONS.into(), vault.get_receive_denom())]
     })));
 }
@@ -320,12 +320,12 @@ fn after_succcesful_withdrawal_returns_fees_to_fee_collector() {
     let automation_fee = total_after_swap_fee * automation_fee_rate;
 
     assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
-        to_address: config.fee_collector.to_string(),
+        to_address: config.fee_collectors[0].address.to_string(),
         amount: vec![Coin::new(swap_fee.into(), vault.get_receive_denom())]
     })));
 
     assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
-        to_address: config.fee_collector.to_string(),
+        to_address: config.fee_collectors[0].address.to_string(),
         amount: vec![Coin::new(automation_fee.into(), vault.get_receive_denom())]
     })));
 }
@@ -830,12 +830,12 @@ fn with_custom_fee_for_base_denom_takes_custom_fee() {
     let automation_fee = total_after_swap_fee * automation_fee_rate;
 
     assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
-        to_address: config.fee_collector.to_string(),
+        to_address: config.fee_collectors[0].address.to_string(),
         amount: vec![Coin::new(swap_fee.into(), vault.get_receive_denom())]
     })));
 
     assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
-        to_address: config.fee_collector.to_string(),
+        to_address: config.fee_collectors[0].address.to_string(),
         amount: vec![Coin::new(automation_fee.into(), vault.get_receive_denom())]
     })));
 }
@@ -917,12 +917,12 @@ fn with_custom_fee_for_quote_denom_takes_custom_fee() {
     let automation_fee = total_after_swap_fee * automation_fee_rate;
 
     assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
-        to_address: config.fee_collector.to_string(),
+        to_address: config.fee_collectors[0].address.to_string(),
         amount: vec![Coin::new(swap_fee.into(), vault.get_receive_denom())]
     })));
 
     assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
-        to_address: config.fee_collector.to_string(),
+        to_address: config.fee_collectors[0].address.to_string(),
         amount: vec![Coin::new(automation_fee.into(), vault.get_receive_denom())]
     })));
 }
@@ -1012,12 +1012,12 @@ fn with_custom_fee_for_both_denoms_takes_lower_fee() {
     let automation_fee = total_after_swap_fee * automation_fee_rate;
 
     assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
-        to_address: config.fee_collector.to_string(),
+        to_address: config.fee_collectors[0].address.to_string(),
         amount: vec![Coin::new(swap_fee.into(), vault.get_receive_denom())]
     })));
 
     assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
-        to_address: config.fee_collector.to_string(),
+        to_address: config.fee_collectors[0].address.to_string(),
         amount: vec![Coin::new(automation_fee.into(), vault.get_receive_denom())]
     })));
 }
