@@ -39,6 +39,20 @@ pub fn instantiate_contract(deps: DepsMut, env: Env, info: MessageInfo) {
     instantiate(deps, env.clone(), info.clone(), instantiate_message).unwrap();
 }
 
+pub fn instantiate_contract_with_multiple_fee_collectors(deps: DepsMut, env: Env, info: MessageInfo, fee_collectors: Vec<FeeCollector>) {
+    let instantiate_message = InstantiateMsg {
+        admin: Addr::unchecked(ADMIN),
+        fee_collectors,
+        swap_fee_percent: Decimal::from_str("0.0165").unwrap(),
+        delegation_fee_percent: Decimal::from_str("0.0075").unwrap(),
+        staking_router_address: Addr::unchecked(ADMIN),
+        page_limit: 1000,
+        paused: false,
+    };
+
+    instantiate(deps, env.clone(), info.clone(), instantiate_message).unwrap();
+}
+
 pub fn setup_vault(deps: DepsMut, env: Env, balance: Coin, swap_amount: Uint128) -> Vault {
     let pair = Pair {
         address: Addr::unchecked("pair"),
