@@ -4,7 +4,7 @@ use cosmwasm_std::Addr;
 use crate::{state::config::Config, types::pair::Pair};
 use cosmwasm_std::{Addr, Decimal256, Uint128};
 
-use crate::types::callback::Callback;
+use crate::{state::config::Config, types::pair::Pair};
 
 #[cw_serde]
 pub struct MigrateMsg {
@@ -40,6 +40,4 @@ pub enum QueryMsg {
     GetConfig {},
     #[returns(Vec<Pair>)]
     GetPath { denoms: [String; 2] },
-    // #[returns(Vec<Addr>)]
-    // GetAllowedZCallers {},
 }
