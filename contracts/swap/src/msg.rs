@@ -48,6 +48,4 @@ pub enum QueryMsg {
     GetConfig {},
     #[returns(Vec<Pair>)]
     GetPath { denoms: [String; 2] },
-    // #[returns(Vec<Addr>)]
-    // GetAllowedZCallers {},
 }
