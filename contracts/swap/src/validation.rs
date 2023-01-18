@@ -1,6 +1,5 @@
-use cosmwasm_std::{Addr, Coin, Env, StdError, StdResult, Storage};
-
 use crate::state::config::get_config;
+use cosmwasm_std::{Addr, Coin, Env, StdError, StdResult, Storage};
 
 pub fn assert_sender_is_admin(storage: &mut dyn Storage, sender: Addr) -> StdResult<()> {
     let config = get_config(storage)?;
@@ -25,6 +24,15 @@ pub fn assert_exactly_one_asset(funds: Vec<Coin>) -> StdResult<()> {
     if funds.is_empty() || funds.len() > 1 {
         return Err(StdError::GenericErr {
             msg: format!("received {} denoms but required exactly 1", funds.len()),
+        });
+    }
+    Ok(())
+}
+
+pub fn assert_exactly_one_asset(funds: Vec<Coin>) -> Result<(), ContractError> {
+    if funds.is_empty() || funds.len() > 1 {
+        return Err(ContractError::CustomError {
+            val: format!("received {} denoms but required exactly 1", funds.len()),
         });
     }
     Ok(())
