@@ -7,11 +7,7 @@ use crate::types::pair::Pair;
 const PATHS: Item<Binary> = Item::new("paths_v1");
 
 pub fn add_path(store: &mut dyn Storage, denoms: [String; 2], pair: Pair) -> StdResult<()> {
-    let mut graph: Graph<String, Pair> = from_binary(
-        &PATHS
-            .load(store)
-            .unwrap_or(to_binary(&Graph::<String, Pair>::new()).expect("empty paths graph")),
-    )?;
+    let mut graph = get_graph(store)?;
     let denom_1 = graph
         .node_indices()
         .find(|node| graph[*node] == denoms[0])
@@ -26,7 +22,7 @@ pub fn add_path(store: &mut dyn Storage, denoms: [String; 2], pair: Pair) -> Std
 }
 
 pub fn get_path(store: &dyn Storage, denoms: [String; 2]) -> StdResult<Vec<Pair>> {
-    let graph: Graph<String, Pair> = from_binary(&PATHS.load(store)?)?;
+    let graph = get_graph(store)?;
     let denom_1 = graph.node_indices().find(|node| graph[*node] == denoms[0]);
     let denom_2 = graph.node_indices().find(|node| graph[*node] == denoms[1]);
     Ok(if let (Some(node_a), Some(node_b)) = (denom_1, denom_2) {
@@ -49,9 +45,15 @@ pub fn get_path(store: &dyn Storage, denoms: [String; 2]) -> StdResult<Vec<Pair>
     })
 }
 
+fn get_graph(store: &dyn Storage) -> StdResult<Graph<String, Pair>> {
+    Ok(from_binary(&PATHS.load(store).unwrap_or(
+        to_binary(&Graph::<String, Pair>::new()).expect("empty paths graph"),
+    ))?)
+}
+
 #[cfg(test)]
 mod path_tests {
-    use cosmwasm_std::testing::mock_dependencies;
+    use cosmwasm_std::{testing::mock_dependencies, Addr};
 
     use super::*;
 
@@ -66,7 +68,9 @@ mod path_tests {
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_b".to_string()],
             Pair::Fin {
-                address: "address".to_string(),
+                address: Addr::unchecked("addr"),
+                base_denom: "denom_a".to_string(),
+                quote_denom: "denom_b".to_string(),
             },
         )
         .unwrap();
@@ -101,7 +105,9 @@ mod path_tests {
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_b".to_string()],
             Pair::Fin {
-                address: "address".to_string(),
+                address: Addr::unchecked("addr"),
+                base_denom: "denom_a".to_string(),
+                quote_denom: "denom_b".to_string(),
             },
         )
         .unwrap();
@@ -113,7 +119,9 @@ mod path_tests {
         assert_eq!(
             path,
             vec![Pair::Fin {
-                address: "address".to_string()
+                address: Addr::unchecked("addr"),
+                base_denom: "denom_a".to_string(),
+                quote_denom: "denom_b".to_string(),
             }]
         );
     }
@@ -129,7 +137,9 @@ mod path_tests {
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_b".to_string()],
             Pair::Fin {
-                address: "address_1".to_string(),
+                address: Addr::unchecked("addr_1"),
+                base_denom: "denom_a".to_string(),
+                quote_denom: "denom_b".to_string(),
             },
         )
         .unwrap();
@@ -137,7 +147,9 @@ mod path_tests {
             deps.as_mut().storage,
             ["denom_c".to_string(), "denom_d".to_string()],
             Pair::Fin {
-                address: "address_2".to_string(),
+                address: Addr::unchecked("addr_2"),
+                base_denom: "denom_c".to_string(),
+                quote_denom: "denom_d".to_string(),
             },
         )
         .unwrap();
@@ -160,7 +172,9 @@ mod path_tests {
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_b".to_string()],
             Pair::Fin {
-                address: "address_1".to_string(),
+                address: Addr::unchecked("addr_1"),
+                base_denom: "denom_a".to_string(),
+                quote_denom: "denom_b".to_string(),
             },
         )
         .unwrap();
@@ -168,7 +182,9 @@ mod path_tests {
             deps.as_mut().storage,
             ["denom_b".to_string(), "denom_c".to_string()],
             Pair::Fin {
-                address: "address_2".to_string(),
+                address: Addr::unchecked("addr_2"),
+                base_denom: "denom_b".to_string(),
+                quote_denom: "denom_c".to_string(),
             },
         )
         .unwrap();
@@ -181,10 +197,14 @@ mod path_tests {
             path,
             vec![
                 Pair::Fin {
-                    address: "address_1".to_string()
+                    address: Addr::unchecked("addr_1"),
+                    base_denom: "denom_a".to_string(),
+                    quote_denom: "denom_b".to_string(),
                 },
                 Pair::Fin {
-                    address: "address_2".to_string()
+                    address: Addr::unchecked("addr_2"),
+                    base_denom: "denom_b".to_string(),
+                    quote_denom: "denom_c".to_string(),
                 }
             ]
         );

@@ -106,12 +106,11 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
 
                 sub_msgs.push(create_fin_swap_message(
                     deps.querier,
-                    vault.pair.address.clone(),
+                    vault.pair.clone(),
                     vault.get_swap_amount(),
-                    vault.get_position_type(),
                     vault.slippage_tolerance,
                     AFTER_FIN_SWAP_REPLY_ID,
-                ));
+                )?);
             } else {
                 delete_trigger(deps.storage, vault.id)?;
 

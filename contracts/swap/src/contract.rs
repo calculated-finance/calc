@@ -1,11 +1,15 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };
 use cw2::set_contract_version;
 
 use crate::{
     errors::contract_error::ContractError,
-    handlers::{add_path::add_path_handler, update_config::update_config_handler},
+    handlers::{
+        add_path::add_path_handler,
+        swap::{after_fin_swap, swap},
+        update_config::update_config_handler,
+    },
     msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg},
     state::{
         config::{get_config, update_config, Config},
@@ -48,7 +52,7 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    _: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
@@ -57,6 +61,25 @@ pub fn execute(
             update_config_handler(deps, info, Config { admin, paused })
         }
         ExecuteMsg::AddPath { denoms, pair } => add_path_handler(deps, denoms, pair),
+        ExecuteMsg::Swap {
+            target_denom,
+            slippage_tolerance,
+            callback,
+        } => swap(deps, env, info, target_denom, slippage_tolerance, callback),
+    }
+}
+
+pub const AFTER_SWAP_CALLBACK_INVOKED_ID: u64 = 0;
+pub const AFTER_FIN_SWAP_REPLY_ID: u64 = 1;
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, ContractError> {
+    match reply.id {
+        AFTER_SWAP_CALLBACK_INVOKED_ID => after_fin_swap(deps, env),
+        AFTER_FIN_SWAP_REPLY_ID => after_fin_swap(deps, env),
+        id => Err(ContractError::CustomError {
+            val: format!("unknown reply id: {}", id),
+        }),
     }
 }
 

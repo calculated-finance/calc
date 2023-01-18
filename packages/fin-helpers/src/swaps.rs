@@ -2,22 +2,29 @@ use crate::{
     position_type::PositionType,
     queries::{query_base_price, query_quote_price},
 };
-use cosmwasm_std::{to_binary, Addr, Coin, CosmosMsg, Decimal256, QuerierWrapper, SubMsg, WasmMsg};
+use base::pair::Pair;
+use cosmwasm_std::{
+    to_binary, Addr, Coin, CosmosMsg, Decimal256, QuerierWrapper, StdResult, SubMsg, WasmMsg,
+};
 use kujira::fin::ExecuteMsg as FINExecuteMsg;
 
 pub fn create_fin_swap_message(
     querier: QuerierWrapper,
-    pair_address: Addr,
+    pair: Pair,
     swap_amount: Coin,
-    position_type: PositionType,
     slippage_tolerance: Option<Decimal256>,
     reply_id: u64,
-) -> SubMsg {
+) -> StdResult<SubMsg> {
     match slippage_tolerance {
         Some(tolerance) => {
+            let position_type = match swap_amount.denom == pair.quote_denom {
+                true => PositionType::Enter,
+                false => PositionType::Exit,
+            };
+
             let fin_price = match position_type {
-                PositionType::Enter => query_base_price(querier, pair_address.clone()),
-                PositionType::Exit => query_quote_price(querier, pair_address.clone()),
+                PositionType::Enter => query_base_price(querier, pair.address.clone()),
+                PositionType::Exit => query_quote_price(querier, pair.address.clone()),
             };
 
             let belief_price = match position_type {
@@ -26,17 +33,19 @@ pub fn create_fin_swap_message(
                     .checked_div(fin_price)
                     .expect("should return a valid inverted price for fin sell"),
             };
-            create_fin_swap_with_slippage(
-                pair_address.clone(),
+            Ok(create_fin_swap_with_slippage(
+                pair.address.clone(),
                 belief_price,
                 tolerance,
                 swap_amount.clone(),
                 reply_id,
-            )
+            ))
         }
-        None => {
-            create_fin_swap_without_slippage(pair_address.clone(), swap_amount.clone(), reply_id)
-        }
+        None => Ok(create_fin_swap_without_slippage(
+            pair.address.clone(),
+            swap_amount.clone(),
+            reply_id,
+        )),
     }
 }
 

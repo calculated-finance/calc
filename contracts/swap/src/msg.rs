@@ -1,10 +1,8 @@
+use crate::{state::config::Config, types::pair::Pair};
+use crate::{state::config::Config, types::pair::Pair};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Addr;
-
-use crate::{state::config::Config, types::pair::Pair};
+use cosmwasm_std::{Addr, Decimal256};
 use cosmwasm_std::{Addr, Decimal256, Uint128};
-
-use crate::{state::config::Config, types::pair::Pair};
 
 #[cw_serde]
 pub struct MigrateMsg {

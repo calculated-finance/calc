@@ -149,12 +149,11 @@ pub fn execute_trigger(
 
             return Ok(response.add_submessage(create_fin_swap_message(
                 deps.querier,
-                vault.pair.address.clone(),
+                vault.pair.clone(),
                 vault.get_swap_amount(),
-                vault.get_position_type(),
                 vault.slippage_tolerance,
                 AFTER_FIN_SWAP_REPLY_ID,
-            )));
+            )?));
         }
         TriggerConfiguration::FinLimitOrder { order_idx, .. } => {
             if let Some(order_idx) = order_idx {
