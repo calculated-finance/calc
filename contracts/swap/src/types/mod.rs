@@ -1,3 +1,3 @@
 pub mod callback;
-pub mod pair;
+pub mod exchange;
 pub mod swap;

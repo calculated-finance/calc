@@ -1,8 +1,7 @@
-use crate::{state::config::Config, types::pair::Pair};
-use crate::{state::config::Config, types::pair::Pair};
+use crate::types::callback::Callback;
+use crate::{state::config::Config, types::exchange::Exchange};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Decimal256};
-use cosmwasm_std::{Addr, Decimal256, Uint128};
 
 #[cw_serde]
 pub struct MigrateMsg {
@@ -22,11 +21,11 @@ pub enum ExecuteMsg {
     },
     AddPath {
         denoms: [String; 2],
-        pair: Pair,
+        exchange: Exchange,
     },
     Swap {
-        belief_price: Option<Decimal256>,
-        max_spread: Option<Decimal256>,
+        target_denom: String,
+        slippage_tolerance: Option<Decimal256>,
         callback: Callback,
     },
 }
@@ -36,6 +35,6 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(Config)]
     GetConfig {},
-    #[returns(Vec<Pair>)]
+    #[returns(Vec<Exchange>)]
     GetPath { denoms: [String; 2] },
 }
