@@ -28,12 +28,3 @@ pub fn assert_exactly_one_asset(funds: Vec<Coin>) -> StdResult<()> {
     }
     Ok(())
 }
-
-pub fn assert_exactly_one_asset(funds: Vec<Coin>) -> Result<(), ContractError> {
-    if funds.is_empty() || funds.len() > 1 {
-        return Err(ContractError::CustomError {
-            val: format!("received {} denoms but required exactly 1", funds.len()),
-        });
-    }
-    Ok(())
-}

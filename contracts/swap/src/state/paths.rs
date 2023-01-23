@@ -27,7 +27,6 @@ pub fn add_path(store: &mut dyn Storage, pair: Pair) -> StdResult<()> {
     Ok(())
 }
 
-<<<<<<< HEAD
 pub fn get_path(store: &dyn Storage, denoms: [String; 2]) -> StdResult<VecDeque<Pair>> {
     let graph = get_graph(store)?;
     let nodes = denoms.map(|denom| graph.node_indices().find(|node| graph[*node] == denom));
@@ -41,14 +40,6 @@ pub fn get_path(store: &dyn Storage, denoms: [String; 2]) -> StdResult<VecDeque<
                 |_edge: EdgeReference<Pair>| 0,
                 |_node: NodeIndex| 0,
             )
-=======
-pub fn get_path(store: &dyn Storage, denoms: [String; 2]) -> StdResult<Vec<Pair>> {
-    let graph = get_graph(store)?;
-    let denom_1 = graph.node_indices().find(|node| graph[*node] == denoms[0]);
-    let denom_2 = graph.node_indices().find(|node| graph[*node] == denoms[1]);
-    Ok(if let (Some(node_a), Some(node_b)) = (denom_1, denom_2) {
-        astar(&graph, node_a, |n| n == node_b, |_| 0, |_| 0)
->>>>>>> 44c0132 (add swap with callback endpoint)
             .map(|p| {
                 p.1.windows(2)
                     .map(|nodes| {
@@ -73,19 +64,8 @@ pub fn get_graph(store: &dyn Storage) -> StdResult<Graph<String, Pair>> {
     ))?)
 }
 
-fn get_graph(store: &dyn Storage) -> StdResult<Graph<String, Pair>> {
-    Ok(from_binary(&PATHS.load(store).unwrap_or(
-        to_binary(&Graph::<String, Pair>::new()).expect("empty paths graph"),
-    ))?)
-}
-
 #[cfg(test)]
 mod path_tests {
-<<<<<<< HEAD
-=======
-    use cosmwasm_std::{testing::mock_dependencies, Addr};
-
->>>>>>> 44c0132 (add swap with callback endpoint)
     use super::*;
     use cosmwasm_std::{testing::mock_dependencies, Addr};
 
