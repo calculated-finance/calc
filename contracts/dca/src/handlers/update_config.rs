@@ -15,6 +15,7 @@ pub fn update_config_handler(
     swap_fee_percent: Option<Decimal>,
     delegation_fee_percent: Option<Decimal>,
     staking_router_address: Option<Addr>,
+    bow_staking_address: Option<Addr>,
     page_limit: Option<u16>,
     paused: Option<bool>,
 ) -> Result<Response, ContractError> {
@@ -30,6 +31,11 @@ pub fn update_config_handler(
         staking_router_address: deps.api.addr_validate(
             &staking_router_address
                 .unwrap_or(existing_config.staking_router_address)
+                .to_string(),
+        )?,
+        bow_staking_address: deps.api.addr_validate(
+            &bow_staking_address
+                .unwrap_or(existing_config.bow_staking_address)
                 .to_string(),
         )?,
         page_limit: page_limit.unwrap_or(existing_config.page_limit),

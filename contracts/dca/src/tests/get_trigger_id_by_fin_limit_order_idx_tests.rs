@@ -31,6 +31,7 @@ fn should_fetch_existing_trigger_id_by_order_idx() {
                 owner: None,
                 minimum_receive_amount: None,
                 label: Some("label".to_string()),
+                source: None,
                 destinations: None,
                 pair_address: mock.fin_contract_address.clone(),
                 position_type: None,

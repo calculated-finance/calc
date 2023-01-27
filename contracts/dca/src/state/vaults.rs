@@ -1,5 +1,12 @@
-use super::{pairs::PAIRS, state_helpers::fetch_and_increment_counter, triggers::get_trigger};
-use crate::types::{price_delta_limit::PriceDeltaLimit, vault::Vault, vault_builder::VaultBuilder};
+use super::{
+    pairs::PAIRS,
+    sources::{get_source, remove_source, save_source},
+    state_helpers::fetch_and_increment_counter,
+    triggers::get_trigger,
+};
+use crate::types::{
+    price_delta_limit::PriceDeltaLimit, source::Source, vault::Vault, vault_builder::VaultBuilder,
+};
 use base::{
     pair::Pair,
     triggers::trigger::{TimeInterval, TriggerConfiguration},
@@ -60,6 +67,7 @@ fn vault_from(
     data: &VaultDTO,
     pair: Pair,
     trigger: Option<TriggerConfiguration>,
+    source: Option<Source>,
     destinations: &mut Vec<Destination>,
 ) -> Vault {
     destinations.append(
@@ -75,6 +83,7 @@ fn vault_from(
         created_at: data.created_at,
         owner: data.owner.clone(),
         label: data.label.clone(),
+        source,
         destinations: destinations.clone(),
         status: data.status.clone(),
         balance: data.balance.clone(),
@@ -130,6 +139,9 @@ pub fn save_vault(store: &mut dyn Storage, vault_builder: VaultBuilder) -> StdRe
         vault.id.into(),
         &to_binary(&vault.destinations).expect("serialised destinations"),
     )?;
+    if let Some(source) = vault.source.clone() {
+        save_source(store, vault.id, source)?;
+    }
     vault_store().save(store, vault.id.into(), &vault.clone().into())?;
     Ok(vault)
 }
@@ -140,6 +152,7 @@ pub fn get_vault(store: &dyn Storage, vault_id: Uint128) -> StdResult<Vault> {
         &data,
         PAIRS.load(store, data.pair_address.clone())?,
         get_trigger(store, vault_id)?.map(|t| t.configuration),
+        get_source(store, vault_id)?,
         &mut get_destinations(store, vault_id)?,
     ))
 }
@@ -178,6 +191,7 @@ pub fn get_vaults_by_address(
                 get_trigger(store, vault_data.id.into())
                     .expect(format!("a trigger for vault id {}", vault_data.id).as_str())
                     .map(|trigger| trigger.configuration),
+                get_source(store, vault_data.id).expect("vault source"),
                 &mut get_destinations(store, vault_data.id).expect("vault destinations"),
             )
         })
@@ -208,6 +222,7 @@ pub fn get_vaults(
                 get_trigger(store, vault_data.id.into())
                     .expect(format!("a trigger for vault id {}", vault_data.id).as_str())
                     .map(|trigger| trigger.configuration),
+                get_source(store, vault_data.id).expect("vault source"),
                 &mut get_destinations(store, vault_data.id).expect("vault destinations"),
             )
         })
@@ -223,6 +238,7 @@ where
         &old_data,
         PAIRS.load(store, old_data.pair_address.clone())?,
         None,
+        get_source(store, old_data.id)?,
         &mut get_destinations(store, old_data.id)?,
     );
     let new_vault = update_fn(Some(old_vault.clone()))?;
@@ -231,6 +247,11 @@ where
         new_vault.id.into(),
         &to_binary(&new_vault.destinations).expect("serialised destinations"),
     )?;
+    if let Some(source) = new_vault.source.clone() {
+        save_source(store, new_vault.id, source)?;
+    } else {
+        remove_source(store, new_vault.id)?;
+    }
     vault_store().replace(
         store,
         vault_id.into(),
@@ -263,6 +284,7 @@ mod destination_store_tests {
         VaultBuilder::new(
             env.block.time,
             Addr::unchecked("owner"),
+            None,
             None,
             vec![Destination {
                 address: Addr::unchecked("owner"),

@@ -1,3 +1,4 @@
+use super::source::Source;
 use base::{
     pair::Pair,
     triggers::trigger::{TimeInterval, TriggerConfiguration},
@@ -15,6 +16,7 @@ pub struct Vault {
     pub created_at: Timestamp,
     pub owner: Addr,
     pub label: Option<String>,
+    pub source: Option<Source>,
     pub destinations: Vec<Destination>,
     pub status: VaultStatus,
     pub balance: Coin,
@@ -38,7 +40,7 @@ impl Vault {
     }
 
     pub fn get_swap_denom(&self) -> String {
-        self.balance.denom.clone()
+        self.swapped_amount.denom.clone()
     }
 
     pub fn get_receive_denom(&self) -> String {
@@ -169,6 +171,7 @@ mod has_sufficient_funds_tests {
             created_at: Timestamp::from_seconds(0),
             owner: Addr::unchecked("owner"),
             label: None,
+            source: None,
             destinations: vec![],
             status: VaultStatus::Active,
             balance: coin(balance, "quote"),
@@ -265,6 +268,7 @@ mod price_threshold_exceeded_tests {
             created_at: Timestamp::from_seconds(0),
             owner: Addr::unchecked("owner"),
             label: None,
+            source: None,
             destinations: vec![],
             status: VaultStatus::Active,
             balance: coin(
@@ -432,6 +436,7 @@ mod get_target_price_tests {
             created_at: Timestamp::from_seconds(0),
             owner: Addr::unchecked("owner"),
             label: None,
+            source: None,
             destinations: vec![],
             status: VaultStatus::Active,
             balance: coin(

@@ -484,6 +484,7 @@ fn with_successful_swap_resulting_in_low_funds_sets_vault_to_inactive() {
         env.clone(),
         Coin::new(100000, DENOM_UKUJI),
         Uint128::new(60000),
+        None,
     );
 
     let receive_amount = Uint128::new(234312312);
@@ -532,6 +533,7 @@ fn with_successful_swap_resulting_in_low_funds_does_not_create_time_trigger() {
         env.clone(),
         Coin::new(100000, DENOM_UKUJI),
         Uint128::new(60000),
+        None,
     );
 
     let receive_amount = Uint128::new(234312312);

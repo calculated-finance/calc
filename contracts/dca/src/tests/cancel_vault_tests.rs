@@ -1,3 +1,6 @@
+use super::mocks::{
+    new_fin_contract_partially_filled_order, new_fin_contract_unfilled_limit_order,
+};
 use crate::constants::{ONE, ONE_THOUSAND, TEN, TWO_MICRONS};
 use crate::msg::{ExecuteMsg, QueryMsg, VaultResponse};
 use crate::tests::helpers::{assert_address_balances, assert_events_published};
@@ -9,10 +12,6 @@ use base::events::event::{EventBuilder, EventData};
 use base::vaults::vault::VaultStatus;
 use cosmwasm_std::{Addr, Coin, Uint128};
 use cw_multi_test::Executor;
-
-use super::mocks::{
-    new_fin_contract_partially_filled_order, new_fin_contract_unfilled_limit_order,
-};
 
 #[test]
 fn when_vault_has_unfilled_fin_limit_order_trigger_should_update_address_balances() {

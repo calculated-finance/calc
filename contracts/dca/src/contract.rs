@@ -1,13 +1,16 @@
 use crate::error::ContractError;
+use crate::handlers::add_received_amount_to_vault_balance::add_received_amount_to_vault_balance;
 use crate::handlers::after_fin_limit_order_retracted::after_fin_limit_order_retracted;
 use crate::handlers::after_fin_limit_order_submitted::after_fin_limit_order_submitted;
 use crate::handlers::after_fin_limit_order_withdrawn_for_cancel_vault::after_fin_limit_order_withdrawn_for_cancel_vault;
 use crate::handlers::after_fin_limit_order_withdrawn_for_execute_trigger::after_fin_limit_order_withdrawn_for_execute_vault;
 use crate::handlers::after_fin_swap::after_fin_swap;
 use crate::handlers::after_z_delegation::after_z_delegation;
+use crate::handlers::burn_lp_tokens::burn_lp_tokens;
 use crate::handlers::cancel_vault::cancel_vault;
 use crate::handlers::create_custom_swap_fee::create_custom_swap_fee;
 use crate::handlers::create_pair::create_pair;
+use crate::handlers::create_pool::add_bow_pool;
 use crate::handlers::create_vault::create_vault;
 use crate::handlers::delete_pair::delete_pair;
 use crate::handlers::deposit::deposit;
@@ -25,7 +28,13 @@ use crate::handlers::get_vaults_by_address::get_vaults_by_address;
 use crate::handlers::migrate_fin_limit_order::{
     after_fin_limit_order_submitted_for_migrate_trigger, migrate_price_trigger,
 };
+use crate::handlers::mint_lp_tokens::mint_lp_tokens;
 use crate::handlers::remove_custom_swap_fee::remove_custom_swap_fee;
+use crate::handlers::send_lp_tokens_to_contract::send_lp_tokens_to_contract;
+use crate::handlers::send_lp_tokens_to_owner::send_lp_tokens_to_owner;
+use crate::handlers::stake_to_bow::stake_to_bow;
+use crate::handlers::swap_from_bow_deposit::swap_from_bow_deposit;
+use crate::handlers::swap_on_fin::swap_on_fin;
 use crate::handlers::update_config::update_config_handler;
 use crate::handlers::update_vault_label::update_vault_label;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
@@ -43,16 +52,6 @@ use cw2::set_contract_version;
 
 pub const CONTRACT_NAME: &str = "crates.io:calc-dca";
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-
-pub const AFTER_FIN_SWAP_REPLY_ID: u64 = 1;
-pub const AFTER_FIN_LIMIT_ORDER_SUBMITTED_REPLY_ID: u64 = 2;
-pub const AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_EXECUTE_VAULT_REPLY_ID: u64 = 3;
-pub const AFTER_FIN_LIMIT_ORDER_RETRACTED_REPLY_ID: u64 = 4;
-pub const AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_CANCEL_VAULT_REPLY_ID: u64 = 5;
-pub const AFTER_Z_DELEGATION_REPLY_ID: u64 = 6;
-pub const AFTER_BANK_SWAP_REPLY_ID: u64 = 7;
-pub const AFTER_FIN_LIMIT_ORDER_RETRACTED_FOR_MIGRATE_REPLY_ID: u64 = 8;
-pub const AFTER_FIN_LIMIT_ORDER_SUBMITTED_FOR_MIGRATE_REPLY_ID: u64 = 9;
 
 #[entry_point]
 pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
@@ -78,6 +77,7 @@ pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, Con
             swap_fee_percent: msg.swap_fee_percent,
             delegation_fee_percent: msg.delegation_fee_percent,
             staking_router_address: msg.staking_router_address,
+            bow_staking_address: msg.bow_staking_address,
             page_limit: msg.page_limit,
             paused: msg.paused,
         },
@@ -110,6 +110,7 @@ pub fn instantiate(
             swap_fee_percent: msg.swap_fee_percent,
             delegation_fee_percent: msg.delegation_fee_percent,
             staking_router_address: msg.staking_router_address,
+            bow_staking_address: msg.bow_staking_address,
             page_limit: msg.page_limit,
             paused: msg.paused,
         },
@@ -124,7 +125,7 @@ pub fn instantiate(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-    deps: DepsMut,
+    mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
@@ -139,6 +140,7 @@ pub fn execute(
         ExecuteMsg::CreateVault {
             owner,
             label,
+            source,
             destinations,
             pair_address,
             position_type,
@@ -149,11 +151,12 @@ pub fn execute(
             target_start_time_utc_seconds,
             target_receive_amount,
         } => create_vault(
-            deps,
+            &mut deps,
             env,
             &info,
             owner.unwrap_or(info.sender.clone()),
             label,
+            source,
             destinations.unwrap_or(vec![]),
             pair_address,
             position_type,
@@ -164,14 +167,19 @@ pub fn execute(
             target_start_time_utc_seconds,
             target_receive_amount,
         ),
-        ExecuteMsg::CancelVault { vault_id } => cancel_vault(deps, env, info, vault_id),
-        ExecuteMsg::ExecuteTrigger { trigger_id } => execute_trigger_handler(deps, env, trigger_id),
-        ExecuteMsg::Deposit { address, vault_id } => deposit(deps, env, info, address, vault_id),
+        ExecuteMsg::CancelVault { vault_id } => cancel_vault(&mut deps, &env, &info, vault_id),
+        ExecuteMsg::ExecuteTrigger { trigger_id } => {
+            execute_trigger_handler(&mut deps, &env, trigger_id)
+        }
+        ExecuteMsg::Deposit { address, vault_id } => {
+            deposit(&mut deps, env, info, address, vault_id)
+        }
         ExecuteMsg::UpdateConfig {
             fee_collectors,
             swap_fee_percent,
             delegation_fee_percent,
             staking_router_address,
+            bow_staking_address,
             page_limit,
             paused,
         } => update_config_handler(
@@ -181,6 +189,7 @@ pub fn execute(
             swap_fee_percent,
             delegation_fee_percent,
             staking_router_address,
+            bow_staking_address,
             page_limit,
             paused,
         ),
@@ -204,8 +213,38 @@ pub fn execute(
             assert_sender_is_admin(deps.storage, info.sender)?;
             migrate_price_trigger(deps, vault_id)
         }
+        ExecuteMsg::AddBowPool { address, denoms } => add_bow_pool(deps, info, address, denoms),
+        ExecuteMsg::Swap {
+            pair_address,
+            slippage_tolerance,
+            reply_config,
+        } => swap_on_fin(
+            deps,
+            &env,
+            &info,
+            pair_address,
+            slippage_tolerance,
+            reply_config,
+        ),
     }
 }
+
+pub const AFTER_FIN_SWAP_REPLY_ID: u64 = 1;
+pub const AFTER_FIN_LIMIT_ORDER_SUBMITTED_REPLY_ID: u64 = 2;
+pub const AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_EXECUTE_VAULT_REPLY_ID: u64 = 3;
+pub const AFTER_FIN_LIMIT_ORDER_RETRACTED_REPLY_ID: u64 = 4;
+pub const AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_CANCEL_VAULT_REPLY_ID: u64 = 5;
+pub const AFTER_Z_DELEGATION_REPLY_ID: u64 = 6;
+pub const AFTER_BANK_SWAP_REPLY_ID: u64 = 7;
+pub const AFTER_FIN_LIMIT_ORDER_RETRACTED_FOR_MIGRATE_REPLY_ID: u64 = 8;
+pub const AFTER_FIN_LIMIT_ORDER_SUBMITTED_FOR_MIGRATE_REPLY_ID: u64 = 9;
+pub const AFTER_SWAPPING_FOR_BOW_DEPOSIT: u64 = 10;
+pub const AFTER_MINTING_LP_TOKENS: u64 = 11;
+pub const AFTER_SENDING_LP_TOKENS_TO_OWNER: u64 = 12;
+pub const AFTER_UNSTAKING_FROM_BOW: u64 = 13;
+pub const AFTER_SENDING_LP_TOKENS_TO_CONTRACT: u64 = 14;
+pub const AFTER_BURNING_LP_TOKENS: u64 = 15;
+pub const AFTER_SWAPPING_FROM_BOW_DEPOSIT: u64 = 16;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, ContractError> {
@@ -230,6 +269,13 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
         AFTER_FIN_LIMIT_ORDER_SUBMITTED_FOR_MIGRATE_REPLY_ID => {
             after_fin_limit_order_submitted_for_migrate_trigger(deps, reply)
         }
+        AFTER_SWAPPING_FOR_BOW_DEPOSIT => mint_lp_tokens(deps, env),
+        AFTER_MINTING_LP_TOKENS => send_lp_tokens_to_owner(deps, env),
+        AFTER_SENDING_LP_TOKENS_TO_OWNER => stake_to_bow(deps, env),
+        AFTER_UNSTAKING_FROM_BOW => send_lp_tokens_to_contract(deps, env),
+        AFTER_SENDING_LP_TOKENS_TO_CONTRACT => burn_lp_tokens(deps, env),
+        AFTER_BURNING_LP_TOKENS => swap_from_bow_deposit(deps, env),
+        AFTER_SWAPPING_FROM_BOW_DEPOSIT => add_received_amount_to_vault_balance(deps, env),
         id => Err(ContractError::CustomError {
             val: format!("unknown reply id: {}", id),
         }),

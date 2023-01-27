@@ -23,6 +23,7 @@ pub fn zdelegate(
     let protobuf_delegate_msg =
         create_protobuf_delegate_msg(delegator_address, validator_address, denom, amount);
     let msg = create_exec_message(env.contract.address, protobuf_delegate_msg);
+
     Ok(Response::new()
         .add_attribute("method", "zdelegate")
         .add_message(msg))
@@ -30,6 +31,7 @@ pub fn zdelegate(
 
 fn create_exec_message(grantee: Addr, protobuf_msg: Any) -> CosmosMsg {
     let mut buffer = vec![];
+
     MsgExec {
         grantee: grantee.to_string(),
         msgs: vec![protobuf_msg],
@@ -50,6 +52,7 @@ fn create_protobuf_delegate_msg(
     amount: Uint128,
 ) -> Any {
     let mut buffer = vec![];
+
     MsgDelegate {
         delegator_address: delegator_address.to_string(),
         validator_address: validator_address.to_string(),

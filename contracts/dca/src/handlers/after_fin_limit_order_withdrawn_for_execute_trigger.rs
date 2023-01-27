@@ -104,12 +104,13 @@ pub fn after_fin_limit_order_withdrawn_for_execute_vault(
                     },
                 )?;
 
-                sub_msgs.push(create_fin_swap_message(
-                    deps.querier,
-                    vault.pair.address.clone(),
-                    vault.get_swap_amount(),
-                    vault.get_position_type(),
-                    vault.slippage_tolerance,
+                sub_msgs.push(SubMsg::reply_always(
+                    create_fin_swap_message(
+                        deps.querier,
+                        vault.pair.clone(),
+                        vault.get_swap_amount(),
+                        vault.slippage_tolerance,
+                    )?,
                     AFTER_FIN_SWAP_REPLY_ID,
                 ));
             } else {

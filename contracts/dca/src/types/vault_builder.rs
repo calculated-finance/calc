@@ -1,4 +1,4 @@
-use super::vault::Vault;
+use super::{source::Source, vault::Vault};
 use base::{
     pair::Pair,
     triggers::trigger::TimeInterval,
@@ -11,6 +11,7 @@ pub struct VaultBuilder {
     pub created_at: Timestamp,
     pub owner: Addr,
     pub label: Option<String>,
+    pub source: Option<Source>,
     pub destinations: Vec<Destination>,
     pub status: VaultStatus,
     pub balance: Coin,
@@ -28,6 +29,7 @@ impl VaultBuilder {
         created_at: Timestamp,
         owner: Addr,
         label: Option<String>,
+        source: Option<Source>,
         destinations: Vec<Destination>,
         status: VaultStatus,
         balance: Coin,
@@ -43,6 +45,7 @@ impl VaultBuilder {
             created_at,
             owner,
             label,
+            source,
             destinations,
             status,
             balance,
@@ -62,6 +65,7 @@ impl VaultBuilder {
             created_at: self.created_at,
             owner: self.owner,
             label: self.label,
+            source: self.source,
             destinations: self.destinations,
             status: self.status,
             balance: self.balance.clone(),

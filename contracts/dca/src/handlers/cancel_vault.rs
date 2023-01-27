@@ -1,57 +1,107 @@
 use crate::contract::AFTER_FIN_LIMIT_ORDER_RETRACTED_REPLY_ID;
 use crate::error::ContractError;
-use crate::state::cache::{Cache, LimitOrderCache, CACHE, LIMIT_ORDER_CACHE};
+use crate::message_helpers::unstake_from_bow_message;
+use crate::msg::ExecuteMsg;
+use crate::state::cache::{
+    BowCache, Cache, LimitOrderCache, BOW_CACHE, CACHE, LIMIT_ORDER_CACHE, SOURCE_CACHE,
+};
 use crate::state::events::create_event;
+use crate::state::sources::{remove_source, save_source};
 use crate::state::triggers::delete_trigger;
 use crate::state::vaults::{get_vault, update_vault};
+use crate::types::source::Source;
 use crate::types::vault::Vault;
 use crate::validation_helpers::{
-    assert_sender_is_admin_or_vault_owner, assert_vault_is_not_cancelled,
+    assert_sender_is_admin_or_vault_owner_or_contract, assert_vault_is_not_cancelled,
 };
 use base::events::event::{EventBuilder, EventData};
 use base::triggers::trigger::TriggerConfiguration;
 use base::vaults::vault::VaultStatus;
-#[cfg(not(feature = "library"))]
-use cosmwasm_std::{BankMsg, DepsMut, Response, Uint128};
-use cosmwasm_std::{Coin, CosmosMsg, Env, MessageInfo, StdError, StdResult};
+use cosmwasm_std::{to_binary, BankMsg, Coin, DepsMut, Response, StdError, Uint128, WasmMsg};
+use cosmwasm_std::{CosmosMsg, Env, MessageInfo, SubMsg};
 use fin_helpers::limit_orders::create_retract_order_sub_msg;
 use fin_helpers::queries::query_order_details;
 
 pub fn cancel_vault(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
+    deps: &mut DepsMut,
+    env: &Env,
+    info: &MessageInfo,
     vault_id: Uint128,
 ) -> Result<Response, ContractError> {
     let vault = get_vault(deps.storage, vault_id)?;
 
-    assert_sender_is_admin_or_vault_owner(deps.storage, vault.owner.clone(), info.sender.clone())?;
+    assert_sender_is_admin_or_vault_owner_or_contract(
+        deps.storage,
+        &info.sender,
+        &vault.owner,
+        &env,
+    )?;
     assert_vault_is_not_cancelled(&vault)?;
+
+    if let Some(source) = vault.source.clone() {
+        let mut sub_messages: Vec<SubMsg> = Vec::new();
+
+        match &source {
+            Source::Bow { address } => {
+                BOW_CACHE.save(
+                    deps.storage,
+                    &BowCache {
+                        pool_address: address.clone(),
+                        lp_token_balance: Some(vault.balance.clone()),
+                        deposit: vec![],
+                        withdrawal: vec![],
+                    },
+                )?;
+
+                sub_messages.push(unstake_from_bow_message(deps, env, &vault)?);
+            }
+        }
+
+        SOURCE_CACHE.save(deps.storage, &source)?;
+        remove_source(deps.storage, vault.id)?;
+
+        return Ok(Response::new()
+            .add_attribute("method", "cancel_vault")
+            .add_attribute("owner", vault.owner.to_string())
+            .add_attribute("vault_id", vault_id)
+            .add_submessages(sub_messages)
+            .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: env.contract.address.to_string(),
+                msg: to_binary(&ExecuteMsg::CancelVault { vault_id: vault.id })?,
+                funds: vec![],
+            })));
+    }
 
     create_event(
         deps.storage,
         EventBuilder::new(vault.id, env.block.clone(), EventData::DcaVaultCancelled {}),
     )?;
 
-    match vault.trigger {
-        Some(TriggerConfiguration::Time { .. }) => {
-            delete_trigger(deps.storage, vault.id.into())?;
-            refund_vault_balance(deps, vault)
+    if let Some(source) = SOURCE_CACHE.may_load(deps.storage)? {
+        save_source(deps.storage, vault.id, source)?;
+        SOURCE_CACHE.remove(deps.storage);
+    }
+
+    return match vault.trigger {
+        Some(TriggerConfiguration::Time { .. }) | None => {
+            if vault.trigger.is_some() {
+                delete_trigger(deps.storage, vault.id.into())?;
+            }
+            refund_vault_balance(deps, &vault)
         }
         Some(TriggerConfiguration::FinLimitOrder { order_idx, .. }) => {
             cancel_fin_limit_order_trigger(
                 deps,
-                env.clone(),
+                env,
                 order_idx
                     .expect(format!("order idx for price trigger for vault {}", vault.id).as_str()),
-                vault,
+                &vault,
             )
         }
-        None => refund_vault_balance(deps, vault),
-    }
+    };
 }
 
-fn refund_vault_balance(deps: DepsMut, vault: Vault) -> Result<Response, ContractError> {
+fn refund_vault_balance(deps: &mut DepsMut, vault: &Vault) -> Result<Response, ContractError> {
     let mut response = Response::new()
         .add_attribute("method", "cancel_vault")
         .add_attribute("owner", vault.owner.to_string())
@@ -64,31 +114,25 @@ fn refund_vault_balance(deps: DepsMut, vault: Vault) -> Result<Response, Contrac
         }))
     }
 
-    update_vault(
-        deps.storage,
-        vault.id.into(),
-        |existing_vault| -> StdResult<Vault> {
-            match existing_vault {
-                Some(mut existing_vault) => {
-                    existing_vault.status = VaultStatus::Cancelled;
-                    existing_vault.balance = Coin::new(0, existing_vault.get_swap_denom());
-                    Ok(existing_vault)
-                }
-                None => Err(StdError::NotFound {
-                    kind: format!("vault for address: {} with id: {}", vault.owner, vault.id),
-                }),
-            }
-        },
-    )?;
+    update_vault(deps.storage, vault.id.into(), |stored_vault| {
+        if let Some(mut stored_vault) = stored_vault {
+            stored_vault.status = VaultStatus::Cancelled;
+            stored_vault.balance = Coin::new(0, stored_vault.get_swap_denom());
+            return Ok(stored_vault);
+        }
+        Err(StdError::NotFound {
+            kind: format!("Vault {}", vault.id),
+        })
+    })?;
 
     Ok(response)
 }
 
 fn cancel_fin_limit_order_trigger(
-    deps: DepsMut,
-    env: Env,
+    deps: &mut DepsMut,
+    env: &Env,
     order_idx: Uint128,
-    vault: Vault,
+    vault: &Vault,
 ) -> Result<Response, ContractError> {
     let limit_order_details =
         query_order_details(deps.querier, vault.pair.address.clone(), order_idx)?;
@@ -108,20 +152,21 @@ fn cancel_fin_limit_order_trigger(
             .query_balance(&env.contract.address, &vault.get_receive_denom())?,
     };
 
+    CACHE.save(
+        deps.storage,
+        &Cache {
+            vault_id: vault.id,
+            owner: vault.owner.clone(),
+        },
+    )?;
+
     LIMIT_ORDER_CACHE.save(deps.storage, &limit_order_cache)?;
 
     let fin_retract_order_sub_msg = create_retract_order_sub_msg(
-        vault.pair.address,
+        vault.pair.address.clone(),
         order_idx,
         AFTER_FIN_LIMIT_ORDER_RETRACTED_REPLY_ID,
     );
-
-    let cache = Cache {
-        vault_id: vault.id,
-        owner: vault.owner.clone(),
-    };
-
-    CACHE.save(deps.storage, &cache)?;
 
     Ok(Response::new()
         .add_attribute("method", "cancel_vault")

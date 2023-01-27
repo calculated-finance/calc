@@ -194,6 +194,7 @@ fn when_vault_is_active_should_not_change_status() {
         .with_active_vault(
             &user_address,
             None,
+            None,
             Coin::new(vault_deposit.into(), DENOM_UKUJI),
             swap_amount,
             "vault",
@@ -233,6 +234,7 @@ fn when_vault_is_active_should_not_execute_vault() {
         .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
         .with_active_vault(
             &user_address,
+            None,
             None,
             Coin::new(vault_deposit.into(), DENOM_UKUJI),
             swap_amount,
@@ -524,6 +526,7 @@ fn when_contract_is_paused_should_fail() {
                 swap_fee_percent: Some(Decimal::from_str("0.015").unwrap()),
                 delegation_fee_percent: Some(Decimal::from_str("0.0075").unwrap()),
                 staking_router_address: None,
+                bow_staking_address: None,
                 page_limit: None,
                 paused: Some(true),
             },

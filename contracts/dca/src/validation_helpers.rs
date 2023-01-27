@@ -3,12 +3,19 @@ use crate::state::config::{get_config, FeeCollector};
 use crate::types::vault::Vault;
 use base::pair::Pair;
 use base::vaults::vault::{Destination, PostExecutionAction, VaultStatus};
-use cosmwasm_std::{Addr, Coin, Decimal, Deps, Storage, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Coin, Decimal, Deps, Env, MessageInfo, Storage, Timestamp, Uint128};
 
-pub fn assert_exactly_one_asset(funds: Vec<Coin>) -> Result<(), ContractError> {
-    if funds.is_empty() || funds.len() > 1 {
+pub fn assert_number_of_assets_equals(
+    funds: Vec<Coin>,
+    expected_number_of_assets: usize,
+) -> Result<(), ContractError> {
+    if funds.len() != expected_number_of_assets {
         return Err(ContractError::CustomError {
-            val: format!("received {} denoms but required exactly 1", funds.len()),
+            val: format!(
+                "received {} denoms but required exactly {}",
+                funds.len(),
+                expected_number_of_assets
+            ),
         });
     }
     Ok(())
@@ -35,6 +42,13 @@ pub fn assert_sender_is_admin(
     Ok(())
 }
 
+pub fn assert_sender_is_contract(info: &MessageInfo, env: &Env) -> Result<(), ContractError> {
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized {});
+    }
+    Ok(())
+}
+
 pub fn asset_sender_is_vault_owner(vault_owner: Addr, sender: Addr) -> Result<(), ContractError> {
     if sender != vault_owner {
         return Err(ContractError::Unauthorized {});
@@ -44,11 +58,24 @@ pub fn asset_sender_is_vault_owner(vault_owner: Addr, sender: Addr) -> Result<()
 
 pub fn assert_sender_is_admin_or_vault_owner(
     storage: &mut dyn Storage,
-    vault_owner: Addr,
-    sender: Addr,
+    vault_owner: &Addr,
+    sender: &Addr,
 ) -> Result<(), ContractError> {
     let config = get_config(storage)?;
-    if sender != config.admin && sender != vault_owner {
+    if sender != &config.admin && sender != vault_owner {
+        return Err(ContractError::Unauthorized {});
+    }
+    Ok(())
+}
+
+pub fn assert_sender_is_admin_or_vault_owner_or_contract(
+    storage: &mut dyn Storage,
+    sender: &Addr,
+    vault_owner: &Addr,
+    env: &Env,
+) -> Result<(), ContractError> {
+    let config = get_config(storage)?;
+    if sender != &config.admin && sender != vault_owner && sender != &env.contract.address {
         return Err(ContractError::Unauthorized {});
     }
     Ok(())
@@ -282,6 +309,15 @@ pub fn assert_denom_is_bond_denom(denom: String) -> Result<(), ContractError> {
     if denom.clone() != "ukuji".to_string() {
         return Err(ContractError::CustomError {
             val: format!("{} is not the bond denomination", denom),
+        });
+    }
+    Ok(())
+}
+
+pub fn assert_exactly_2_denoms(denoms: Vec<String>) -> Result<(), ContractError> {
+    if denoms.len() != 2 {
+        return Err(ContractError::CustomError {
+            val: "denoms must contain exactly 2 values".to_string(),
         });
     }
     Ok(())

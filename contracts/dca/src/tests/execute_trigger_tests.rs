@@ -2110,6 +2110,7 @@ fn when_contract_is_paused_should_fail() {
                 swap_fee_percent: Some(Decimal::from_str("0.015").unwrap()),
                 delegation_fee_percent: Some(Decimal::from_str("0.0075").unwrap()),
                 staking_router_address: None,
+                bow_staking_address: None,
                 page_limit: None,
                 paused: Some(true),
             },
@@ -2192,6 +2193,7 @@ fn for_vault_with_balance_less_than_minimum_swap_amount_should_fail() {
         .with_active_vault(
             &user_address,
             None,
+            None,
             Coin::new(vault_deposit.into(), DENOM_UKUJI),
             swap_amount,
             "time",
@@ -2235,6 +2237,7 @@ fn for_fin_buy_vault_with_exceeded_price_ceiling_should_skip_execution() {
         .with_active_vault(
             &user_address,
             None,
+            None,
             Coin::new(vault_deposit.into(), DENOM_UKUJI),
             swap_amount,
             "time",
@@ -2266,6 +2269,7 @@ fn for_fin_buy_vault_with_non_exceeded_price_ceiling_should_execute() {
         .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
         .with_active_vault(
             &user_address,
+            None,
             None,
             Coin::new(vault_deposit.into(), DENOM_UKUJI),
             swap_amount,
@@ -2302,6 +2306,7 @@ fn for_fin_sell_vault_with_exceeded_price_floor_should_skip_execution() {
         .with_active_vault(
             &user_address,
             None,
+            None,
             Coin::new(vault_deposit.into(), DENOM_UTEST),
             swap_amount,
             "time",
@@ -2333,6 +2338,7 @@ fn for_fin_sell_vault_with_non_exceeded_price_floor_should_execute() {
         .with_funds_for(&user_address, user_balance, DENOM_UTEST)
         .with_active_vault(
             &user_address,
+            None,
             None,
             Coin::new(vault_deposit.into(), DENOM_UTEST),
             swap_amount,

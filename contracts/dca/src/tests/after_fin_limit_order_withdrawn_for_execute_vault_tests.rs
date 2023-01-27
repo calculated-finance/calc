@@ -33,7 +33,7 @@ use cosmwasm_std::{
     to_binary, BankMsg, Coin, CosmosMsg, Decimal, Decimal256, Reply, SubMsg, SubMsgResponse,
     SubMsgResult, Timestamp, Uint128, WasmMsg,
 };
-use kujira::fin::ExecuteMsg as FINExecuteMsg;
+use kujira::fin::ExecuteMsg as FinExecuteMsg;
 use staking_router::msg::ExecuteMsg;
 use std::{cmp::min, str::FromStr};
 
@@ -94,7 +94,7 @@ fn after_succcesful_withdrawal_of_new_limit_order_invokes_a_fin_swap() {
     assert!(response.messages.contains(&SubMsg::reply_always(
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: vault.pair.address.to_string(),
-            msg: to_binary(&FINExecuteMsg::Swap {
+            msg: to_binary(&FinExecuteMsg::Swap {
                 offer_asset: None,
                 belief_price: None,
                 max_spread: None,
@@ -583,6 +583,7 @@ fn after_successful_withdrawal_resulting_in_low_funds_does_not_create_a_new_time
         env.clone(),
         Coin::new(100000, DENOM_UKUJI),
         Uint128::new(60000),
+        None,
     );
 
     deps.querier.update_balance(

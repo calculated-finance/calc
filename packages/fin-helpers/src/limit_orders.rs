@@ -1,5 +1,5 @@
 use cosmwasm_std::{to_binary, Addr, Coin, CosmosMsg, Decimal256, SubMsg, Uint128, WasmMsg};
-use kujira::fin::ExecuteMsg as FINExecuteMsg;
+use kujira::fin::ExecuteMsg as FinExecuteMsg;
 
 pub fn create_submit_order_sub_msg(
     pair_address: Addr,
@@ -7,7 +7,7 @@ pub fn create_submit_order_sub_msg(
     coin_to_send_with_message: Coin,
     reply_id: u64,
 ) -> SubMsg {
-    let fin_limit_order_msg = FINExecuteMsg::SubmitOrder { price };
+    let fin_limit_order_msg = FinExecuteMsg::SubmitOrder { price };
 
     SubMsg::reply_always(
         CosmosMsg::Wasm(WasmMsg::Execute {
@@ -24,7 +24,7 @@ pub fn create_withdraw_limit_order_sub_msg(
     order_idx: Uint128,
     reply_id: u64,
 ) -> SubMsg {
-    let fin_withdraw_order_msg = FINExecuteMsg::WithdrawOrders {
+    let fin_withdraw_order_msg = FinExecuteMsg::WithdrawOrders {
         order_idxs: Some(vec![order_idx]),
     };
 
@@ -43,7 +43,7 @@ pub fn create_retract_order_sub_msg(
     order_idx: Uint128,
     reply_id: u64,
 ) -> SubMsg {
-    let fin_retract_order_msg = FINExecuteMsg::RetractOrder {
+    let fin_retract_order_msg = FinExecuteMsg::RetractOrder {
         order_idx,
         amount: None,
     };

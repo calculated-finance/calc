@@ -110,6 +110,7 @@ fn with_one_vault_should_return_proper_vault_data() {
             label: Some("label".to_string()),
             id: Uint128::new(1),
             owner: user_address.clone(),
+            source: None,
             destinations: vec![Destination {
                 address: user_address.clone(),
                 allocation: Decimal::percent(100),

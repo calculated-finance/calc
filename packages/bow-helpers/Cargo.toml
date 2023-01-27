@@ -1,0 +1,35 @@
+[package]
+name = "bow-helpers"
+version = "1.0.0"
+authors = ["aidan <aidan@calculated.fi>"]
+edition = "2021"
+
+exclude = ["contract.wasm", "hash.txt"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+backtraces = ["cosmwasm-std/backtraces"]
+
+# use library feature to disable all instantiate/execute/query exports
+library = []
+
+[package.metadata.scripts]
+optimize = """docker run --rm -v "$(pwd)":/code \
+  --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \
+  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
+  cosmwasm/rust-optimizer:0.12.6
+"""
+
+[dependencies]
+cosmwasm-std = "1.0.0"
+cw2 = "0.15.0"
+schemars = "0.8.10"
+serde = { version = "1.0.144", default-features = false, features = ["derive"] }
+thiserror = { version = "1.0.31" }
+kujira = "0.7.16"
+cosmwasm-schema = "1.1.1"
+
+[dev-dependencies]
+cw-multi-test = "0.15.0"

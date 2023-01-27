@@ -1,3 +1,8 @@
+use crate::state::config::{Config, FeeCollector};
+use crate::state::data_fixes::DataFix;
+use crate::types::reply_config::ReplyConfig;
+use crate::types::source::Source;
+use crate::types::vault::Vault;
 use base::events::event::Event;
 use base::pair::Pair;
 use base::triggers::trigger::TimeInterval;
@@ -6,10 +11,6 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Decimal, Decimal256, Uint128, Uint64};
 use fin_helpers::position_type::PositionType;
 
-use crate::state::config::{Config, FeeCollector};
-use crate::state::data_fixes::DataFix;
-use crate::types::vault::Vault;
-
 #[cw_serde]
 pub struct InstantiateMsg {
     pub admin: Addr,
@@ -17,6 +18,7 @@ pub struct InstantiateMsg {
     pub swap_fee_percent: Decimal,
     pub delegation_fee_percent: Decimal,
     pub staking_router_address: Addr,
+    pub bow_staking_address: Addr,
     pub page_limit: u16,
     pub paused: bool,
 }
@@ -28,6 +30,7 @@ pub struct MigrateMsg {
     pub swap_fee_percent: Decimal,
     pub delegation_fee_percent: Decimal,
     pub staking_router_address: Addr,
+    pub bow_staking_address: Addr,
     pub page_limit: u16,
     pub paused: bool,
 }
@@ -45,6 +48,7 @@ pub enum ExecuteMsg {
     CreateVault {
         owner: Option<Addr>,
         label: Option<String>,
+        source: Option<Source>,
         destinations: Option<Vec<Destination>>,
         pair_address: Addr,
         position_type: Option<PositionType>,
@@ -70,6 +74,7 @@ pub enum ExecuteMsg {
         swap_fee_percent: Option<Decimal>,
         delegation_fee_percent: Option<Decimal>,
         staking_router_address: Option<Addr>,
+        bow_staking_address: Option<Addr>,
         page_limit: Option<u16>,
         paused: Option<bool>,
     },
@@ -88,6 +93,15 @@ pub enum ExecuteMsg {
     SetFinLimitOrderTimestamp {},
     MigratePriceTrigger {
         vault_id: Uint128,
+    },
+    AddBowPool {
+        address: Addr,
+        denoms: Vec<String>,
+    },
+    Swap {
+        pair_address: Addr,
+        slippage_tolerance: Option<Decimal256>,
+        reply_config: Option<ReplyConfig>,
     },
 }
 

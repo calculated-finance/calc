@@ -9,6 +9,7 @@ pub struct Config {
     pub swap_fee_percent: Decimal,
     pub delegation_fee_percent: Decimal,
     pub staking_router_address: Addr,
+    pub bow_staking_address: Addr,
     pub page_limit: u16,
     pub paused: bool,
 }

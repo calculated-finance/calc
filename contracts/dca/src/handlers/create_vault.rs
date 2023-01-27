@@ -1,19 +1,21 @@
 use crate::constants::TWO_MICRONS;
 use crate::contract::AFTER_FIN_LIMIT_ORDER_SUBMITTED_REPLY_ID;
 use crate::error::ContractError;
-use crate::state::cache::{Cache, CACHE};
+use crate::message_helpers::{execute_trigger_message, swap_for_bow_deposit_messages};
+use crate::state::cache::{BowCache, Cache, BOW_CACHE, CACHE};
 use crate::state::events::create_event;
 use crate::state::fin_limit_order_change_timestamp::FIN_LIMIT_ORDER_CHANGE_TIMESTAMP;
 use crate::state::pairs::PAIRS;
 use crate::state::triggers::save_trigger;
 use crate::state::vaults::{save_vault, update_vault};
+use crate::types::source::Source;
 use crate::types::vault::Vault;
 use crate::types::vault_builder::VaultBuilder;
 use crate::validation_helpers::{
     assert_address_is_valid, assert_contract_is_not_paused, assert_delegation_denom_is_stakeable,
     assert_destination_allocations_add_up_to_one, assert_destination_send_addresses_are_valid,
     assert_destination_validator_addresses_are_valid, assert_destinations_limit_is_not_breached,
-    assert_exactly_one_asset, assert_no_destination_allocations_are_zero,
+    assert_no_destination_allocations_are_zero, assert_number_of_assets_equals,
     assert_send_denom_is_in_pair_denoms, assert_swap_amount_is_greater_than_50000,
     assert_target_start_time_is_in_future,
 };
@@ -27,14 +29,13 @@ use fin_helpers::limit_orders::create_submit_order_sub_msg;
 use fin_helpers::position_type::PositionType;
 use fin_helpers::queries::query_pair_config;
 
-use super::execute_trigger::execute_trigger;
-
 pub fn create_vault(
-    mut deps: DepsMut,
+    deps: &mut DepsMut,
     env: Env,
     info: &MessageInfo,
     owner: Addr,
     label: Option<String>,
+    source: Option<Source>,
     mut destinations: Vec<Destination>,
     pair_address: Addr,
     position_type: Option<PositionType>,
@@ -47,7 +48,7 @@ pub fn create_vault(
 ) -> Result<Response, ContractError> {
     assert_contract_is_not_paused(deps.storage)?;
     assert_address_is_valid(deps.as_ref(), owner.clone(), "owner".to_string())?;
-    assert_exactly_one_asset(info.funds.clone())?;
+    assert_number_of_assets_equals(info.funds.clone(), 1)?;
     assert_swap_amount_is_greater_than_50000(swap_amount)?;
     assert_destinations_limit_is_not_breached(&destinations)?;
 
@@ -89,6 +90,7 @@ pub fn create_vault(
     let vault_builder = VaultBuilder {
         owner,
         label,
+        source,
         destinations,
         created_at: env.block.time,
         status: if info.funds[0].amount.clone() <= Uint128::from(50000u128) {
@@ -137,25 +139,72 @@ pub fn create_vault(
         .add_attribute("owner", vault.owner.to_string())
         .add_attribute("vault_id", vault.id);
 
+    let response = connect_source(deps, &env, &vault, response)?;
+
     if vault.is_inactive() {
         return Ok(response);
     }
 
+    let response = create_trigger(
+        deps,
+        env,
+        vault,
+        target_start_time_utc_seconds,
+        target_receive_amount,
+        response,
+    )?;
+
+    Ok(response)
+}
+
+fn connect_source(
+    deps: &mut DepsMut,
+    env: &Env,
+    vault: &Vault,
+    response: Response,
+) -> Result<Response, ContractError> {
+    match vault.source.clone() {
+        Some(source) => match source {
+            Source::Bow { address, .. } => {
+                BOW_CACHE.save(
+                    deps.storage,
+                    &BowCache {
+                        pool_address: address.clone(),
+                        lp_token_balance: None,
+                        deposit: vec![],
+                        withdrawal: vec![],
+                    },
+                )?;
+
+                Ok(response.add_messages(swap_for_bow_deposit_messages(
+                    deps,
+                    env,
+                    address.clone(),
+                    vault.balance.clone(),
+                    vault.slippage_tolerance,
+                )?))
+            }
+        },
+        None => Ok(response),
+    }
+}
+
+fn create_trigger(
+    deps: &mut DepsMut,
+    env: Env,
+    vault: Vault,
+    target_start_time_utc_seconds: Option<Uint64>,
+    target_receive_amount: Option<Uint128>,
+    response: Response,
+) -> Result<Response, ContractError> {
     match (target_start_time_utc_seconds, target_receive_amount) {
         (None, None) | (Some(_), None) => {
-            let response = create_time_trigger(
-                &mut deps,
-                &env,
-                &vault,
-                target_start_time_utc_seconds,
-                &response,
-            )
-            .expect("time trigger created");
+            let response =
+                create_time_trigger(deps, &env, &vault, target_start_time_utc_seconds, &response)
+                    .expect("time trigger created");
 
             if target_start_time_utc_seconds.is_none() {
-                return Ok(
-                    execute_trigger(deps, env, vault.id, response).expect("time trigger executed")
-                );
+                return Ok(response.add_message(execute_trigger_message(env, vault.id)));
             }
 
             Ok(response)
@@ -195,7 +244,7 @@ fn create_time_trigger(
 }
 
 fn create_fin_limit_order_trigger(
-    deps: DepsMut,
+    deps: &mut DepsMut,
     vault: Vault,
     target_receive_amount: Uint128,
     response: Response,

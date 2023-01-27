@@ -25,7 +25,7 @@ use cosmwasm_std::{
     to_binary, BankMsg, Coin, CosmosMsg, Decimal256, Reply, SubMsg, SubMsgResponse, SubMsgResult,
     Uint128, WasmMsg,
 };
-use kujira::fin::ExecuteMsg as FINExecuteMsg;
+use kujira::fin::ExecuteMsg as FinExecuteMsg;
 
 #[test]
 fn with_unfilled_limit_order_should_return_vault_balance() {
@@ -960,7 +960,7 @@ fn with_partially_filled_limit_order_should_withdraw_remainder() {
     assert!(response.messages.contains(&SubMsg::reply_always(
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: vault.pair.address.to_string(),
-            msg: to_binary(&FINExecuteMsg::WithdrawOrders {
+            msg: to_binary(&FinExecuteMsg::WithdrawOrders {
                 order_idxs: Some(vec![order_idx]),
             })
             .unwrap(),
@@ -1028,7 +1028,7 @@ fn with_partially_filled_new_limit_order_should_withdraw_remainder() {
     assert!(response.messages.contains(&SubMsg::reply_always(
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: vault.pair.address.to_string(),
-            msg: to_binary(&FINExecuteMsg::WithdrawOrders {
+            msg: to_binary(&FinExecuteMsg::WithdrawOrders {
                 order_idxs: Some(vec![order_idx]),
             })
             .unwrap(),
@@ -1098,7 +1098,7 @@ fn with_partially_filled_limit_order_and_low_funds_should_withdraw_remainder() {
     assert!(response.messages.contains(&SubMsg::reply_always(
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: vault.pair.address.to_string(),
-            msg: to_binary(&FINExecuteMsg::WithdrawOrders {
+            msg: to_binary(&FinExecuteMsg::WithdrawOrders {
                 order_idxs: Some(vec![order_idx]),
             })
             .unwrap(),
@@ -1295,7 +1295,7 @@ fn with_filled_limit_order_should_withdraw_remainder() {
     assert!(response.messages.contains(&SubMsg::reply_always(
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: vault.pair.address.to_string(),
-            msg: to_binary(&FINExecuteMsg::WithdrawOrders {
+            msg: to_binary(&FinExecuteMsg::WithdrawOrders {
                 order_idxs: Some(vec![order_idx]),
             })
             .unwrap(),
@@ -1360,7 +1360,7 @@ fn with_filled_new_limit_order_should_withdraw_remainder() {
     assert!(response.messages.contains(&SubMsg::reply_always(
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: vault.pair.address.to_string(),
-            msg: to_binary(&FINExecuteMsg::WithdrawOrders {
+            msg: to_binary(&FinExecuteMsg::WithdrawOrders {
                 order_idxs: Some(vec![order_idx]),
             })
             .unwrap(),
@@ -1494,7 +1494,7 @@ fn with_filled_limit_order_and_low_funds_should_withdraw_remainder() {
     assert!(response.messages.contains(&SubMsg::reply_always(
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: vault.pair.address.to_string(),
-            msg: to_binary(&FINExecuteMsg::WithdrawOrders {
+            msg: to_binary(&FinExecuteMsg::WithdrawOrders {
                 order_idxs: Some(vec![order_idx]),
             })
             .unwrap(),

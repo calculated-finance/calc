@@ -27,7 +27,6 @@ dependencies = [
  "cw-storage-plus 0.15.1",
  "cw2 0.15.1",
  "enum-as-inner",
- "fin-helpers",
  "schemars",
  "serde",
  "thiserror",
@@ -67,6 +66,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69cce20737498f97b993470a6e536b8523f0af7892a4f928cceb1ac5e52ebe7e"
 dependencies = [
  "generic-array",
+]
+
+[[package]]
+name = "bow-helpers"
+version = "1.0.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-multi-test",
+ "cw2 0.15.1",
+ "kujira",
+ "schemars",
+ "serde",
+ "thiserror",
 ]
 
 [[package]]
@@ -340,13 +353,14 @@ name = "dca"
 version = "1.4.0"
 dependencies = [
  "base",
+ "bow-helpers",
+ "cosmos-sdk-proto 0.14.0",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
  "cw-multi-test",
  "cw-storage-plus 0.15.1",
  "cw2 0.15.1",
- "enum-as-inner",
  "fin-helpers",
  "kujira",
  "rand",
@@ -482,6 +496,7 @@ dependencies = [
 name = "fin-helpers"
 version = "1.1.0"
 dependencies = [
+ "base",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
@@ -947,9 +962,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.86"
+version = "1.0.91"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41feea4228a6f1cd09ec7a3593a682276702cd67b5273544757dae23c096f074"
+checksum = "877c235533714907a8c2464236f5c4b2a17262ef1bd71f38f35ea592c8da6883"
 dependencies = [
  "itoa",
  "ryu",

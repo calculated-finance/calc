@@ -28,6 +28,7 @@ fn get_config_should_succeed() {
         swap_fee_percent: Decimal::from_str("0.015").unwrap(),
         delegation_fee_percent: Decimal::from_str("0.0075").unwrap(),
         staking_router_address: Addr::unchecked("staking-router"),
+        bow_staking_address: Addr::unchecked("bow-staking"),
         page_limit: 1000,
         paused: false,
     };

@@ -12,7 +12,7 @@ use crate::{
         triggers::save_trigger,
         vaults::save_vault,
     },
-    types::{vault::Vault, vault_builder::VaultBuilder},
+    types::{source::Source, vault::Vault, vault_builder::VaultBuilder},
 };
 use base::{
     events::event::Event,
@@ -32,6 +32,7 @@ pub fn instantiate_contract(deps: DepsMut, env: Env, info: MessageInfo) {
         swap_fee_percent: Decimal::from_str("0.0165").unwrap(),
         delegation_fee_percent: Decimal::from_str("0.0075").unwrap(),
         staking_router_address: Addr::unchecked(ADMIN),
+        bow_staking_address: Addr::unchecked("bow-staking"),
         page_limit: 1000,
         paused: false,
     };
@@ -52,7 +53,8 @@ pub fn instantiate_contract_with_community_pool_fee_collector(
         }],
         swap_fee_percent: Decimal::from_str("0.0165").unwrap(),
         delegation_fee_percent: Decimal::from_str("0.0075").unwrap(),
-        staking_router_address: Addr::unchecked(ADMIN),
+        staking_router_address: Addr::unchecked("staking-router"),
+        bow_staking_address: Addr::unchecked("bow-staking"),
         page_limit: 1000,
         paused: false,
     };
@@ -71,7 +73,8 @@ pub fn instantiate_contract_with_multiple_fee_collectors(
         fee_collectors,
         swap_fee_percent: Decimal::from_str("0.0165").unwrap(),
         delegation_fee_percent: Decimal::from_str("0.0075").unwrap(),
-        staking_router_address: Addr::unchecked(ADMIN),
+        staking_router_address: Addr::unchecked("staking-router"),
+        bow_staking_address: Addr::unchecked("bow-staking"),
         page_limit: 1000,
         paused: false,
     };
@@ -79,7 +82,13 @@ pub fn instantiate_contract_with_multiple_fee_collectors(
     instantiate(deps, env.clone(), info.clone(), instantiate_message).unwrap();
 }
 
-pub fn setup_vault(deps: DepsMut, env: Env, balance: Coin, swap_amount: Uint128) -> Vault {
+pub fn setup_vault(
+    deps: DepsMut,
+    env: Env,
+    balance: Coin,
+    swap_amount: Uint128,
+    source: Option<Source>,
+) -> Vault {
     let pair = Pair {
         address: Addr::unchecked("pair"),
         base_denom: "base".to_string(),
@@ -97,6 +106,7 @@ pub fn setup_vault(deps: DepsMut, env: Env, balance: Coin, swap_amount: Uint128)
         VaultBuilder {
             owner: owner.clone(),
             label: None,
+            source,
             destinations: vec![Destination {
                 address: owner,
                 allocation: Decimal::percent(100),
@@ -141,7 +151,7 @@ pub fn setup_vault(deps: DepsMut, env: Env, balance: Coin, swap_amount: Uint128)
 }
 
 pub fn setup_active_vault_with_funds(deps: DepsMut, env: Env) -> Vault {
-    setup_vault(deps, env, Coin::new(TEN.into(), "base"), ONE)
+    setup_vault(deps, env, Coin::new(TEN.into(), "base"), ONE, None)
 }
 
 pub fn setup_active_vault_with_slippage_funds(deps: DepsMut, env: Env) -> Vault {
@@ -150,6 +160,7 @@ pub fn setup_active_vault_with_slippage_funds(deps: DepsMut, env: Env) -> Vault 
         env,
         Coin::new(Uint128::new(500000).into(), "base"),
         Uint128::new(500000),
+        None,
     )
 }
 
@@ -159,6 +170,7 @@ pub fn setup_active_vault_with_low_funds(deps: DepsMut, env: Env) -> Vault {
         env,
         Coin::new(Uint128::new(10).into(), "base"),
         Uint128::new(100),
+        None,
     )
 }
 

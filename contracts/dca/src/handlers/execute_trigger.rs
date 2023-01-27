@@ -1,20 +1,24 @@
-// use super::execute_fin_swap::execute_fin_swap;
 use crate::contract::{
     AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_EXECUTE_VAULT_REPLY_ID, AFTER_FIN_SWAP_REPLY_ID,
 };
 use crate::error::ContractError;
+use crate::message_helpers::{swap_for_bow_deposit_messages, unstake_from_bow_message};
+use crate::msg::ExecuteMsg;
 use crate::state::cache::{
-    Cache, LimitOrderCache, SwapCache, CACHE, LIMIT_ORDER_CACHE, SWAP_CACHE,
+    BowCache, Cache, LimitOrderCache, SwapCache, BOW_CACHE, CACHE, LIMIT_ORDER_CACHE, SOURCE_CACHE,
+    SWAP_CACHE,
 };
 use crate::state::events::create_event;
+use crate::state::sources::{remove_source, save_source};
 use crate::state::triggers::{delete_trigger, save_trigger};
 use crate::state::vaults::{get_vault, update_vault};
+use crate::types::source::Source;
 use crate::validation_helpers::{assert_contract_is_not_paused, assert_target_time_is_in_past};
 use base::events::event::{EventBuilder, EventData, ExecutionSkippedReason};
 use base::helpers::time_helpers::get_next_target_time;
 use base::triggers::trigger::{Trigger, TriggerConfiguration};
 use base::vaults::vault::VaultStatus;
-use cosmwasm_std::StdError;
+use cosmwasm_std::{to_binary, CosmosMsg, StdError, SubMsg, WasmMsg};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{DepsMut, Env, Response, Uint128};
 use fin_helpers::limit_orders::create_withdraw_limit_order_sub_msg;
@@ -23,43 +27,36 @@ use fin_helpers::queries::{query_base_price, query_order_details, query_quote_pr
 use fin_helpers::swaps::create_fin_swap_message;
 
 pub fn execute_trigger_handler(
-    deps: DepsMut,
-    env: Env,
+    deps: &mut DepsMut,
+    env: &Env,
     trigger_id: Uint128,
 ) -> Result<Response, ContractError> {
     assert_contract_is_not_paused(deps.storage)?;
-    let response = Response::new().add_attribute("method", "execute_trigger");
-    Ok(execute_trigger(deps, env, trigger_id, response)?)
-}
+    let vault = get_vault(deps.storage, trigger_id.into())?;
 
-pub fn execute_trigger(
-    deps: DepsMut,
-    env: Env,
-    vault_id: Uint128,
-    response: Response,
-) -> Result<Response, ContractError> {
-    let vault = get_vault(deps.storage, vault_id.into())?;
-
-    let position_type = vault.get_position_type();
+    if vault.trigger.is_none() {
+        return Err(ContractError::CustomError {
+            val: format!(
+                "vault with id {} has no trigger attached, and is not available for execution",
+                vault.id
+            ),
+        });
+    }
 
     if vault.is_scheduled() {
-        update_vault(deps.storage, vault.id, |stored_value| match stored_value {
-            Some(mut existing_vault) => {
-                existing_vault.status = VaultStatus::Active;
-                existing_vault.started_at = Some(env.block.time);
-                Ok(existing_vault)
+        update_vault(deps.storage, vault.id, |stored_vault| {
+            if let Some(mut stored_vault) = stored_vault {
+                stored_vault.status = VaultStatus::Active;
+                stored_vault.started_at = Some(env.block.time);
+                return Ok(stored_vault);
             }
-            None => Err(StdError::NotFound {
-                kind: format!(
-                    "vault for address: {} with id: {}",
-                    vault.owner.clone(),
-                    vault.id
-                ),
-            }),
+            Err(StdError::NotFound {
+                kind: format!("Vault {}", vault.id),
+            })
         })?;
     }
 
-    let fin_price = match position_type {
+    let fin_price = match vault.get_position_type() {
         PositionType::Enter => query_base_price(deps.querier, vault.pair.address.clone()),
         PositionType::Exit => query_quote_price(deps.querier, vault.pair.address.clone()),
     };
@@ -77,21 +74,8 @@ pub fn execute_trigger(
         ),
     )?;
 
-    if vault.trigger.is_none() {
-        return Err(ContractError::CustomError {
-            val: format!(
-                "vault with id {} has no trigger attached, and is not available for execution",
-                vault.id
-            ),
-        });
-    }
-
-    match vault
-        .trigger
-        .clone()
-        .expect(format!("trigger for vault id {}", vault.id).as_str())
-    {
-        TriggerConfiguration::Time { target_time } => {
+    if let Some(trigger) = vault.trigger.clone() {
+        if let TriggerConfiguration::Time { target_time } = trigger {
             assert_target_time_is_in_past(env.block.time, target_time)?;
 
             if vault.price_threshold_exceeded(fin_price) {
@@ -124,9 +108,49 @@ pub fn execute_trigger(
                     },
                 )?;
 
-                return Ok(response.to_owned());
+                return Ok(Response::new());
             };
+        }
+    }
 
+    let mut messages: Vec<CosmosMsg> = Vec::new();
+    let mut sub_messages: Vec<SubMsg> = Vec::new();
+
+    if let Some(source) = vault.source.clone() {
+        match source.clone() {
+            Source::Bow { address } => {
+                BOW_CACHE.save(
+                    deps.storage,
+                    &BowCache {
+                        pool_address: address,
+                        lp_token_balance: Some(vault.balance.clone()),
+                        deposit: vec![],
+                        withdrawal: vec![],
+                    },
+                )?;
+
+                sub_messages.push(unstake_from_bow_message(deps, env, &vault)?);
+            }
+        }
+
+        SOURCE_CACHE.save(deps.storage, &source)?;
+        remove_source(deps.storage, vault.id)?;
+
+        return Ok(Response::new()
+            .add_submessages(sub_messages)
+            .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: env.contract.address.to_string(),
+                msg: to_binary(&ExecuteMsg::ExecuteTrigger { trigger_id })?,
+                funds: vec![],
+            })));
+    }
+
+    match vault
+        .trigger
+        .clone()
+        .expect(format!("trigger for vault id {}", vault.id).as_str())
+    {
+        TriggerConfiguration::Time { .. } => {
             CACHE.save(
                 deps.storage,
                 &Cache {
@@ -147,14 +171,15 @@ pub fn execute_trigger(
                 },
             )?;
 
-            return Ok(response.add_submessage(create_fin_swap_message(
-                deps.querier,
-                vault.pair.address.clone(),
-                vault.get_swap_amount(),
-                vault.get_position_type(),
-                vault.slippage_tolerance,
+            sub_messages.push(SubMsg::reply_always(
+                create_fin_swap_message(
+                    deps.querier,
+                    vault.pair.clone(),
+                    vault.get_swap_amount(),
+                    vault.slippage_tolerance,
+                )?,
                 AFTER_FIN_SWAP_REPLY_ID,
-            )));
+            ));
         }
         TriggerConfiguration::FinLimitOrder { order_idx, .. } => {
             if let Some(order_idx) = order_idx {
@@ -190,14 +215,14 @@ pub fn execute_trigger(
                     AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_EXECUTE_VAULT_REPLY_ID,
                 );
 
-                let cache: Cache = Cache {
+                let cache = Cache {
                     vault_id: vault.id,
                     owner: vault.owner.clone(),
                 };
 
                 CACHE.save(deps.storage, &cache)?;
 
-                return Ok(response.add_submessage(fin_withdraw_sub_msg));
+                sub_messages.push(fin_withdraw_sub_msg);
             } else {
                 return Err(ContractError::CustomError {
                     val: String::from("fin limit order has not been created"),
@@ -205,4 +230,26 @@ pub fn execute_trigger(
             }
         }
     }
+
+    if let Some(source) = SOURCE_CACHE.may_load(deps.storage)? {
+        save_source(deps.storage, vault.id, source.clone())?;
+        SOURCE_CACHE.remove(deps.storage);
+
+        match source {
+            Source::Bow { address, .. } => {
+                messages.append(&mut swap_for_bow_deposit_messages(
+                    deps,
+                    env,
+                    address.clone(),
+                    vault.balance.clone(),
+                    vault.slippage_tolerance,
+                )?);
+            }
+        };
+    }
+
+    Ok(Response::new()
+        .add_attribute("method", "execute_trigger")
+        .add_submessages(sub_messages)
+        .add_messages(messages))
 }
