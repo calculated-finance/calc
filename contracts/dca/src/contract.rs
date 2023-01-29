@@ -8,9 +8,9 @@ use crate::handlers::after_fin_swap::after_fin_swap;
 use crate::handlers::after_z_delegation::after_z_delegation;
 use crate::handlers::burn_lp_tokens::burn_lp_tokens;
 use crate::handlers::cancel_vault::cancel_vault;
+use crate::handlers::create_bow_pool::create_bow_pool;
 use crate::handlers::create_custom_swap_fee::create_custom_swap_fee;
 use crate::handlers::create_pair::create_pair;
-use crate::handlers::create_pool::add_bow_pool;
 use crate::handlers::create_vault::create_vault;
 use crate::handlers::delete_pair::delete_pair;
 use crate::handlers::deposit::deposit;
@@ -213,7 +213,7 @@ pub fn execute(
             assert_sender_is_admin(deps.storage, info.sender)?;
             migrate_price_trigger(deps, vault_id)
         }
-        ExecuteMsg::AddBowPool { address, denoms } => add_bow_pool(deps, info, address, denoms),
+        ExecuteMsg::AddBowPool { address, denoms } => create_bow_pool(deps, info, address, denoms),
         ExecuteMsg::Swap {
             pair_address,
             slippage_tolerance,

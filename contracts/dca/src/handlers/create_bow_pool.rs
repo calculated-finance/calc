@@ -6,7 +6,7 @@ use cosmwasm_std::{Addr, DepsMut};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{MessageInfo, Response};
 
-pub fn add_bow_pool(
+pub fn create_bow_pool(
     deps: DepsMut,
     info: MessageInfo,
     address: Addr,
