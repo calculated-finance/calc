@@ -240,7 +240,7 @@ pub fn execute_trigger_handler(
                 messages.append(&mut swap_for_bow_deposit_messages(
                     deps,
                     env,
-                    address.clone(),
+                    &address,
                     vault.balance.clone(),
                     vault.slippage_tolerance,
                 )?);

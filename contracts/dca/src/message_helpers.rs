@@ -24,12 +24,12 @@ pub fn execute_trigger_message(env: Env, trigger_id: Uint128) -> CosmosMsg {
 pub fn swap_for_bow_deposit_messages(
     deps: &mut DepsMut,
     env: &Env,
-    pool_address: Addr,
+    pool_address: &Addr,
     amount: Coin,
     slippage_tolerance: Option<Decimal256>,
 ) -> StdResult<Vec<CosmosMsg>> {
     let mut cache = BOW_CACHE.load(deps.storage)?;
-    let pool_response = get_pool(deps.storage, pool_address.clone())?;
+    let pool_response = get_pool(deps.storage, pool_address)?;
 
     if pool_response.is_none() {
         return Err(StdError::GenericErr {
@@ -38,7 +38,7 @@ pub fn swap_for_bow_deposit_messages(
     }
 
     let denoms = pool_response.unwrap().denoms;
-    let pool_balances = query_pool_balances(deps.querier, pool_address.clone())?.balances;
+    let pool_balances = query_pool_balances(deps.querier, pool_address)?.balances;
 
     let pool_balances_with_denoms: Vec<(&String, Uint128)> =
         denoms.iter().zip(pool_balances).collect();

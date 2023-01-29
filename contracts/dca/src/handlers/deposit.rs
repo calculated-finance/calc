@@ -60,7 +60,7 @@ pub fn deposit(
             Source::Bow { address } => messages.append(&mut swap_for_bow_deposit_messages(
                 deps,
                 &env,
-                address,
+                &address,
                 deposit,
                 vault.slippage_tolerance,
             )?),

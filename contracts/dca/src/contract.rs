@@ -213,7 +213,9 @@ pub fn execute(
             assert_sender_is_admin(deps.storage, info.sender)?;
             migrate_price_trigger(deps, vault_id)
         }
-        ExecuteMsg::AddBowPool { address, denoms } => create_bow_pool(deps, info, address, denoms),
+        ExecuteMsg::AddBowPool { address, denoms } => {
+            create_bow_pool(deps, &info, &address, denoms)
+        }
         ExecuteMsg::Swap {
             pair_address,
             slippage_tolerance,
@@ -269,7 +271,7 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
         AFTER_FIN_LIMIT_ORDER_SUBMITTED_FOR_MIGRATE_REPLY_ID => {
             after_fin_limit_order_submitted_for_migrate_trigger(deps, reply)
         }
-        AFTER_SWAPPING_FOR_BOW_DEPOSIT => mint_lp_tokens(deps, env),
+        AFTER_SWAPPING_FOR_BOW_DEPOSIT => mint_lp_tokens(deps, &env),
         AFTER_MINTING_LP_TOKENS => send_lp_tokens_to_owner(deps, env),
         AFTER_SENDING_LP_TOKENS_TO_OWNER => stake_to_bow(deps, env),
         AFTER_UNSTAKING_FROM_BOW => send_lp_tokens_to_contract(deps, env),

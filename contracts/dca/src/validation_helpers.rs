@@ -313,12 +313,3 @@ pub fn assert_denom_is_bond_denom(denom: String) -> Result<(), ContractError> {
     }
     Ok(())
 }
-
-pub fn assert_exactly_2_denoms(denoms: Vec<String>) -> Result<(), ContractError> {
-    if denoms.len() != 2 {
-        return Err(ContractError::CustomError {
-            val: "denoms must contain exactly 2 values".to_string(),
-        });
-    }
-    Ok(())
-}

@@ -179,7 +179,7 @@ fn connect_source(
                 Ok(response.add_messages(swap_for_bow_deposit_messages(
                     deps,
                     env,
-                    address.clone(),
+                    &address,
                     vault.balance.clone(),
                     vault.slippage_tolerance,
                 )?))

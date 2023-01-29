@@ -4,5 +4,5 @@ use cosmwasm_std::Addr;
 #[cw_serde]
 pub struct Pool {
     pub address: Addr,
-    pub denoms: Vec<String>,
+    pub denoms: [String; 2],
 }

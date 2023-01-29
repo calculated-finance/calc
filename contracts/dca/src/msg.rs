@@ -96,7 +96,7 @@ pub enum ExecuteMsg {
     },
     AddBowPool {
         address: Addr,
-        denoms: Vec<String>,
+        denoms: [String; 2],
     },
     Swap {
         pair_address: Addr,

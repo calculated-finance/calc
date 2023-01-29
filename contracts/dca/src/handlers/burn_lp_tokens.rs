@@ -9,8 +9,7 @@ use cosmwasm_std::{to_binary, Coin, CosmosMsg, DepsMut, Env, Response, SubMsg, W
 pub fn burn_lp_tokens(deps: DepsMut, env: Env) -> Result<Response, ContractError> {
     let mut bow_cache = BOW_CACHE.load(deps.storage)?;
 
-    let pool_config =
-        get_pool(deps.storage, bow_cache.pool_address.clone())?.expect("Bow Pool config");
+    let pool_config = get_pool(deps.storage, &bow_cache.pool_address)?.expect("Bow Pool config");
 
     bow_cache.withdrawal = pool_config
         .denoms
@@ -71,9 +70,9 @@ mod burn_lp_tokens_tests {
 
         create_bow_pool(
             deps.as_mut(),
-            info.clone(),
-            bow_pool_address.clone(),
-            vec!["base".to_string(), "quote".to_string()],
+            &info,
+            &bow_pool_address,
+            ["base".to_string(), "quote".to_string()],
         )
         .unwrap();
 
@@ -115,15 +114,9 @@ mod burn_lp_tokens_tests {
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
 
-        let pool_denoms = vec!["base".to_string(), "quote".to_string()];
+        let pool_denoms = ["base".to_string(), "quote".to_string()];
 
-        create_bow_pool(
-            deps.as_mut(),
-            info.clone(),
-            bow_pool_address.clone(),
-            pool_denoms.clone(),
-        )
-        .unwrap();
+        create_bow_pool(deps.as_mut(), &info, &bow_pool_address, pool_denoms.clone()).unwrap();
 
         BOW_CACHE
             .save(
