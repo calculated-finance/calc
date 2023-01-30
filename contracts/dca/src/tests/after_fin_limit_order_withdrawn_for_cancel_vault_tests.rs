@@ -30,7 +30,7 @@ fn with_partially_filled_limit_order_should_return_funds_to_owner() {
     let vault = setup_active_vault_with_low_funds(deps.as_mut(), env.clone());
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - TWO_MICRONS / Uint128::new(2)).into(),

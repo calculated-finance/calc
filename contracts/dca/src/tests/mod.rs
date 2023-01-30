@@ -60,3 +60,24 @@ pub mod get_vaults_tests;
 
 #[cfg(test)]
 pub mod get_config_tests;
+
+#[cfg(test)]
+pub mod send_lp_tokens_to_contract_tests;
+
+#[cfg(test)]
+pub mod send_lp_tokens_to_owner_tests;
+
+#[cfg(test)]
+pub mod mint_lp_tokens_tests;
+
+#[cfg(test)]
+pub mod add_received_amount_to_vault_balance_tests;
+
+#[cfg(test)]
+pub mod swap_from_bow_deposit_tests;
+
+#[cfg(test)]
+pub mod burn_lp_tokens_tests;
+
+#[cfg(test)]
+pub mod swap_tests;

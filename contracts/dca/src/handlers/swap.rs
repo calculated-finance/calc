@@ -10,7 +10,7 @@ use crate::{
 use cosmwasm_std::{Addr, Decimal256, DepsMut, Env, MessageInfo, Response, SubMsg};
 use fin_helpers::swaps::create_fin_swap_message;
 
-pub fn swap_on_fin(
+pub fn swap(
     deps: DepsMut,
     env: &Env,
     info: &MessageInfo,

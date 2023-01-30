@@ -33,8 +33,8 @@ use crate::handlers::remove_custom_swap_fee::remove_custom_swap_fee;
 use crate::handlers::send_lp_tokens_to_contract::send_lp_tokens_to_contract;
 use crate::handlers::send_lp_tokens_to_owner::send_lp_tokens_to_owner;
 use crate::handlers::stake_to_bow::stake_to_bow;
+use crate::handlers::swap::swap;
 use crate::handlers::swap_from_bow_deposit::swap_from_bow_deposit;
-use crate::handlers::swap_on_fin::swap_on_fin;
 use crate::handlers::update_config::update_config_handler;
 use crate::handlers::update_vault_label::update_vault_label;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
@@ -220,7 +220,7 @@ pub fn execute(
             pair_address,
             slippage_tolerance,
             reply_config,
-        } => swap_on_fin(
+        } => swap(
             deps,
             &env,
             &info,

@@ -6,8 +6,8 @@ use base::{
 };
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    BankMsg, Coin, Decimal, Decimal256, Reply, SubMsg, SubMsgResponse, SubMsgResult,
-    Timestamp, Uint128,
+    BankMsg, Coin, Decimal, Decimal256, Reply, SubMsg, SubMsgResponse, SubMsgResult, Timestamp,
+    Uint128,
 };
 use fin_helpers::codes::ERROR_SWAP_SLIPPAGE_EXCEEDED;
 use std::{cmp::min, str::FromStr};
@@ -54,7 +54,7 @@ fn with_succcesful_swap_returns_funds_to_destination() {
         .unwrap();
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
     );
 
@@ -123,7 +123,7 @@ fn with_succcesful_swap_returns_fee_to_fee_collector() {
         .unwrap();
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
     );
 
@@ -203,7 +203,7 @@ fn with_succcesful_swap_returns_fee_to_multiple_fee_collectors() {
         .unwrap();
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
     );
 
@@ -293,7 +293,7 @@ fn with_succcesful_swap_adjusts_vault_balance() {
         .unwrap();
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
     );
 
@@ -338,7 +338,7 @@ fn with_succcesful_swap_adjusts_swapped_amount_stat() {
         .unwrap();
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount).into(),
@@ -389,7 +389,7 @@ fn with_succcesful_swap_adjusts_received_amount_stat() {
         .unwrap();
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
     );
 
@@ -446,7 +446,7 @@ fn with_successful_swap_creates_a_new_time_trigger() {
         .unwrap();
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
     );
 
@@ -500,7 +500,7 @@ fn with_successful_swap_resulting_in_low_funds_sets_vault_to_inactive() {
         .unwrap();
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
     );
 
@@ -549,7 +549,7 @@ fn with_successful_swap_resulting_in_low_funds_does_not_create_time_trigger() {
         .unwrap();
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
     );
 
@@ -826,7 +826,7 @@ fn with_custom_fee_for_base_denom_takes_custom_fee() {
         .unwrap();
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
     );
 
@@ -900,7 +900,7 @@ fn with_custom_fee_for_quote_denom_takes_custom_fee() {
         .unwrap();
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
     );
 
@@ -982,7 +982,7 @@ fn with_custom_fee_for_both_denoms_takes_lower_fee() {
         .unwrap();
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
     );
 

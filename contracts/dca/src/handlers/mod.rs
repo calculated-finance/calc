@@ -30,7 +30,7 @@ pub mod remove_custom_swap_fee;
 pub mod send_lp_tokens_to_contract;
 pub mod send_lp_tokens_to_owner;
 pub mod stake_to_bow;
+pub mod swap;
 pub mod swap_from_bow_deposit;
-pub mod swap_on_fin;
 pub mod update_config;
 pub mod update_vault_label;

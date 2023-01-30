@@ -45,7 +45,7 @@ fn after_succcesful_withdrawal_of_new_limit_order_invokes_a_fin_swap() {
     let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - TWO_MICRONS).into(),
@@ -117,7 +117,7 @@ fn after_succcesful_withdrawal_returns_funds_to_destination() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount).into(),
@@ -199,7 +199,7 @@ fn after_succcesful_withdrawal_of_new_limit_order_returns_limit_order_to_fee_col
     let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - TWO_MICRONS).into(),
@@ -264,7 +264,7 @@ fn after_succcesful_withdrawal_returns_fees_to_fee_collector() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount).into(),
@@ -357,7 +357,7 @@ fn after_succcesful_withdrawal_returns_fees_to_multiple_fee_collectors() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount).into(),
@@ -455,7 +455,7 @@ fn after_succesful_withdrawal_adjusts_vault_balance() {
     let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount).into(),
@@ -517,7 +517,7 @@ fn after_successful_withdrawal_creates_a_new_time_trigger() {
     let vault = setup_active_vault_with_funds(deps.as_mut(), env.clone());
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount).into(),
@@ -587,7 +587,7 @@ fn after_successful_withdrawal_resulting_in_low_funds_does_not_create_a_new_time
     );
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount).into(),
@@ -647,7 +647,7 @@ fn after_successful_withdrawal_creates_delegation_messages() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount).into(),
@@ -737,7 +737,7 @@ fn after_successful_withdrawal_creates_execution_completed_event() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount).into(),
@@ -823,7 +823,7 @@ fn with_empty_resulting_vault_sets_vault_to_inactive() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount).into(),
@@ -890,7 +890,7 @@ fn with_custom_fee_for_base_denom_takes_custom_fee() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount).into(),
@@ -977,7 +977,7 @@ fn with_custom_fee_for_quote_denom_takes_custom_fee() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount).into(),
@@ -1072,7 +1072,7 @@ fn with_custom_fee_for_both_denoms_takes_lower_fee() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount).into(),

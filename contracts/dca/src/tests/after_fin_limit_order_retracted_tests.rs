@@ -37,7 +37,7 @@ fn with_unfilled_limit_order_should_return_vault_balance() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(vault.balance.amount.into(), vault.get_swap_denom()),
             Coin::new(0, vault.get_receive_denom()),
@@ -92,7 +92,7 @@ fn with_new_unfilled_limit_order_should_return_vault_balance() {
     let received_amount = TWO_MICRONS;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount + TWO_MICRONS).into(),
@@ -151,7 +151,7 @@ fn with_unfilled_limit_order_and_low_funds_should_return_vault_balance() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(vault.balance.amount.into(), vault.get_swap_denom()),
             Coin::new(0, vault.get_receive_denom()),
@@ -210,7 +210,7 @@ fn with_unfilled_limit_order_should_set_vault_balance_to_zero() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(vault.balance.amount.into(), vault.get_swap_denom()),
             Coin::new(0, vault.get_receive_denom()),
@@ -265,7 +265,7 @@ fn with_new_unfilled_limit_order_should_set_vault_balance_to_zero() {
     let received_amount = TWO_MICRONS;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount + TWO_MICRONS).into(),
@@ -324,7 +324,7 @@ fn with_unfilled_limit_order_and_low_funds_should_set_vault_balance_to_zero() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(vault.balance.amount.into(), vault.get_swap_denom()),
             Coin::new(received_amount.into(), vault.get_receive_denom()),
@@ -379,7 +379,7 @@ fn with_unfilled_limit_order_should_set_vault_status_to_cancelled() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(vault.balance.amount.into(), vault.get_swap_denom()),
             Coin::new(received_amount.into(), vault.get_receive_denom()),
@@ -434,7 +434,7 @@ fn with_new_unfilled_limit_order_should_set_vault_status_to_cancelled() {
     let received_amount = TWO_MICRONS;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount + TWO_MICRONS).into(),
@@ -493,7 +493,7 @@ fn with_unfilled_limit_order_and_low_funds_should_set_vault_status_to_cancelled(
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(vault.balance.amount.into(), vault.get_swap_denom()),
             Coin::new(received_amount.into(), vault.get_receive_denom()),
@@ -548,7 +548,7 @@ fn with_unfilled_limit_order_should_delete_trigger() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(vault.balance.amount.into(), vault.get_swap_denom()),
             Coin::new(received_amount.into(), vault.get_receive_denom()),
@@ -603,7 +603,7 @@ fn with_new_unfilled_limit_order_should_delete_trigger() {
     let received_amount = TWO_MICRONS;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount + TWO_MICRONS).into(),
@@ -662,7 +662,7 @@ fn with_unfilled_limit_order_and_low_funds_should_delete_trigger() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(vault.balance.amount.into(), vault.get_swap_denom()),
             Coin::new(received_amount.into(), vault.get_receive_denom()),
@@ -717,7 +717,7 @@ fn with_partially_filled_limit_order_should_return_vault_balance_minus_filled_am
     let received_amount = vault.get_swap_amount().amount / Uint128::new(2);
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount + received_amount).into(),
@@ -782,7 +782,7 @@ fn with_partially_filled_new_limit_order_should_return_vault_balance_minus_fille
     let received_amount = TWO_MICRONS / Uint128::new(2);
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount + received_amount).into(),
@@ -846,7 +846,7 @@ fn with_partially_filled_limit_order_and_low_funds_should_return_vault_balance_m
     let received_amount = vault.get_swap_amount().amount / Uint128::new(2);
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount + received_amount).into(),
@@ -912,7 +912,7 @@ fn with_partially_filled_limit_order_should_withdraw_remainder() {
     let received_amount = vault.get_swap_amount().amount / Uint128::new(2);
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount + received_amount).into(),
@@ -982,7 +982,7 @@ fn with_partially_filled_new_limit_order_should_withdraw_remainder() {
     let received_amount = TWO_MICRONS / Uint128::new(2);
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount + received_amount).into(),
@@ -1050,7 +1050,7 @@ fn with_partially_filled_limit_order_and_low_funds_should_withdraw_remainder() {
     let received_amount = vault.get_swap_amount().amount / Uint128::new(2);
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount + received_amount).into(),
@@ -1119,7 +1119,7 @@ fn with_filled_limit_order_should_return_vault_balance_minus_swap_amount() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount).into(),
@@ -1185,7 +1185,7 @@ fn with_filled_new_limit_order_should_return_vault_balance() {
     let received_amount = TWO_MICRONS;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(vault.balance.amount.into(), vault.get_swap_denom()),
             Coin::new(received_amount.into(), vault.get_receive_denom()),
@@ -1247,7 +1247,7 @@ fn with_filled_limit_order_should_withdraw_remainder() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount).into(),
@@ -1317,7 +1317,7 @@ fn with_filled_new_limit_order_should_withdraw_remainder() {
     let received_amount = TWO_MICRONS;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(vault.balance.amount.into(), vault.get_swap_denom()),
             Coin::new(received_amount.into(), vault.get_receive_denom()),
@@ -1381,7 +1381,7 @@ fn with_filled_limit_order_and_low_funds_should_return_no_funds() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount).into(),
@@ -1446,7 +1446,7 @@ fn with_filled_limit_order_and_low_funds_should_withdraw_remainder() {
     let received_amount = vault.get_swap_amount().amount;
 
     deps.querier.update_balance(
-        "cosmos2contract",
+        env.contract.address.clone(),
         vec![
             Coin::new(
                 (vault.balance.amount - vault.get_swap_amount().amount).into(),
