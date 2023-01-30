@@ -25,36 +25,33 @@ pub fn swap_for_bow_deposit_messages(
     deps: &mut DepsMut,
     env: &Env,
     pool_address: &Addr,
-    amount: Coin,
+    deposit_amount: Coin,
     slippage_tolerance: Option<Decimal256>,
 ) -> StdResult<Vec<CosmosMsg>> {
     let mut cache = BOW_CACHE.load(deps.storage)?;
-    let pool_response = get_pool(deps.storage, pool_address)?;
+    let pool = get_pool(deps.storage, pool_address)?;
 
-    if pool_response.is_none() {
+    if pool.is_none() {
         return Err(StdError::GenericErr {
             msg: format!("BOW pool {} does not exist", pool_address),
         });
     }
 
-    let denoms = pool_response.unwrap().denoms;
+    let denoms = pool.unwrap().denoms;
     let pool_balances = query_pool_balances(deps.querier, pool_address)?.balances;
-
-    let pool_balances_with_denoms: Vec<(&String, Uint128)> =
-        denoms.iter().zip(pool_balances).collect();
-
     let pool_total = pool_balances.iter().sum::<Uint128>();
 
-    let swap_messages = pool_balances_with_denoms
-        .into_iter()
+    let swap_messages = denoms
+        .iter()
+        .zip(pool_balances)
         .map(|(denom, pool_balance)| {
             let amount = Coin::new(
-                amount
+                deposit_amount
                     .amount
                     .checked_multiply_ratio(pool_balance, pool_total)
                     .expect("amount to swap for bow deposit")
                     .into(),
-                amount.denom.clone(),
+                deposit_amount.denom.clone(),
             );
 
             let denoms = [amount.denom.clone(), denom.to_string()];
