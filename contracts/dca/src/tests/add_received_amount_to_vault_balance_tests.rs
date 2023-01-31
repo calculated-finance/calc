@@ -23,8 +23,8 @@ pub fn adds_received_amount_to_existing_vault_balance() {
         .save(
             deps.as_mut().storage,
             &SwapCache {
-                swap_denom_balance: vault.balance.clone(),
-                receive_denom_balance: Coin::new(0, vault.get_receive_denom()),
+                swap_denom_balance: Coin::new(10000, "some-token"),
+                receive_denom_balance: vault.balance.clone(),
             },
         )
         .unwrap();
@@ -70,8 +70,8 @@ pub fn replaces_different_denom_vault_balance_with_received_amount() {
         .save(
             deps.as_mut().storage,
             &SwapCache {
-                swap_denom_balance: Coin::new(0, vault.get_swap_denom()),
-                receive_denom_balance: Coin::new(0, vault.get_receive_denom()),
+                swap_denom_balance: Coin::new(10000, "some-token"),
+                receive_denom_balance: vault.balance.clone(),
             },
         )
         .unwrap();
@@ -79,7 +79,7 @@ pub fn replaces_different_denom_vault_balance_with_received_amount() {
     deps.querier.update_balance(
         env.contract.address.clone(),
         vec![Coin::new(
-            (balance_received.amount).into(),
+            (vault.balance.amount + balance_received.amount).into(),
             vault.get_swap_denom(),
         )],
     );

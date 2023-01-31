@@ -213,7 +213,7 @@ pub fn execute(
             assert_sender_is_admin(deps.storage, info.sender)?;
             migrate_price_trigger(deps, vault_id)
         }
-        ExecuteMsg::AddBowPool { address, denoms } => {
+        ExecuteMsg::CreateBowPool { address, denoms } => {
             create_bow_pool(deps, &info, &address, denoms)
         }
         ExecuteMsg::Swap {

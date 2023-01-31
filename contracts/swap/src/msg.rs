@@ -1,7 +1,6 @@
+use crate::{state::config::Config, types::pair::Pair};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
-
-use crate::{state::config::Config, types::pair::Pair};
 
 #[cw_serde]
 pub struct MigrateMsg {

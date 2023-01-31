@@ -2,11 +2,14 @@ use std::cmp::min;
 
 use crate::contract::{AFTER_BANK_SWAP_REPLY_ID, AFTER_Z_DELEGATION_REPLY_ID};
 use crate::error::ContractError;
-use crate::state::cache::{CACHE, SWAP_CACHE};
+use crate::message_helpers::swap_for_bow_deposit_messages;
+use crate::state::cache::{CACHE, SOURCE_CACHE, SWAP_CACHE};
 use crate::state::config::{get_config, get_custom_fee};
 use crate::state::events::create_event;
+use crate::state::sources::save_source;
 use crate::state::triggers::{delete_trigger, save_trigger};
 use crate::state::vaults::{get_vault, update_vault};
+use crate::types::source::Source;
 use crate::types::vault::Vault;
 use base::events::event::{EventBuilder, EventData, ExecutionSkippedReason};
 use base::helpers::coin_helpers::add_to_coin;
@@ -20,7 +23,11 @@ use cosmwasm_std::{to_binary, StdError, StdResult, SubMsg, SubMsgResult, WasmMsg
 use cosmwasm_std::{Attribute, BankMsg, Coin, CosmosMsg, DepsMut, Env, Reply, Response, Uint128};
 use staking_router::msg::ExecuteMsg as StakingRouterExecuteMsg;
 
-pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, ContractError> {
+pub fn after_fin_swap(
+    mut deps: DepsMut,
+    env: Env,
+    reply: Reply,
+) -> Result<Response, ContractError> {
     let cache = CACHE.load(deps.storage)?;
     let vault = get_vault(deps.storage, cache.vault_id.into())?;
 
@@ -223,6 +230,23 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                         },
                     },
                 )?;
+            }
+
+            if let Some(source) = SOURCE_CACHE.may_load(deps.storage)? {
+                save_source(deps.storage, vault.id, source.clone())?;
+                SOURCE_CACHE.remove(deps.storage);
+
+                match source {
+                    Source::Bow { address, .. } => {
+                        messages.append(&mut swap_for_bow_deposit_messages(
+                            &mut deps,
+                            &env,
+                            &address,
+                            updated_vault.balance.clone(),
+                            updated_vault.slippage_tolerance,
+                        )?);
+                    }
+                };
             }
 
             create_event(

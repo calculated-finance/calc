@@ -94,7 +94,7 @@ pub enum ExecuteMsg {
     MigratePriceTrigger {
         vault_id: Uint128,
     },
-    AddBowPool {
+    CreateBowPool {
         address: Addr,
         denoms: [String; 2],
     },

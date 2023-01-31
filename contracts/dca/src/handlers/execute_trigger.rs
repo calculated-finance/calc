@@ -2,14 +2,14 @@ use crate::contract::{
     AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_EXECUTE_VAULT_REPLY_ID, AFTER_FIN_SWAP_REPLY_ID,
 };
 use crate::error::ContractError;
-use crate::message_helpers::{swap_for_bow_deposit_messages, unstake_from_bow_message};
+use crate::message_helpers::unstake_from_bow_message;
 use crate::msg::ExecuteMsg;
 use crate::state::cache::{
     BowCache, Cache, LimitOrderCache, SwapCache, BOW_CACHE, CACHE, LIMIT_ORDER_CACHE, SOURCE_CACHE,
     SWAP_CACHE,
 };
 use crate::state::events::create_event;
-use crate::state::sources::{remove_source, save_source};
+use crate::state::sources::remove_source;
 use crate::state::triggers::{delete_trigger, save_trigger};
 use crate::state::vaults::{get_vault, update_vault};
 use crate::types::source::Source;
@@ -61,19 +61,6 @@ pub fn execute_trigger_handler(
         PositionType::Exit => query_quote_price(deps.querier, vault.pair.address.clone()),
     };
 
-    create_event(
-        deps.storage,
-        EventBuilder::new(
-            vault.id,
-            env.block.to_owned(),
-            EventData::DcaVaultExecutionTriggered {
-                base_denom: vault.pair.base_denom.clone(),
-                quote_denom: vault.pair.quote_denom.clone(),
-                asset_price: fin_price.clone(),
-            },
-        ),
-    )?;
-
     if let Some(trigger) = vault.trigger.clone() {
         if let TriggerConfiguration::Time { target_time } = trigger {
             assert_target_time_is_in_past(env.block.time, target_time)?;
@@ -113,7 +100,6 @@ pub fn execute_trigger_handler(
         }
     }
 
-    let mut messages: Vec<CosmosMsg> = Vec::new();
     let mut sub_messages: Vec<SubMsg> = Vec::new();
 
     if let Some(source) = vault.source.clone() {
@@ -144,6 +130,19 @@ pub fn execute_trigger_handler(
                 funds: vec![],
             })));
     }
+
+    create_event(
+        deps.storage,
+        EventBuilder::new(
+            vault.id,
+            env.block.to_owned(),
+            EventData::DcaVaultExecutionTriggered {
+                base_denom: vault.pair.base_denom.clone(),
+                quote_denom: vault.pair.quote_denom.clone(),
+                asset_price: fin_price.clone(),
+            },
+        ),
+    )?;
 
     match vault
         .trigger
@@ -231,25 +230,7 @@ pub fn execute_trigger_handler(
         }
     }
 
-    if let Some(source) = SOURCE_CACHE.may_load(deps.storage)? {
-        save_source(deps.storage, vault.id, source.clone())?;
-        SOURCE_CACHE.remove(deps.storage);
-
-        match source {
-            Source::Bow { address, .. } => {
-                messages.append(&mut swap_for_bow_deposit_messages(
-                    deps,
-                    env,
-                    &address,
-                    vault.balance.clone(),
-                    vault.slippage_tolerance,
-                )?);
-            }
-        };
-    }
-
     Ok(Response::new()
         .add_attribute("method", "execute_trigger")
-        .add_submessages(sub_messages)
-        .add_messages(messages))
+        .add_submessages(sub_messages))
 }

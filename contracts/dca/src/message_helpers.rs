@@ -4,7 +4,7 @@ use crate::{
     state::{cache::BOW_CACHE, config::get_config, pairs::find_pair, pools::get_pool},
     types::{reply_config::ReplyConfig, vault::Vault},
 };
-use bow_helpers::{msg::BowStakingExecuteMsg, queries::query_pool_balances};
+use bow_helpers::msg::BowStakingExecuteMsg;
 use cosmos_sdk_proto::{
     cosmos::authz::v1beta1::MsgExec, cosmwasm::wasm::v1::MsgExecuteContract, traits::Message, Any,
 };
@@ -33,28 +33,25 @@ pub fn swap_for_bow_deposit_messages(
 
     if pool.is_none() {
         return Err(StdError::GenericErr {
-            msg: format!("BOW pool {} does not exist", pool_address),
+            msg: format!("BOW pool {} is not supported", pool_address),
         });
     }
 
     let denoms = pool.unwrap().denoms;
-    let pool_balances = query_pool_balances(deps.querier, pool_address)?.balances;
-    let pool_total = pool_balances.iter().sum::<Uint128>();
 
     let swap_messages = denoms
         .iter()
-        .zip(pool_balances)
-        .map(|(denom, pool_balance)| {
+        .map(|denom| {
             let amount = Coin::new(
                 deposit_amount
                     .amount
-                    .checked_multiply_ratio(pool_balance, pool_total)
+                    .checked_div(Uint128::new(2))
                     .expect("amount to swap for bow deposit")
                     .into(),
                 deposit_amount.denom.clone(),
             );
 
-            let denoms = [amount.denom.clone(), denom.to_string()];
+            let denoms = [deposit_amount.denom.clone(), denom.to_string()];
 
             if denoms[0] == denoms[1] {
                 cache.deposit.push(amount);

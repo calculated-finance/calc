@@ -163,6 +163,10 @@ fn connect_source(
     vault: &Vault,
     response: Response,
 ) -> Result<Response, ContractError> {
+    if !vault.has_sufficient_funds() {
+        return Ok(response);
+    }
+
     match vault.source.clone() {
         Some(source) => match source {
             Source::Bow { address, .. } => {

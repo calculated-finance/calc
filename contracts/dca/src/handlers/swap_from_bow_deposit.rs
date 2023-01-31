@@ -42,15 +42,15 @@ pub fn swap_from_bow_deposit(deps: DepsMut, env: Env) -> Result<Response, Contra
             let denoms = [old_balance.denom.clone(), swap_denom.to_string()];
 
             if denoms[0] == denoms[1] {
-                update_vault(deps.storage, vault.id, |stored_vault| match stored_vault {
-                    Some(mut stored_vault) => {
+                update_vault(deps.storage, vault.id, |stored_vault| {
+                    if let Some(mut stored_vault) = stored_vault {
                         stored_vault.balance = amount_returned_from_bow;
-                        Ok(stored_vault)
+                        return Ok(stored_vault);
                     }
-                    None => Err(StdError::generic_err(format!(
+                    Err(StdError::generic_err(format!(
                         "Vault {} not exist",
                         vault.id
-                    ))),
+                    )))
                 })
                 .expect("Updated vault");
 

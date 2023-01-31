@@ -1320,28 +1320,16 @@ fn for_ready_time_trigger_for_fin_buy_less_than_minimum_receive_amount_should_sk
     assert_events_published(
         &mock,
         vault_id,
-        &[
-            EventBuilder::new(
-                vault_id,
-                mock.app.block_info(),
-                EventData::DcaVaultExecutionTriggered {
-                    base_denom: DENOM_UTEST.to_string(),
-                    quote_denom: DENOM_UKUJI.to_string(),
-                    asset_price: Decimal256::from_str("1.0").unwrap(),
+        &[EventBuilder::new(
+            vault_id,
+            mock.app.block_info(),
+            EventData::DcaVaultExecutionSkipped {
+                reason: base::events::event::ExecutionSkippedReason::PriceThresholdExceeded {
+                    price: Decimal256::from_str("1.0").unwrap(),
                 },
-            )
-            .build(3),
-            EventBuilder::new(
-                vault_id,
-                mock.app.block_info(),
-                EventData::DcaVaultExecutionSkipped {
-                    reason: base::events::event::ExecutionSkippedReason::PriceThresholdExceeded {
-                        price: Decimal256::from_str("1.0").unwrap(),
-                    },
-                },
-            )
-            .build(4),
-        ],
+            },
+        )
+        .build(3)],
     );
 
     assert_vault_balance(
@@ -1389,28 +1377,16 @@ fn for_ready_time_trigger_for_fin_sell_less_than_minimum_receive_amount_should_s
     assert_events_published(
         &mock,
         vault_id,
-        &[
-            EventBuilder::new(
-                vault_id,
-                mock.app.block_info(),
-                EventData::DcaVaultExecutionTriggered {
-                    base_denom: DENOM_UTEST.to_string(),
-                    quote_denom: DENOM_UKUJI.to_string(),
-                    asset_price: Decimal256::from_str("1.0").unwrap(),
+        &[EventBuilder::new(
+            vault_id,
+            mock.app.block_info(),
+            EventData::DcaVaultExecutionSkipped {
+                reason: base::events::event::ExecutionSkippedReason::PriceThresholdExceeded {
+                    price: Decimal256::from_str("1.0").unwrap(),
                 },
-            )
-            .build(3),
-            EventBuilder::new(
-                vault_id,
-                mock.app.block_info(),
-                EventData::DcaVaultExecutionSkipped {
-                    reason: base::events::event::ExecutionSkippedReason::PriceThresholdExceeded {
-                        price: Decimal256::from_str("1.0").unwrap(),
-                    },
-                },
-            )
-            .build(4),
-        ],
+            },
+        )
+        .build(3)],
     );
 
     assert_vault_balance(
