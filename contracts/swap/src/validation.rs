@@ -1,22 +1,21 @@
-use cosmwasm_std::{Addr, Coin, Storage};
+use cosmwasm_std::{Addr, Coin, StdError, StdResult, Storage};
 
-use crate::{errors::contract_error::ContractError, state::config::get_config};
+use crate::state::config::get_config;
 
-pub fn assert_sender_is_admin(
-    storage: &mut dyn Storage,
-    sender: Addr,
-) -> Result<(), ContractError> {
+pub fn assert_sender_is_admin(storage: &mut dyn Storage, sender: Addr) -> StdResult<()> {
     let config = get_config(storage)?;
     if sender != config.admin {
-        return Err(ContractError::Unauthorized {});
+        return Err(StdError::GenericErr {
+            msg: "Unauthorised".to_string(),
+        });
     }
     Ok(())
 }
 
-pub fn assert_exactly_one_asset(funds: Vec<Coin>) -> Result<(), ContractError> {
+pub fn assert_exactly_one_asset(funds: Vec<Coin>) -> StdResult<()> {
     if funds.is_empty() || funds.len() > 1 {
-        return Err(ContractError::CustomError {
-            val: format!("received {} denoms but required exactly 1", funds.len()),
+        return Err(StdError::GenericErr {
+            msg: format!("received {} denoms but required exactly 1", funds.len()),
         });
     }
     Ok(())

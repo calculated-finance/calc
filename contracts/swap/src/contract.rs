@@ -2,7 +2,7 @@ use crate::{
     errors::contract_error::ContractError,
     handlers::{
         add_path::add_path_handler,
-        swap::{delete_completed_swap, invoke_callback_or_next_swap, swap},
+        swap::{delete_completed_swap, invoke_callback_or_next_swap, swap_handler},
         update_config::update_config_handler,
     },
     msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg},
@@ -49,12 +49,7 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn execute(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    msg: ExecuteMsg,
-) -> Result<Response, ContractError> {
+pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
         ExecuteMsg::UpdateConfig { admin, paused } => {
             update_config_handler(deps, info, Config { admin, paused })
@@ -64,7 +59,7 @@ pub fn execute(
             target_denom,
             slippage_tolerance,
             callback,
-        } => swap(deps, env, info, target_denom, slippage_tolerance, callback),
+        } => swap_handler(deps, env, info, target_denom, slippage_tolerance, callback),
     }
 }
 

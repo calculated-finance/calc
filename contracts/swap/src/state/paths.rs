@@ -1,12 +1,15 @@
+use crate::types::exchange::UnweightedExchange;
 use cosmwasm_std::{from_binary, to_binary, Binary, StdResult, Storage};
 use cw_storage_plus::Item;
-use petgraph::{algo::astar, Graph};
-
-use crate::types::exchange::Exchange;
+use petgraph::{algo::all_simple_paths, algo::astar, Graph};
 
 const PATHS: Item<Binary> = Item::new("paths_v1");
 
-pub fn add_path(store: &mut dyn Storage, denoms: [String; 2], exchange: Exchange) -> StdResult<()> {
+pub fn add_path(
+    store: &mut dyn Storage,
+    denoms: [String; 2],
+    exchange: UnweightedExchange,
+) -> StdResult<()> {
     let existing_path = get_path(store, denoms.clone())?;
     if !existing_path.is_empty() {
         return Ok(());
@@ -25,7 +28,35 @@ pub fn add_path(store: &mut dyn Storage, denoms: [String; 2], exchange: Exchange
     Ok(())
 }
 
-pub fn get_path(store: &dyn Storage, denoms: [String; 2]) -> StdResult<Vec<Exchange>> {
+pub fn get_paths(
+    store: &dyn Storage,
+    from: &str,
+    to: &str,
+) -> StdResult<Vec<Vec<UnweightedExchange>>> {
+    let graph = get_graph(store)?;
+    let nodes = [from, to].map(|denom| graph.node_indices().find(|node| graph[*node] == denom));
+    Ok(match nodes {
+        [Some(node_a), Some(node_b)] => {
+            all_simple_paths::<Vec<_>, _>(&graph, node_a, node_b, 0, None)
+                .map(|path| {
+                    path.windows(2)
+                        .map(|nodes| {
+                            graph.find_edge(nodes[0], nodes[1]).expect(&format!(
+                                "path from {} to {}",
+                                nodes[0].index(),
+                                nodes[1].index()
+                            ))
+                        })
+                        .map(|edge| graph[edge].clone())
+                        .collect::<Vec<UnweightedExchange>>()
+                })
+                .collect()
+        }
+        _ => vec![],
+    })
+}
+
+pub fn get_path(store: &dyn Storage, denoms: [String; 2]) -> StdResult<Vec<UnweightedExchange>> {
     let graph = get_graph(store)?;
     let denom_1 = graph.node_indices().find(|node| graph[*node] == denoms[0]);
     let denom_2 = graph.node_indices().find(|node| graph[*node] == denoms[1]);
@@ -41,7 +72,7 @@ pub fn get_path(store: &dyn Storage, denoms: [String; 2]) -> StdResult<Vec<Excha
                         ))
                     })
                     .map(|edge| graph[edge].clone())
-                    .collect::<Vec<Exchange>>()
+                    .collect::<Vec<UnweightedExchange>>()
             })
             .unwrap_or(vec![])
     } else {
@@ -49,9 +80,9 @@ pub fn get_path(store: &dyn Storage, denoms: [String; 2]) -> StdResult<Vec<Excha
     })
 }
 
-fn get_graph(store: &dyn Storage) -> StdResult<Graph<String, Exchange>> {
+pub fn get_graph(store: &dyn Storage) -> StdResult<Graph<String, UnweightedExchange>> {
     Ok(from_binary(&PATHS.load(store).unwrap_or(
-        to_binary(&Graph::<String, Exchange>::new()).expect("empty paths graph"),
+        to_binary(&Graph::<String, UnweightedExchange>::new()).expect("empty paths graph"),
     ))?)
 }
 
@@ -63,21 +94,21 @@ mod path_tests {
     #[test]
     fn add_path_adds_nodes_and_edge() {
         let mut deps = mock_dependencies();
-        let graph = Graph::<String, Exchange>::new();
+        let graph = Graph::<String, UnweightedExchange>::new();
         PATHS
             .save(deps.as_mut().storage, &to_binary(&graph).unwrap())
             .unwrap();
         add_path(
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_b".to_string()],
-            Exchange::Fin {
+            UnweightedExchange::Fin {
                 address: Addr::unchecked("addr"),
                 base_denom: "denom_a".to_string(),
                 quote_denom: "denom_b".to_string(),
             },
         )
         .unwrap();
-        let graph: Graph<String, Exchange> =
+        let graph: Graph<String, UnweightedExchange> =
             from_binary(&PATHS.load(&deps.storage).unwrap()).unwrap();
         assert_eq!(graph.node_count(), 2);
         assert_eq!(graph.edge_count(), 1);
@@ -86,14 +117,14 @@ mod path_tests {
     #[test]
     fn add_path_is_idempotent() {
         let mut deps = mock_dependencies();
-        let graph = Graph::<String, Exchange>::new();
+        let graph = Graph::<String, UnweightedExchange>::new();
         PATHS
             .save(deps.as_mut().storage, &to_binary(&graph).unwrap())
             .unwrap();
         add_path(
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_b".to_string()],
-            Exchange::Fin {
+            UnweightedExchange::Fin {
                 address: Addr::unchecked("addr"),
                 base_denom: "denom_a".to_string(),
                 quote_denom: "denom_b".to_string(),
@@ -103,14 +134,14 @@ mod path_tests {
         add_path(
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_b".to_string()],
-            Exchange::Fin {
+            UnweightedExchange::Fin {
                 address: Addr::unchecked("addr"),
                 base_denom: "denom_a".to_string(),
                 quote_denom: "denom_b".to_string(),
             },
         )
         .unwrap();
-        let graph: Graph<String, Exchange> =
+        let graph: Graph<String, UnweightedExchange> =
             from_binary(&PATHS.load(&deps.storage).unwrap()).unwrap();
         assert_eq!(graph.node_count(), 2);
         assert_eq!(graph.edge_count(), 1);
@@ -119,7 +150,7 @@ mod path_tests {
     #[test]
     fn get_path_returns_empty_if_no_paths() {
         let mut deps = mock_dependencies();
-        let graph = Graph::<String, Exchange>::new();
+        let graph = Graph::<String, UnweightedExchange>::new();
         PATHS
             .save(deps.as_mut().storage, &to_binary(&graph).unwrap())
             .unwrap();
@@ -134,14 +165,14 @@ mod path_tests {
     #[test]
     fn get_path_returns_path_if_path_exists() {
         let mut deps = mock_dependencies();
-        let graph = Graph::<String, Exchange>::new();
+        let graph = Graph::<String, UnweightedExchange>::new();
         PATHS
             .save(deps.as_mut().storage, &to_binary(&graph).unwrap())
             .unwrap();
         add_path(
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_b".to_string()],
-            Exchange::Fin {
+            UnweightedExchange::Fin {
                 address: Addr::unchecked("addr"),
                 base_denom: "denom_a".to_string(),
                 quote_denom: "denom_b".to_string(),
@@ -155,7 +186,7 @@ mod path_tests {
         .unwrap();
         assert_eq!(
             path,
-            vec![Exchange::Fin {
+            vec![UnweightedExchange::Fin {
                 address: Addr::unchecked("addr"),
                 base_denom: "denom_a".to_string(),
                 quote_denom: "denom_b".to_string(),
@@ -166,14 +197,14 @@ mod path_tests {
     #[test]
     fn get_path_returns_empty_if_path_does_not_exist() {
         let mut deps = mock_dependencies();
-        let graph = Graph::<String, Exchange>::new();
+        let graph = Graph::<String, UnweightedExchange>::new();
         PATHS
             .save(deps.as_mut().storage, &to_binary(&graph).unwrap())
             .unwrap();
         add_path(
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_b".to_string()],
-            Exchange::Fin {
+            UnweightedExchange::Fin {
                 address: Addr::unchecked("addr_1"),
                 base_denom: "denom_a".to_string(),
                 quote_denom: "denom_b".to_string(),
@@ -183,7 +214,7 @@ mod path_tests {
         add_path(
             deps.as_mut().storage,
             ["denom_c".to_string(), "denom_d".to_string()],
-            Exchange::Fin {
+            UnweightedExchange::Fin {
                 address: Addr::unchecked("addr_2"),
                 base_denom: "denom_c".to_string(),
                 quote_denom: "denom_d".to_string(),
@@ -201,14 +232,14 @@ mod path_tests {
     #[test]
     fn get_path_returns_path_if_multihop_path_exists() {
         let mut deps = mock_dependencies();
-        let graph = Graph::<String, Exchange>::new();
+        let graph = Graph::<String, UnweightedExchange>::new();
         PATHS
             .save(deps.as_mut().storage, &to_binary(&graph).unwrap())
             .unwrap();
         add_path(
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_b".to_string()],
-            Exchange::Fin {
+            UnweightedExchange::Fin {
                 address: Addr::unchecked("addr_1"),
                 base_denom: "denom_a".to_string(),
                 quote_denom: "denom_b".to_string(),
@@ -218,7 +249,7 @@ mod path_tests {
         add_path(
             deps.as_mut().storage,
             ["denom_b".to_string(), "denom_c".to_string()],
-            Exchange::Fin {
+            UnweightedExchange::Fin {
                 address: Addr::unchecked("addr_2"),
                 base_denom: "denom_b".to_string(),
                 quote_denom: "denom_c".to_string(),
@@ -233,12 +264,12 @@ mod path_tests {
         assert_eq!(
             path,
             vec![
-                Exchange::Fin {
+                UnweightedExchange::Fin {
                     address: Addr::unchecked("addr_1"),
                     base_denom: "denom_a".to_string(),
                     quote_denom: "denom_b".to_string(),
                 },
-                Exchange::Fin {
+                UnweightedExchange::Fin {
                     address: Addr::unchecked("addr_2"),
                     base_denom: "denom_b".to_string(),
                     quote_denom: "denom_c".to_string(),

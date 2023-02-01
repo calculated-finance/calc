@@ -1,23 +1,23 @@
-use super::{callback::Callback, exchange::Exchange};
+use super::{callback::Callback, exchange::UnweightedExchange};
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Coin;
 
 #[cw_serde]
 pub struct Swap {
     pub id: u64,
-    pub path: Vec<Exchange>,
+    pub path: Vec<UnweightedExchange>,
     pub callback: Callback,
     pub balance: Coin,
 }
 
 pub struct SwapBuilder {
-    pub path: Vec<Exchange>,
+    pub path: Vec<UnweightedExchange>,
     pub callback: Callback,
     pub balance: Coin,
 }
 
 impl SwapBuilder {
-    pub fn new(path: Vec<Exchange>, callback: Callback, balance: Coin) -> Self {
+    pub fn new(path: Vec<UnweightedExchange>, callback: Callback, balance: Coin) -> Self {
         Self {
             path,
             callback,

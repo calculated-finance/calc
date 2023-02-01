@@ -6,24 +6,24 @@ use crate::{
         paths::get_path,
         swaps::{delete_swap, get_swap, save_swap, update_swap},
     },
-    types::{callback::Callback, exchange::Exchange, swap::SwapBuilder},
+    types::{callback::Callback, exchange::UnweightedExchange, swap::SwapBuilder},
     validation::assert_exactly_one_asset,
 };
 use base::pair::Pair;
 use cosmwasm_std::{
-    Coin, CosmosMsg, Decimal256, DepsMut, Env, MessageInfo, Reply, Response, StdResult, SubMsg,
-    SubMsgResult, WasmMsg,
+    Coin, CosmosMsg, Decimal256, DepsMut, Env, MessageInfo, Reply, Response, StdError, StdResult,
+    SubMsg, SubMsgResult, WasmMsg,
 };
 use fin_helpers::swaps::create_fin_swap_message;
 
-pub fn swap(
+pub fn swap_handler(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
     target_denom: String,
     slippage_tolerance: Option<Decimal256>,
     callback: Callback,
-) -> Result<Response, ContractError> {
+) -> StdResult<Response> {
     assert_exactly_one_asset(info.funds.clone())?;
 
     let swap_amount = info.funds[0].clone();
@@ -31,8 +31,8 @@ pub fn swap(
     let path = get_path(deps.storage, [swap_denom.clone(), target_denom.clone()])?;
 
     if path.len() == 0 {
-        return Err(ContractError::CustomError {
-            val: format!("no path found between {} and {}", swap_denom, target_denom),
+        return Err(StdError::GenericErr {
+            msg: format!("no path found between {} and {}", swap_denom, target_denom),
         });
     }
 
@@ -70,12 +70,12 @@ fn generate_swap_message(
     deps: DepsMut,
     env: Env,
     swap_id: u64,
-    exchange: Exchange,
+    exchange: UnweightedExchange,
     swap_amount: Coin,
     slippage_tolerance: Option<Decimal256>,
 ) -> StdResult<SubMsg> {
     match exchange {
-        Exchange::Fin {
+        UnweightedExchange::Fin {
             address,
             base_denom,
             quote_denom,
@@ -182,7 +182,7 @@ mod swap_tests {
         let env = mock_env();
         let info = mock_info("admin", &[]);
 
-        let response = swap(
+        let response = swap_handler(
             deps.as_mut(),
             env,
             info,
@@ -212,7 +212,7 @@ mod swap_tests {
             }],
         );
 
-        let response = swap(
+        let response = swap_handler(
             deps.as_mut(),
             env,
             info,
@@ -244,7 +244,7 @@ mod swap_tests {
         add_path(
             deps.as_mut().storage,
             ["swap_denom".to_string(), "transfer_denom".to_string()],
-            Exchange::Fin {
+            UnweightedExchange::Fin {
                 address: Addr::unchecked("fin_pair_1"),
                 quote_denom: "swap_denom".to_string(),
                 base_denom: "transfer_denom".to_string(),
@@ -255,7 +255,7 @@ mod swap_tests {
         add_path(
             deps.as_mut().storage,
             ["transfer_denom".to_string(), "target_denom".to_string()],
-            Exchange::Fin {
+            UnweightedExchange::Fin {
                 address: Addr::unchecked("fin_pair_2"),
                 quote_denom: "transfer_denom".to_string(),
                 base_denom: "target_denom".to_string(),
@@ -263,7 +263,7 @@ mod swap_tests {
         )
         .unwrap();
 
-        let response = swap(
+        let response = swap_handler(
             deps.as_mut(),
             env,
             info,
@@ -305,7 +305,7 @@ mod swap_tests {
         add_path(
             deps.as_mut().storage,
             ["swap_denom".to_string(), "transfer_denom".to_string()],
-            Exchange::Fin {
+            UnweightedExchange::Fin {
                 address: Addr::unchecked("fin_pair_1"),
                 quote_denom: "swap_denom".to_string(),
                 base_denom: "transfer_denom".to_string(),
@@ -316,7 +316,7 @@ mod swap_tests {
         add_path(
             deps.as_mut().storage,
             ["transfer_denom".to_string(), "target_denom".to_string()],
-            Exchange::Fin {
+            UnweightedExchange::Fin {
                 address: Addr::unchecked("fin_pair_2"),
                 quote_denom: "transfer_denom".to_string(),
                 base_denom: "target_denom".to_string(),
@@ -324,7 +324,7 @@ mod swap_tests {
         )
         .unwrap();
 
-        let response = swap(
+        let response = swap_handler(
             deps.as_mut(),
             env,
             info,
@@ -356,7 +356,7 @@ mod swap_tests {
         add_path(
             deps.as_mut().storage,
             ["swap_denom".to_string(), "transfer_denom".to_string()],
-            Exchange::Fin {
+            UnweightedExchange::Fin {
                 address: Addr::unchecked("fin_pair_1"),
                 quote_denom: "swap_denom".to_string(),
                 base_denom: "transfer_denom".to_string(),
@@ -367,7 +367,7 @@ mod swap_tests {
         add_path(
             deps.as_mut().storage,
             ["transfer_denom".to_string(), "target_denom".to_string()],
-            Exchange::Fin {
+            UnweightedExchange::Fin {
                 address: Addr::unchecked("fin_pair_2"),
                 quote_denom: "transfer_denom".to_string(),
                 base_denom: "target_denom".to_string(),
@@ -375,7 +375,7 @@ mod swap_tests {
         )
         .unwrap();
 
-        let response = swap(
+        let response = swap_handler(
             deps.as_mut(),
             env,
             info,
@@ -414,7 +414,7 @@ mod invoke_callback_or_next_swap_tests {
         };
 
         let swap_builder = SwapBuilder::new(
-            vec![Exchange::Fin {
+            vec![UnweightedExchange::Fin {
                 address: Addr::unchecked("fin_pair"),
                 quote_denom: "swap_denom".to_string(),
                 base_denom: "target_denom".to_string(),
@@ -473,12 +473,12 @@ mod invoke_callback_or_next_swap_tests {
 
         let swap = SwapBuilder::new(
             vec![
-                Exchange::Fin {
+                UnweightedExchange::Fin {
                     address: Addr::unchecked("fin_pair_1"),
                     quote_denom: "swap_denom".to_string(),
                     base_denom: "transfer_denom".to_string(),
                 },
-                Exchange::Fin {
+                UnweightedExchange::Fin {
                     address: Addr::unchecked("fin_pair_2"),
                     quote_denom: "transfer_denom".to_string(),
                     base_denom: "target_denom".to_string(),
