@@ -59,7 +59,16 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             target_denom,
             slippage_tolerance,
             callback,
-        } => swap_handler(deps, env, info, target_denom, slippage_tolerance, callback),
+            path,
+        } => swap_handler(
+            deps,
+            env,
+            info,
+            target_denom,
+            slippage_tolerance,
+            callback,
+            path,
+        ),
     }
 }
 

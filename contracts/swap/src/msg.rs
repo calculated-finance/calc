@@ -1,4 +1,5 @@
 use crate::types::callback::Callback;
+use crate::types::path::Path;
 use crate::{state::config::Config, types::exchange::UnweightedExchange};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Decimal256};
@@ -27,6 +28,7 @@ pub enum ExecuteMsg {
         target_denom: String,
         slippage_tolerance: Option<Decimal256>,
         callback: Callback,
+        path: Option<Path>,
     },
 }
 

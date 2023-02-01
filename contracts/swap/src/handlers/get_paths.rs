@@ -1,29 +1,22 @@
 use crate::{
     state::paths::get_paths,
-    types::exchange::{UnweightedExchange, WeightedExchange},
+    types::{exchange::UnweightedExchange, path::Path},
 };
 use cosmwasm_std::{Decimal256, Deps, QuerierWrapper, StdResult};
 use fin_helpers::queries::{query_base_price, query_quote_price};
 
-pub fn get_paths_handler(
-    deps: Deps,
-    from: &str,
-    to: &str,
-) -> StdResult<Vec<Vec<WeightedExchange>>> {
+pub fn get_paths_handler(deps: Deps, from: &str, to: &str) -> StdResult<Vec<Path>> {
     Ok(get_paths(deps.storage, from, to)?
         .iter()
-        .map(|path| {
-            path.iter()
-                .map(|exchange| -> StdResult<WeightedExchange> {
-                    Ok(WeightedExchange {
-                        exchange: exchange.clone(),
-                        price: get_price(deps.querier, exchange, from)?,
-                    })
-                })
+        .map(|exchanges| Path {
+            cost: exchanges
+                .iter()
+                .map(|exchange| get_price(deps.querier, exchange, from))
                 .flatten()
-                .collect::<Vec<WeightedExchange>>()
+                .sum(),
+            exchanges: exchanges.clone(),
         })
-        .collect())
+        .collect::<Vec<Path>>())
 }
 
 pub fn get_price(

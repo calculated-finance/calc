@@ -28,6 +28,30 @@ pub fn add_path(
     Ok(())
 }
 
+pub fn get_path(store: &dyn Storage, denoms: [String; 2]) -> StdResult<Vec<UnweightedExchange>> {
+    let graph = get_graph(store)?;
+    let denom_1 = graph.node_indices().find(|node| graph[*node] == denoms[0]);
+    let denom_2 = graph.node_indices().find(|node| graph[*node] == denoms[1]);
+    Ok(if let (Some(node_a), Some(node_b)) = (denom_1, denom_2) {
+        astar(&graph, node_a, |n| n == node_b, |_| 0, |_| 0)
+            .map(|p| {
+                p.1.windows(2)
+                    .map(|nodes| {
+                        graph.find_edge(nodes[0], nodes[1]).expect(&format!(
+                            "path from {} to {}",
+                            nodes[0].index(),
+                            nodes[1].index()
+                        ))
+                    })
+                    .map(|edge| graph[edge].clone())
+                    .collect::<Vec<UnweightedExchange>>()
+            })
+            .unwrap_or(vec![])
+    } else {
+        vec![]
+    })
+}
+
 pub fn get_paths(
     store: &dyn Storage,
     from: &str,
@@ -53,30 +77,6 @@ pub fn get_paths(
                 .collect()
         }
         _ => vec![],
-    })
-}
-
-pub fn get_path(store: &dyn Storage, denoms: [String; 2]) -> StdResult<Vec<UnweightedExchange>> {
-    let graph = get_graph(store)?;
-    let denom_1 = graph.node_indices().find(|node| graph[*node] == denoms[0]);
-    let denom_2 = graph.node_indices().find(|node| graph[*node] == denoms[1]);
-    Ok(if let (Some(node_a), Some(node_b)) = (denom_1, denom_2) {
-        astar(&graph, node_a, |n| n == node_b, |_| 0, |_| 0)
-            .map(|p| {
-                p.1.windows(2)
-                    .map(|nodes| {
-                        graph.find_edge(nodes[0], nodes[1]).expect(&format!(
-                            "path from {} to {}",
-                            nodes[0].index(),
-                            nodes[1].index()
-                        ))
-                    })
-                    .map(|edge| graph[edge].clone())
-                    .collect::<Vec<UnweightedExchange>>()
-            })
-            .unwrap_or(vec![])
-    } else {
-        vec![]
     })
 }
 
