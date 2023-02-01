@@ -6,7 +6,7 @@ use crate::{
         paths::get_path,
         swaps::{delete_swap, get_swap, save_swap, update_swap},
     },
-    types::{callback::Callback, exchange::UnweightedExchange, swap::SwapBuilder},
+    types::{callback::Callback, exchange::UnweightedExchange, path::Path, swap::SwapBuilder},
     validation::assert_exactly_one_asset,
 };
 use base::pair::Pair;
@@ -23,14 +23,26 @@ pub fn swap_handler(
     target_denom: String,
     slippage_tolerance: Option<Decimal256>,
     callback: Callback,
+    mut path: Option<Path>,
 ) -> StdResult<Response> {
     assert_exactly_one_asset(info.funds.clone())?;
 
     let swap_amount = info.funds[0].clone();
     let swap_denom = swap_amount.denom.clone();
-    let path = get_path(deps.storage, [swap_denom.clone(), target_denom.clone()])?;
 
-    if path.len() == 0 {
+    if path.is_none() {
+        path = Some(Path {
+            cost: Decimal256::zero(),
+            exchanges: get_path(deps.storage, [swap_denom.clone(), target_denom.clone()])?,
+        });
+    }
+
+    let exchanges = match path {
+        Some(path) => path.exchanges,
+        None => get_path(deps.storage, [swap_denom.clone(), target_denom.clone()])?,
+    };
+
+    if exchanges.len() == 0 {
         return Err(StdError::GenericErr {
             msg: format!("no path found between {} and {}", swap_denom, target_denom),
         });
@@ -38,14 +50,14 @@ pub fn swap_handler(
 
     let swap_id = save_swap(
         deps.storage,
-        SwapBuilder::new(path.clone(), callback, swap_amount.clone()),
+        SwapBuilder::new(exchanges.clone(), callback, swap_amount.clone()),
     )?;
 
     let starting_swap_message = generate_swap_message(
         deps,
         env,
         swap_id,
-        path[0].clone(),
+        exchanges[0].clone(),
         swap_amount,
         slippage_tolerance,
     )?;
@@ -57,7 +69,8 @@ pub fn swap_handler(
             "path",
             format!(
                 "[{}]",
-                path.iter()
+                exchanges
+                    .iter()
                     .map(|p| format!("{:?}", p))
                     .collect::<Vec<String>>()
                     .join(", ")
@@ -192,6 +205,7 @@ mod swap_tests {
                 address: Addr::unchecked("sender"),
                 msg: to_binary("callback").unwrap(),
             },
+            None,
         );
 
         assert_eq!(
@@ -222,6 +236,7 @@ mod swap_tests {
                 address: Addr::unchecked("sender"),
                 msg: to_binary("callback").unwrap(),
             },
+            None,
         );
 
         assert_eq!(
@@ -273,6 +288,7 @@ mod swap_tests {
                 address: Addr::unchecked("sender"),
                 msg: to_binary("callback").unwrap(),
             },
+            None,
         );
 
         assert!(response.unwrap().messages.contains(&SubMsg::reply_always(
@@ -334,6 +350,7 @@ mod swap_tests {
                 address: Addr::unchecked("sender"),
                 msg: to_binary("callback").unwrap(),
             },
+            None,
         );
 
         assert!(response
@@ -385,6 +402,7 @@ mod swap_tests {
                 address: Addr::unchecked("sender"),
                 msg: to_binary("callback").unwrap(),
             },
+            None,
         );
 
         assert!(response
