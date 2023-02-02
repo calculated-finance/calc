@@ -2,7 +2,7 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Addr;
 
 #[cw_serde]
-pub enum UnweightedExchange {
+pub enum Trade {
     Fin {
         address: Addr,
         quote_denom: String,
