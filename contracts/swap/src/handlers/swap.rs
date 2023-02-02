@@ -135,7 +135,7 @@ pub fn invoke_callback_or_next_swap(deps: DepsMut, env: Env) -> Result<Response,
     )?;
 
     swap.balance = receive_denom_balance.clone();
-    swap.path = swap.path[1..].to_vec();
+    swap.path.pop_front();
 
     update_swap(deps.storage, swap.clone())?;
 
@@ -210,7 +210,7 @@ mod swap_tests {
 
         assert_eq!(
             response.unwrap_err().to_string(),
-            "Error: received 0 denoms but required exactly 1"
+            "Generic error: received 0 denoms but required exactly 1"
         )
     }
 
@@ -241,7 +241,7 @@ mod swap_tests {
 
         assert_eq!(
             response.unwrap_err().to_string(),
-            "Error: no path found between swap_denom and target_denom"
+            "Generic error: no path found between swap_denom and target_denom"
         )
     }
 
@@ -436,7 +436,8 @@ mod invoke_callback_or_next_swap_tests {
                 address: Addr::unchecked("fin_pair"),
                 quote_denom: "swap_denom".to_string(),
                 base_denom: "target_denom".to_string(),
-            }],
+            }]
+            .into(),
             Callback {
                 address: Addr::unchecked("sender"),
                 msg: to_binary("callback").unwrap(),
@@ -501,7 +502,8 @@ mod invoke_callback_or_next_swap_tests {
                     quote_denom: "transfer_denom".to_string(),
                     base_denom: "target_denom".to_string(),
                 },
-            ],
+            ]
+            .into(),
             Callback {
                 address: Addr::unchecked("sender"),
                 msg: to_binary("callback").unwrap(),

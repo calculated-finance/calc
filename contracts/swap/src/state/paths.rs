@@ -2,6 +2,7 @@ use crate::types::exchange::UnweightedExchange;
 use cosmwasm_std::{from_binary, to_binary, Binary, StdResult, Storage};
 use cw_storage_plus::Item;
 use petgraph::{algo::all_simple_paths, algo::astar, Graph};
+use std::collections::VecDeque;
 
 const PATHS: Item<Binary> = Item::new("paths_v1");
 
@@ -28,12 +29,14 @@ pub fn add_path(
     Ok(())
 }
 
-pub fn get_path(store: &dyn Storage, denoms: [String; 2]) -> StdResult<Vec<UnweightedExchange>> {
+pub fn get_path(
+    store: &dyn Storage,
+    denoms: [String; 2],
+) -> StdResult<VecDeque<UnweightedExchange>> {
     let graph = get_graph(store)?;
-    let denom_1 = graph.node_indices().find(|node| graph[*node] == denoms[0]);
-    let denom_2 = graph.node_indices().find(|node| graph[*node] == denoms[1]);
-    Ok(if let (Some(node_a), Some(node_b)) = (denom_1, denom_2) {
-        astar(&graph, node_a, |n| n == node_b, |_| 0, |_| 0)
+    let nodes = denoms.map(|denom| graph.node_indices().find(|node| graph[*node] == denom));
+    match nodes {
+        [Some(node_a), Some(node_b)] => Ok(astar(&graph, node_a, |n| n == node_b, |_| 0, |_| 0)
             .map(|p| {
                 p.1.windows(2)
                     .map(|nodes| {
@@ -44,19 +47,18 @@ pub fn get_path(store: &dyn Storage, denoms: [String; 2]) -> StdResult<Vec<Unwei
                         ))
                     })
                     .map(|edge| graph[edge].clone())
-                    .collect::<Vec<UnweightedExchange>>()
+                    .collect::<VecDeque<UnweightedExchange>>()
             })
-            .unwrap_or(vec![])
-    } else {
-        vec![]
-    })
+            .unwrap_or(VecDeque::new())),
+        _ => Ok(VecDeque::new()),
+    }
 }
 
 pub fn get_paths(
     store: &dyn Storage,
     from: &str,
     to: &str,
-) -> StdResult<Vec<Vec<UnweightedExchange>>> {
+) -> StdResult<Vec<VecDeque<UnweightedExchange>>> {
     let graph = get_graph(store)?;
     let nodes = [from, to].map(|denom| graph.node_indices().find(|node| graph[*node] == denom));
     Ok(match nodes {
@@ -72,7 +74,7 @@ pub fn get_paths(
                             ))
                         })
                         .map(|edge| graph[edge].clone())
-                        .collect::<Vec<UnweightedExchange>>()
+                        .collect::<VecDeque<UnweightedExchange>>()
                 })
                 .collect()
         }
