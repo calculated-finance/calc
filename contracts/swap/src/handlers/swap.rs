@@ -42,7 +42,7 @@ pub fn swap_handler(
         None => get_path(deps.storage, [swap_denom.clone(), target_denom.clone()])?,
     };
 
-    if exchanges.len() == 0 {
+    if exchanges.is_empty() {
         return Err(StdError::GenericErr {
             msg: format!("no path found between {} and {}", swap_denom, target_denom),
         });
@@ -139,23 +139,24 @@ pub fn invoke_callback_or_next_swap(deps: DepsMut, env: Env) -> Result<Response,
 
     update_swap(deps.storage, swap.clone())?;
 
-    let message = match swap.path.len() {
-        0 => SubMsg::reply_always(
+    let message = if swap.path.is_empty() {
+        SubMsg::reply_always(
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: swap.callback.address.to_string(),
                 msg: swap.callback.msg,
                 funds: vec![receive_denom_balance],
             }),
             AFTER_SWAP_CALLBACK_INVOKED_ID,
-        ),
-        _ => generate_swap_message(
+        )
+    } else {
+        generate_swap_message(
             deps,
             env,
             swap_cache.swap_id,
             swap.path[0].clone(),
             receive_denom_balance,
             None,
-        )?,
+        )?
     };
 
     Ok(Response::new().add_submessage(message))
