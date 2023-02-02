@@ -6,7 +6,7 @@ use crate::{
         paths::get_path,
         swaps::{delete_swap, get_swap, save_swap, update_swap},
     },
-    types::{callback::Callback, exchange::UnweightedExchange, path::Path, swap::SwapBuilder},
+    types::{callback::Callback, exchange::Exchange, path::Path, swap::SwapBuilder},
     validation::assert_exactly_one_asset,
 };
 use base::pair::Pair;
@@ -83,12 +83,12 @@ fn generate_swap_message(
     deps: DepsMut,
     env: Env,
     swap_id: u64,
-    exchange: UnweightedExchange,
+    exchange: Exchange,
     swap_amount: Coin,
     slippage_tolerance: Option<Decimal256>,
 ) -> StdResult<SubMsg> {
     match exchange {
-        UnweightedExchange::Fin {
+        Exchange::Fin {
             address,
             base_denom,
             quote_denom,
@@ -260,7 +260,7 @@ mod swap_tests {
         add_path(
             deps.as_mut().storage,
             ["swap_denom".to_string(), "transfer_denom".to_string()],
-            UnweightedExchange::Fin {
+            Exchange::Fin {
                 address: Addr::unchecked("fin_pair_1"),
                 quote_denom: "swap_denom".to_string(),
                 base_denom: "transfer_denom".to_string(),
@@ -271,7 +271,7 @@ mod swap_tests {
         add_path(
             deps.as_mut().storage,
             ["transfer_denom".to_string(), "target_denom".to_string()],
-            UnweightedExchange::Fin {
+            Exchange::Fin {
                 address: Addr::unchecked("fin_pair_2"),
                 quote_denom: "transfer_denom".to_string(),
                 base_denom: "target_denom".to_string(),
@@ -322,7 +322,7 @@ mod swap_tests {
         add_path(
             deps.as_mut().storage,
             ["swap_denom".to_string(), "transfer_denom".to_string()],
-            UnweightedExchange::Fin {
+            Exchange::Fin {
                 address: Addr::unchecked("fin_pair_1"),
                 quote_denom: "swap_denom".to_string(),
                 base_denom: "transfer_denom".to_string(),
@@ -333,7 +333,7 @@ mod swap_tests {
         add_path(
             deps.as_mut().storage,
             ["transfer_denom".to_string(), "target_denom".to_string()],
-            UnweightedExchange::Fin {
+            Exchange::Fin {
                 address: Addr::unchecked("fin_pair_2"),
                 quote_denom: "transfer_denom".to_string(),
                 base_denom: "target_denom".to_string(),
@@ -374,7 +374,7 @@ mod swap_tests {
         add_path(
             deps.as_mut().storage,
             ["swap_denom".to_string(), "transfer_denom".to_string()],
-            UnweightedExchange::Fin {
+            Exchange::Fin {
                 address: Addr::unchecked("fin_pair_1"),
                 quote_denom: "swap_denom".to_string(),
                 base_denom: "transfer_denom".to_string(),
@@ -385,7 +385,7 @@ mod swap_tests {
         add_path(
             deps.as_mut().storage,
             ["transfer_denom".to_string(), "target_denom".to_string()],
-            UnweightedExchange::Fin {
+            Exchange::Fin {
                 address: Addr::unchecked("fin_pair_2"),
                 quote_denom: "transfer_denom".to_string(),
                 base_denom: "target_denom".to_string(),
@@ -433,7 +433,7 @@ mod invoke_callback_or_next_swap_tests {
         };
 
         let swap_builder = SwapBuilder::new(
-            vec![UnweightedExchange::Fin {
+            vec![Exchange::Fin {
                 address: Addr::unchecked("fin_pair"),
                 quote_denom: "swap_denom".to_string(),
                 base_denom: "target_denom".to_string(),
@@ -493,12 +493,12 @@ mod invoke_callback_or_next_swap_tests {
 
         let swap = SwapBuilder::new(
             vec![
-                UnweightedExchange::Fin {
+                Exchange::Fin {
                     address: Addr::unchecked("fin_pair_1"),
                     quote_denom: "swap_denom".to_string(),
                     base_denom: "transfer_denom".to_string(),
                 },
-                UnweightedExchange::Fin {
+                Exchange::Fin {
                     address: Addr::unchecked("fin_pair_2"),
                     quote_denom: "transfer_denom".to_string(),
                     base_denom: "target_denom".to_string(),

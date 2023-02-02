@@ -1,6 +1,6 @@
 use crate::types::callback::Callback;
 use crate::types::path::Path;
-use crate::{state::config::Config, types::exchange::UnweightedExchange};
+use crate::{state::config::Config, types::exchange::Exchange};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Decimal256};
 
@@ -22,7 +22,7 @@ pub enum ExecuteMsg {
     },
     AddPath {
         denoms: [String; 2],
-        exchange: UnweightedExchange,
+        exchange: Exchange,
     },
     Swap {
         target_denom: String,
@@ -37,6 +37,6 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(Config)]
     GetConfig {},
-    #[returns(Vec<UnweightedExchange>)]
+    #[returns(Vec<Exchange>)]
     GetPath { denoms: [String; 2] },
 }

@@ -1,10 +1,10 @@
-use crate::{state::paths::add_path, types::exchange::UnweightedExchange};
+use crate::{state::paths::add_path, types::exchange::Exchange};
 use cosmwasm_std::{DepsMut, Response, StdResult};
 
 pub fn add_path_handler(
     deps: DepsMut,
     denoms: [String; 2],
-    exchange: UnweightedExchange,
+    exchange: Exchange,
 ) -> StdResult<Response> {
     add_path(deps.storage, denoms.clone(), exchange.clone())?;
     Ok(Response::new()
