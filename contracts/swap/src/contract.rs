@@ -2,7 +2,9 @@ use crate::{
     errors::contract_error::ContractError,
     handlers::{
         add_path::add_path_handler,
-        swap::{delete_completed_swap, invoke_callback_or_next_swap, swap_handler},
+        continue_swap::continue_swap_handler,
+        create_swap::create_swap_handler,
+        swap_on_fin::{after_swap_on_fin, swap_on_fin_handler},
         update_config::update_config_handler,
     },
     msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg},
@@ -12,7 +14,8 @@ use crate::{
     },
 };
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError,
+    StdResult,
 };
 use cw2::set_contract_version;
 
@@ -55,34 +58,30 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             update_config_handler(deps, info, Config { admin, paused })
         }
         ExecuteMsg::AddPath { denoms, exchange } => add_path_handler(deps, denoms, exchange),
-        ExecuteMsg::Swap {
+        ExecuteMsg::CreateSwap {
             target_denom,
             slippage_tolerance,
             callback,
-            path,
-        } => swap_handler(
-            deps,
-            env,
-            info,
-            target_denom,
+        } => create_swap_handler(deps, env, info, target_denom, slippage_tolerance, callback),
+        ExecuteMsg::ContinueSwap { swap_id } => continue_swap_handler(deps, info, swap_id),
+        ExecuteMsg::SwapOnFin {
+            pair,
             slippage_tolerance,
             callback,
-            path,
-        ),
+        } => swap_on_fin_handler(deps, &env, &info, pair, slippage_tolerance, callback),
     }
 }
 
-pub const AFTER_SWAP_CALLBACK_INVOKED_ID: u64 = 0;
-pub const AFTER_FIN_SWAP_REPLY_ID: u64 = 1;
+pub const AFTER_FIN_SWAP_REPLY_ID: u64 = 0;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, ContractError> {
+pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> StdResult<Response> {
     match reply.id {
-        AFTER_SWAP_CALLBACK_INVOKED_ID => delete_completed_swap(deps, reply),
-        AFTER_FIN_SWAP_REPLY_ID => invoke_callback_or_next_swap(deps, env),
-        id => Err(ContractError::CustomError {
-            val: format!("unknown reply id: {}", id),
-        }),
+        AFTER_FIN_SWAP_REPLY_ID => after_swap_on_fin(deps, env),
+        id => Err(StdError::generic_err(format!(
+            "Reply id {} has no after handler",
+            id
+        ))),
     }
 }
 

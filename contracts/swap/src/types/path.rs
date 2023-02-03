@@ -1,4 +1,4 @@
-use super::exchange::Exchange;
+use super::exchange::Pair;
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Decimal256;
 use std::collections::VecDeque;
@@ -6,5 +6,5 @@ use std::collections::VecDeque;
 #[cw_serde]
 pub struct Path {
     pub cost: Decimal256,
-    pub exchanges: VecDeque<Exchange>,
+    pub exchanges: VecDeque<Pair>,
 }

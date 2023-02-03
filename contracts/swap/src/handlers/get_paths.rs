@@ -1,6 +1,6 @@
 use crate::{
     state::paths::get_paths,
-    types::{exchange::Exchange, path::Path},
+    types::{exchange::Pair, path::Path},
 };
 use cosmwasm_std::{Decimal256, Deps, QuerierWrapper, StdResult};
 use fin_helpers::queries::{query_base_price, query_quote_price};
@@ -19,13 +19,9 @@ pub fn get_paths_handler(deps: Deps, from: &str, to: &str) -> StdResult<Vec<Path
         .collect::<Vec<Path>>())
 }
 
-pub fn get_price(
-    querier: QuerierWrapper,
-    exchange: &Exchange,
-    from: &str,
-) -> StdResult<Decimal256> {
+pub fn get_price(querier: QuerierWrapper, exchange: &Pair, from: &str) -> StdResult<Decimal256> {
     Ok(match exchange {
-        Exchange::Fin {
+        Pair::Fin {
             address,
             base_denom,
             ..

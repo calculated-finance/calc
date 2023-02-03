@@ -14,9 +14,9 @@ use base::events::event::{EventBuilder, EventData, ExecutionSkippedReason};
 use base::helpers::time_helpers::get_next_target_time;
 use base::triggers::trigger::{Trigger, TriggerConfiguration};
 use base::vaults::vault::VaultStatus;
-use cosmwasm_std::StdError;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{DepsMut, Env, Response, Uint128};
+use cosmwasm_std::{ReplyOn, StdError};
 use fin_helpers::limit_orders::create_withdraw_limit_order_sub_msg;
 use fin_helpers::position_type::PositionType;
 use fin_helpers::queries::{query_base_price, query_order_details, query_quote_price};
@@ -152,7 +152,8 @@ pub fn execute_trigger(
                 vault.pair.clone(),
                 vault.get_swap_amount(),
                 vault.slippage_tolerance,
-                AFTER_FIN_SWAP_REPLY_ID,
+                Some(AFTER_FIN_SWAP_REPLY_ID),
+                Some(ReplyOn::Always),
             )?));
         }
         TriggerConfiguration::FinLimitOrder { order_idx, .. } => {
