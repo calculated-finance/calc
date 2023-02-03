@@ -36,7 +36,7 @@ pub fn create_swap_handler(
     }
 
     let swap_id = get_next_swap_id(deps.storage)?;
-    let callback = to_binary(&ExecuteMsg::ContinueSwap { swap_id })?;
+    let continue_callback = to_binary(&ExecuteMsg::ContinueSwap { swap_id })?;
 
     let mut messages = swap_path
         .iter()
@@ -45,7 +45,7 @@ pub fn create_swap_handler(
                 env.clone(),
                 pair.clone(),
                 slippage_tolerance,
-                callback.clone(),
+                continue_callback.clone(),
             )
         })
         .flatten()
@@ -70,7 +70,7 @@ pub fn create_swap_handler(
         )
         .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: env.contract.address.to_string(),
-            msg: callback,
+            msg: continue_callback,
             funds: vec![swap_amount],
         })))
 }
@@ -104,7 +104,7 @@ fn generate_swap_message(
 #[cfg(test)]
 mod swap_tests {
     use super::*;
-    use crate::state::paths::add_path;
+    use crate::state::{messages::get_messages, paths::add_path};
     use cosmwasm_std::{
         testing::{mock_dependencies, mock_env, mock_info},
         Addr, Attribute, Coin, SubMsg, Uint128,
@@ -165,7 +165,7 @@ mod swap_tests {
     }
 
     #[test]
-    fn swap_with_fin_path_should_invoke_fin_swap() {
+    fn swap_with_path_should_invoke_continue_swap() {
         let swap_amount = Coin {
             denom: "swap_denom".to_string(),
             amount: Uint128::new(1000000),
@@ -226,7 +226,98 @@ mod swap_tests {
     }
 
     #[test]
-    fn swap_with_fin_path_should_return_swap_id() {
+    fn swap_with_path_should_save_swap_messages() {
+        let swap_amount = Coin {
+            denom: "swap_denom".to_string(),
+            amount: Uint128::new(1000000),
+        };
+
+        let mut deps = mock_dependencies();
+        let env = mock_env();
+        let info = mock_info("admin", &[swap_amount.clone()]);
+
+        let pair = FinPair {
+            address: Addr::unchecked("fin_pair_1"),
+            quote_denom: "swap_denom".to_string(),
+            base_denom: "transfer_denom".to_string(),
+        };
+
+        add_path(
+            deps.as_mut().storage,
+            ["swap_denom".to_string(), "transfer_denom".to_string()],
+            Pair::Fin {
+                address: pair.address.clone(),
+                quote_denom: pair.quote_denom.clone(),
+                base_denom: pair.base_denom.clone(),
+            },
+        )
+        .unwrap();
+
+        add_path(
+            deps.as_mut().storage,
+            ["transfer_denom".to_string(), "target_denom".to_string()],
+            Pair::Fin {
+                address: Addr::unchecked("fin_pair_2"),
+                quote_denom: "transfer_denom".to_string(),
+                base_denom: "target_denom".to_string(),
+            },
+        )
+        .unwrap();
+
+        let on_complete = Callback {
+            address: Addr::unchecked("sender"),
+            msg: to_binary("callback").unwrap(),
+        };
+
+        create_swap_handler(
+            deps.as_mut(),
+            env.clone(),
+            info,
+            "target_denom".to_string(),
+            None,
+            on_complete.clone(),
+        )
+        .unwrap();
+
+        let swap_messages = get_messages(deps.as_ref().storage, 1).unwrap();
+        let continue_callback = to_binary(&ExecuteMsg::ContinueSwap { swap_id: 1 }).unwrap();
+
+        assert_eq!(
+            swap_messages,
+            vec![
+                Callback {
+                    address: env.contract.address.clone(),
+                    msg: to_binary(&ExecuteMsg::SwapOnFin {
+                        pair: FinPair {
+                            address: Addr::unchecked("fin_pair_1"),
+                            base_denom: "transfer_denom".to_string(),
+                            quote_denom: "swap_denom".to_string(),
+                        },
+                        callback: continue_callback.clone(),
+                        slippage_tolerance: None
+                    })
+                    .unwrap(),
+                },
+                Callback {
+                    address: env.contract.address,
+                    msg: to_binary(&ExecuteMsg::SwapOnFin {
+                        pair: FinPair {
+                            address: Addr::unchecked("fin_pair_2"),
+                            base_denom: "target_denom".to_string(),
+                            quote_denom: "transfer_denom".to_string(),
+                        },
+                        callback: continue_callback,
+                        slippage_tolerance: None
+                    })
+                    .unwrap(),
+                },
+                on_complete
+            ]
+        );
+    }
+
+    #[test]
+    fn swap_with_path_should_return_swap_id() {
         let swap_amount = Coin {
             denom: "swap_denom".to_string(),
             amount: Uint128::new(1000000),

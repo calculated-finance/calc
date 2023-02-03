@@ -4,7 +4,7 @@ use crate::{
         add_path::add_path_handler,
         continue_swap::continue_swap_handler,
         create_swap::create_swap_handler,
-        swap_on_fin::{after_swap_on_fin, swap_on_fin_handler},
+        swap_on_fin::{after_swap_on_fin_handler, swap_on_fin_handler},
         update_config::update_config_handler,
     },
     msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg},
@@ -77,7 +77,7 @@ pub const AFTER_FIN_SWAP_REPLY_ID: u64 = 0;
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> StdResult<Response> {
     match reply.id {
-        AFTER_FIN_SWAP_REPLY_ID => after_swap_on_fin(deps, env),
+        AFTER_FIN_SWAP_REPLY_ID => after_swap_on_fin_handler(deps, env),
         id => Err(StdError::generic_err(format!(
             "Reply id {} has no after handler",
             id

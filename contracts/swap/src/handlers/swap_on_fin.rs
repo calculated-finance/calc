@@ -52,7 +52,7 @@ pub fn swap_on_fin_handler(
     )?))
 }
 
-pub fn after_swap_on_fin(deps: DepsMut, env: Env) -> StdResult<Response> {
+pub fn after_swap_on_fin_handler(deps: DepsMut, env: Env) -> StdResult<Response> {
     let swap_cache = SWAP_CACHE.load(deps.storage)?;
 
     let receive_denom_balance = deps.querier.query_balance(
@@ -169,7 +169,7 @@ mod after_swap_on_fin_tests {
 
     use crate::state::cache::{SwapCache, SWAP_CACHE};
 
-    use super::after_swap_on_fin;
+    use super::after_swap_on_fin_handler;
 
     #[test]
     fn sends_callback_message() {
@@ -194,7 +194,7 @@ mod after_swap_on_fin_tests {
         deps.querier
             .update_balance(env.contract.address.clone(), vec![received_amount.clone()]);
 
-        let result = after_swap_on_fin(deps.as_mut(), env.clone()).unwrap();
+        let result = after_swap_on_fin_handler(deps.as_mut(), env.clone()).unwrap();
 
         assert!(result
             .messages
