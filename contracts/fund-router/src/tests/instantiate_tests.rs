@@ -9,7 +9,7 @@ use crate::{contract::instantiate, msg::InstantiateMsg};
 pub const USER: &str = "user";
 
 #[test]
-fn instantiate_contract_creates_new_denom() {
+fn creates_new_denom() {
     let mut deps = mock_dependencies();
     let mock_env = mock_env();
     let info = mock_info(USER, &[]);
