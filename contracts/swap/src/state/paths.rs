@@ -1,9 +1,7 @@
 use crate::types::pair::Pair;
 use cosmwasm_std::{from_binary, to_binary, Binary, StdResult, Storage};
 use cw_storage_plus::Item;
-use petgraph::{
-    algo::all_simple_paths, algo::astar, graph::EdgeReference, graph::NodeIndex, Graph,
-};
+use petgraph::{algo::astar, graph::EdgeReference, graph::NodeIndex, Graph};
 use std::collections::VecDeque;
 
 const PATHS: Item<Binary> = Item::new("paths_v1");
@@ -58,30 +56,6 @@ pub fn get_path(store: &dyn Storage, denoms: [String; 2]) -> StdResult<VecDeque<
     }
 }
 
-pub fn get_paths(store: &dyn Storage, from: &str, to: &str) -> StdResult<Vec<VecDeque<Pair>>> {
-    let graph = get_graph(store)?;
-    let nodes = [from, to].map(|denom| graph.node_indices().find(|node| graph[*node] == denom));
-    Ok(match nodes {
-        [Some(node_a), Some(node_b)] => {
-            all_simple_paths::<Vec<_>, _>(&graph, node_a, node_b, 0, None)
-                .map(|path| {
-                    path.windows(2)
-                        .map(|nodes| {
-                            graph.find_edge(nodes[0], nodes[1]).expect(&format!(
-                                "path from {} to {}",
-                                nodes[0].index(),
-                                nodes[1].index()
-                            ))
-                        })
-                        .map(|edge| graph[edge].clone())
-                        .collect::<VecDeque<Pair>>()
-                })
-                .collect()
-        }
-        _ => vec![],
-    })
-}
-
 pub fn get_graph(store: &dyn Storage) -> StdResult<Graph<String, Pair>> {
     Ok(from_binary(&PATHS.load(store).unwrap_or(
         to_binary(&Graph::<String, Pair>::new()).expect("empty paths graph"),
@@ -97,6 +71,7 @@ mod path_tests {
     fn add_path_adds_nodes_and_edge() {
         let mut deps = mock_dependencies();
         let graph = Graph::<String, Pair>::new();
+
         PATHS
             .save(deps.as_mut().storage, &to_binary(&graph).unwrap())
             .unwrap();
@@ -110,7 +85,9 @@ mod path_tests {
             },
         )
         .unwrap();
+
         let graph: Graph<String, Pair> = from_binary(&PATHS.load(&deps.storage).unwrap()).unwrap();
+
         assert_eq!(graph.node_count(), 2);
         assert_eq!(graph.edge_count(), 1);
     }
@@ -119,9 +96,11 @@ mod path_tests {
     fn add_path_is_idempotent() {
         let mut deps = mock_dependencies();
         let graph = Graph::<String, Pair>::new();
+
         PATHS
             .save(deps.as_mut().storage, &to_binary(&graph).unwrap())
             .unwrap();
+
         add_path(
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_b".to_string()],
@@ -132,6 +111,7 @@ mod path_tests {
             },
         )
         .unwrap();
+
         add_path(
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_b".to_string()],
@@ -142,7 +122,9 @@ mod path_tests {
             },
         )
         .unwrap();
+
         let graph: Graph<String, Pair> = from_binary(&PATHS.load(&deps.storage).unwrap()).unwrap();
+
         assert_eq!(graph.node_count(), 2);
         assert_eq!(graph.edge_count(), 1);
     }
@@ -151,14 +133,17 @@ mod path_tests {
     fn get_path_returns_empty_if_no_paths() {
         let mut deps = mock_dependencies();
         let graph = Graph::<String, Pair>::new();
+
         PATHS
             .save(deps.as_mut().storage, &to_binary(&graph).unwrap())
             .unwrap();
+
         let path = get_path(
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_b".to_string()],
         )
         .unwrap();
+
         assert_eq!(path, vec![]);
     }
 
@@ -166,9 +151,11 @@ mod path_tests {
     fn get_path_returns_path_if_path_exists() {
         let mut deps = mock_dependencies();
         let graph = Graph::<String, Pair>::new();
+
         PATHS
             .save(deps.as_mut().storage, &to_binary(&graph).unwrap())
             .unwrap();
+
         add_path(
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_b".to_string()],
@@ -179,11 +166,13 @@ mod path_tests {
             },
         )
         .unwrap();
+
         let path = get_path(
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_b".to_string()],
         )
         .unwrap();
+
         assert_eq!(
             path,
             vec![Pair::Fin {
@@ -198,9 +187,11 @@ mod path_tests {
     fn get_path_returns_empty_if_path_does_not_exist() {
         let mut deps = mock_dependencies();
         let graph = Graph::<String, Pair>::new();
+
         PATHS
             .save(deps.as_mut().storage, &to_binary(&graph).unwrap())
             .unwrap();
+
         add_path(
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_b".to_string()],
@@ -211,6 +202,7 @@ mod path_tests {
             },
         )
         .unwrap();
+
         add_path(
             deps.as_mut().storage,
             ["denom_c".to_string(), "denom_d".to_string()],
@@ -221,11 +213,13 @@ mod path_tests {
             },
         )
         .unwrap();
+
         let path = get_path(
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_c".to_string()],
         )
         .unwrap();
+
         assert_eq!(path, vec![]);
     }
 
@@ -233,9 +227,11 @@ mod path_tests {
     fn get_path_returns_path_if_multihop_path_exists() {
         let mut deps = mock_dependencies();
         let graph = Graph::<String, Pair>::new();
+
         PATHS
             .save(deps.as_mut().storage, &to_binary(&graph).unwrap())
             .unwrap();
+
         add_path(
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_b".to_string()],
@@ -246,6 +242,7 @@ mod path_tests {
             },
         )
         .unwrap();
+
         add_path(
             deps.as_mut().storage,
             ["denom_b".to_string(), "denom_c".to_string()],
@@ -256,11 +253,13 @@ mod path_tests {
             },
         )
         .unwrap();
+
         let path = get_path(
             deps.as_mut().storage,
             ["denom_a".to_string(), "denom_c".to_string()],
         )
         .unwrap();
+
         assert_eq!(
             path,
             vec![

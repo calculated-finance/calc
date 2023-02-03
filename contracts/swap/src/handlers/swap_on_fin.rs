@@ -86,7 +86,7 @@ mod swap_on_fin_tests {
     };
 
     #[test]
-    fn saves_amounts_to_swap_cache() {
+    fn saves_current_receive_denom_balance_to_cache() {
         let mut deps = mock_dependencies();
         let env = mock_env();
         let info = mock_info(

@@ -1,8 +1,8 @@
 use crate::{
     msg::ExecuteMsg,
     state::{
-        messages::{get_next_swap_id, save_messages},
         paths::get_path,
+        swap_messages::{get_next_swap_id, save_swap_messages},
     },
     types::{callback::Callback, pair::Pair},
     validation::assert_exactly_one_asset,
@@ -38,7 +38,7 @@ pub fn create_swap_handler(
     let swap_id = get_next_swap_id(deps.storage)?;
     let continue_callback = to_binary(&ExecuteMsg::ContinueSwap { swap_id })?;
 
-    let mut messages = swap_path
+    let mut swap_messages = swap_path
         .iter()
         .map(|pair| {
             generate_swap_message(
@@ -51,8 +51,8 @@ pub fn create_swap_handler(
         .flatten()
         .collect::<VecDeque<Callback>>();
 
-    messages.push_back(on_complete);
-    save_messages(deps.storage, swap_id, messages)?;
+    swap_messages.push_back(on_complete);
+    save_swap_messages(deps.storage, swap_id, swap_messages)?;
 
     Ok(Response::new()
         .add_attribute("method", "swap")
@@ -104,7 +104,7 @@ fn generate_swap_message(
 #[cfg(test)]
 mod swap_tests {
     use super::*;
-    use crate::state::{messages::get_messages, paths::add_path};
+    use crate::state::{paths::add_path, swap_messages::get_swap_messages};
     use cosmwasm_std::{
         testing::{mock_dependencies, mock_env, mock_info},
         Addr, Attribute, Coin, SubMsg, Uint128,
@@ -279,7 +279,7 @@ mod swap_tests {
         )
         .unwrap();
 
-        let swap_messages = get_messages(deps.as_ref().storage, 1).unwrap();
+        let swap_messages = get_swap_messages(deps.as_ref().storage, 1).unwrap();
         let continue_callback = to_binary(&ExecuteMsg::ContinueSwap { swap_id: 1 }).unwrap();
 
         assert_eq!(
@@ -368,7 +368,7 @@ mod swap_tests {
     }
 
     #[test]
-    fn swap_with_fin_path_should_return_path() {
+    fn swap_with_path_should_return_path() {
         let swap_amount = Coin {
             denom: "swap_denom".to_string(),
             amount: Uint128::new(1000000),

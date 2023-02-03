@@ -16,9 +16,7 @@ pub fn create_fin_swap_message(
     reply_id: Option<u64>,
     reply_on: Option<ReplyOn>,
 ) -> StdResult<SubMsg> {
-    let mut belief_price = None;
-
-    if slippage_tolerance.is_some() {
+    let belief_price = slippage_tolerance.map(|_| {
         let position_type = match swap_amount.denom == pair.quote_denom {
             true => PositionType::Enter,
             false => PositionType::Exit,
@@ -29,13 +27,13 @@ pub fn create_fin_swap_message(
             PositionType::Exit => query_quote_price(querier, pair.address.clone()),
         };
 
-        belief_price = Some(match position_type {
+        match position_type {
             PositionType::Enter => fin_price,
             PositionType::Exit => Decimal256::one()
                 .checked_div(fin_price)
                 .expect("should return a valid inverted price for fin sell"),
-        });
-    }
+        }
+    });
 
     let swap_message = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: pair.address.to_string(),

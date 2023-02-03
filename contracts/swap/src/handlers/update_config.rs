@@ -17,14 +17,12 @@ pub fn update_config_handler(
 
 #[cfg(test)]
 mod update_config_handler_tests {
+    use super::update_config_handler;
+    use crate::state::config::{get_config, update_config, Config};
     use cosmwasm_std::{
         testing::{mock_dependencies, mock_info},
         Addr,
     };
-
-    use crate::state::config::{get_config, update_config, Config};
-
-    use super::update_config_handler;
 
     #[test]
     fn saves_config() {

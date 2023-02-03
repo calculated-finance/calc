@@ -1,5 +1,5 @@
 use crate::{
-    state::messages::{get_messages, save_messages},
+    state::swap_messages::{get_swap_messages, save_swap_messages},
     validation::assert_exactly_one_asset,
 };
 use cosmwasm_std::{CosmosMsg, DepsMut, MessageInfo, Response, StdResult, WasmMsg};
@@ -11,15 +11,15 @@ pub fn continue_swap_handler(
 ) -> StdResult<Response> {
     assert_exactly_one_asset(info.funds.clone())?;
 
-    let mut messages = get_messages(deps.storage, swap_id)?;
-    let next = messages.pop_front().expect("next callback");
+    let mut swap_messages = get_swap_messages(deps.storage, swap_id)?;
+    let next_swap_message = swap_messages.pop_front().expect("next callback");
 
-    save_messages(deps.storage, swap_id, messages)?;
+    save_swap_messages(deps.storage, swap_id, swap_messages)?;
 
     Ok(
         Response::new().add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: next.address.to_string(),
-            msg: next.msg,
+            contract_addr: next_swap_message.address.to_string(),
+            msg: next_swap_message.msg,
             funds: info.funds,
         })),
     )
@@ -30,7 +30,7 @@ mod continue_swap_tests {
     use super::continue_swap_handler;
     use crate::{
         msg::ExecuteMsg,
-        state::messages::{get_messages, save_messages},
+        state::swap_messages::{get_swap_messages, save_swap_messages},
         types::callback::Callback,
     };
     use base::pair::Pair;
@@ -76,7 +76,7 @@ mod continue_swap_tests {
 
         let swap_id = 1;
 
-        save_messages(deps.as_mut().storage, swap_id, messages).unwrap();
+        save_swap_messages(deps.as_mut().storage, swap_id, messages).unwrap();
 
         continue_swap_handler(
             deps.as_mut(),
@@ -88,7 +88,7 @@ mod continue_swap_tests {
         )
         .unwrap();
 
-        let swap_messages = get_messages(&deps.storage, swap_id).unwrap();
+        let swap_messages = get_swap_messages(&deps.storage, swap_id).unwrap();
         assert_eq!(swap_messages.len(), 1);
     }
 
@@ -131,7 +131,7 @@ mod continue_swap_tests {
 
         let swap_id = 1;
 
-        save_messages(deps.as_mut().storage, swap_id, messages).unwrap();
+        save_swap_messages(deps.as_mut().storage, swap_id, messages).unwrap();
 
         let funds = Coin::new(10000, "base-denom");
 
