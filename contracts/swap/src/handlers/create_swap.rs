@@ -4,7 +4,7 @@ use crate::{
         messages::{get_next_swap_id, save_messages},
         paths::get_path,
     },
-    types::{callback::Callback, exchange::Pair},
+    types::{callback::Callback, pair::Pair},
     validation::assert_exactly_one_asset,
 };
 use base::pair::Pair as FinPair;

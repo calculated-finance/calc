@@ -1,5 +1,5 @@
 use crate::types::callback::Callback;
-use crate::{state::config::Config, types::exchange::Pair};
+use crate::{state::config::Config, types::pair::Pair};
 use base::pair::Pair as FinPair;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Decimal256};
@@ -22,7 +22,7 @@ pub enum ExecuteMsg {
     },
     AddPath {
         denoms: [String; 2],
-        exchange: Pair,
+        pair: Pair,
     },
     CreateSwap {
         target_denom: String,

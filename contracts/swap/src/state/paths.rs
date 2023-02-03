@@ -1,4 +1,4 @@
-use crate::types::exchange::Pair;
+use crate::types::pair::Pair;
 use cosmwasm_std::{from_binary, to_binary, Binary, StdResult, Storage};
 use cw_storage_plus::Item;
 use petgraph::{
@@ -8,7 +8,7 @@ use std::collections::VecDeque;
 
 const PATHS: Item<Binary> = Item::new("paths_v1");
 
-pub fn add_path(store: &mut dyn Storage, denoms: [String; 2], exchange: Pair) -> StdResult<()> {
+pub fn add_path(store: &mut dyn Storage, denoms: [String; 2], pair: Pair) -> StdResult<()> {
     let existing_path = get_path(store, denoms.clone())?;
     if !existing_path.is_empty() {
         return Ok(());
@@ -22,7 +22,7 @@ pub fn add_path(store: &mut dyn Storage, denoms: [String; 2], exchange: Pair) ->
         .node_indices()
         .find(|node| graph[*node] == denoms[1])
         .unwrap_or_else(|| graph.add_node(denoms[1].clone()));
-    graph.add_edge(denom_1, denom_2, exchange);
+    graph.add_edge(denom_1, denom_2, pair);
     PATHS.save(store, &to_binary(&graph)?)?;
     Ok(())
 }
