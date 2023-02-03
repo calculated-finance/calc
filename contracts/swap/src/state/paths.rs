@@ -1,7 +1,9 @@
 use crate::types::exchange::Pair;
 use cosmwasm_std::{from_binary, to_binary, Binary, StdResult, Storage};
 use cw_storage_plus::Item;
-use petgraph::{algo::all_simple_paths, algo::astar, Graph};
+use petgraph::{
+    algo::all_simple_paths, algo::astar, graph::EdgeReference, graph::NodeIndex, Graph,
+};
 use std::collections::VecDeque;
 
 const PATHS: Item<Binary> = Item::new("paths_v1");
@@ -29,7 +31,15 @@ pub fn get_path(store: &dyn Storage, denoms: [String; 2]) -> StdResult<VecDeque<
     let graph = get_graph(store)?;
     let nodes = denoms.map(|denom| graph.node_indices().find(|node| graph[*node] == denom));
     match nodes {
-        [Some(node_a), Some(node_b)] => Ok(astar(&graph, node_a, |n| n == node_b, |_| 0, |_| 0)
+        [Some(node_a), Some(node_b)] => {
+            // use the A* algorithm to find the shortest path with 0 edge cost and 0 estimate cost
+            Ok(astar(
+                &graph,
+                node_a,
+                |n: NodeIndex| n == node_b,
+                |_edge: EdgeReference<Pair>| 0,
+                |_node: NodeIndex| 0,
+            )
             .map(|p| {
                 p.1.windows(2)
                     .map(|nodes| {
@@ -42,7 +52,8 @@ pub fn get_path(store: &dyn Storage, denoms: [String; 2]) -> StdResult<VecDeque<
                     .map(|edge| graph[edge].clone())
                     .collect::<VecDeque<Pair>>()
             })
-            .unwrap_or(VecDeque::new())),
+            .unwrap_or(VecDeque::new()))
+        }
         _ => Ok(VecDeque::new()),
     }
 }

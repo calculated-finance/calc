@@ -215,11 +215,8 @@ mod swap_tests {
             },
         );
 
-        let response = response.unwrap();
-
-        println!("{:?}", response.messages);
-
         assert!(response
+            .unwrap()
             .messages
             .contains(&SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: env.contract.address.to_string(),

@@ -159,3 +159,49 @@ mod swap_on_fin_tests {
         )));
     }
 }
+
+#[cfg(test)]
+mod after_swap_on_fin_tests {
+    use cosmwasm_std::{
+        testing::{mock_dependencies, mock_env},
+        to_binary, Coin, CosmosMsg, SubMsg, WasmMsg,
+    };
+
+    use crate::state::cache::{SwapCache, SWAP_CACHE};
+
+    use super::after_swap_on_fin;
+
+    #[test]
+    fn sends_callback_message() {
+        let mut deps = mock_dependencies();
+        let env = mock_env();
+
+        SWAP_CACHE
+            .save(
+                deps.as_mut().storage,
+                &SwapCache {
+                    callback: crate::types::callback::Callback {
+                        address: env.contract.address.clone(),
+                        msg: to_binary("test").unwrap(),
+                    },
+                    receive_denom_balance: Coin::new(0, "denom"),
+                },
+            )
+            .unwrap();
+
+        let received_amount = Coin::new(10000, "denom");
+
+        deps.querier
+            .update_balance(env.contract.address.clone(), vec![received_amount.clone()]);
+
+        let result = after_swap_on_fin(deps.as_mut(), env.clone()).unwrap();
+
+        assert!(result
+            .messages
+            .contains(&SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: env.contract.address.to_string(),
+                msg: to_binary("test").unwrap(),
+                funds: vec![received_amount],
+            }))));
+    }
+}
