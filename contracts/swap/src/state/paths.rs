@@ -21,7 +21,8 @@ pub fn add_path(store: &mut dyn Storage, pair: Pair) -> StdResult<()> {
         .node_indices()
         .find(|node| graph[*node] == denoms[1])
         .unwrap_or_else(|| graph.add_node(denoms[1].clone()));
-    graph.add_edge(denom_1, denom_2, pair);
+    graph.add_edge(denom_1, denom_2, pair.clone());
+    graph.add_edge(denom_2, denom_1, pair);
     PATHS.save(store, &to_binary(&graph)?)?;
     Ok(())
 }
@@ -69,7 +70,7 @@ mod path_tests {
     use cosmwasm_std::{testing::mock_dependencies, Addr};
 
     #[test]
-    fn add_path_adds_nodes_and_edge() {
+    fn add_path_adds_nodes_and_edges() {
         let mut deps = mock_dependencies();
         let graph = Graph::<String, Pair>::new();
 
@@ -89,7 +90,7 @@ mod path_tests {
         let graph: Graph<String, Pair> = from_binary(&PATHS.load(&deps.storage).unwrap()).unwrap();
 
         assert_eq!(graph.node_count(), 2);
-        assert_eq!(graph.edge_count(), 1);
+        assert_eq!(graph.edge_count(), 2);
     }
 
     #[test]
@@ -124,7 +125,7 @@ mod path_tests {
         let graph: Graph<String, Pair> = from_binary(&PATHS.load(&deps.storage).unwrap()).unwrap();
 
         assert_eq!(graph.node_count(), 2);
-        assert_eq!(graph.edge_count(), 1);
+        assert_eq!(graph.edge_count(), 2);
     }
 
     #[test]

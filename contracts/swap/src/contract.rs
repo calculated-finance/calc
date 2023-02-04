@@ -57,7 +57,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         ExecuteMsg::UpdateConfig { admin, paused } => {
             update_config_handler(deps, info, Config { admin, paused })
         }
-        ExecuteMsg::AddPair { pair } => add_pair_handler(deps, pair),
+        ExecuteMsg::AddPair { pair } => add_pair_handler(deps, info, pair),
         ExecuteMsg::CreateSwap {
             target_denom,
             slippage_tolerance,
