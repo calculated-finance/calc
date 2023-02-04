@@ -296,8 +296,8 @@ mod swap_tests {
         .unwrap();
 
         let on_complete_callback = Callback {
-            address: Addr::unchecked("on_complete_callback"),
-            msg: to_binary("something").unwrap(),
+            address: Addr::unchecked("final-destination"),
+            msg: to_binary("custom-callback").unwrap(),
         };
 
         create_swap_handler(
