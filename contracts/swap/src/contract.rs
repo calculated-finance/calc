@@ -1,7 +1,7 @@
 use crate::{
     errors::contract_error::ContractError,
     handlers::{
-        add_path::add_path_handler,
+        add_pair::add_pair_handler,
         continue_swap::continue_swap_handler,
         create_swap::create_swap_handler,
         swap_on_fin::{after_swap_on_fin_handler, swap_on_fin_handler},
@@ -57,7 +57,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         ExecuteMsg::UpdateConfig { admin, paused } => {
             update_config_handler(deps, info, Config { admin, paused })
         }
-        ExecuteMsg::AddPath { denoms, pair } => add_path_handler(deps, denoms, pair),
+        ExecuteMsg::AddPair { pair } => add_pair_handler(deps, pair),
         ExecuteMsg::CreateSwap {
             target_denom,
             slippage_tolerance,

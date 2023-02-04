@@ -20,8 +20,7 @@ pub enum ExecuteMsg {
         admin: Addr,
         paused: bool,
     },
-    AddPath {
-        denoms: [String; 2],
+    AddPair {
         pair: Pair,
     },
     CreateSwap {

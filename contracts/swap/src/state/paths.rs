@@ -6,7 +6,8 @@ use std::collections::VecDeque;
 
 const PATHS: Item<Binary> = Item::new("paths_v1");
 
-pub fn add_path(store: &mut dyn Storage, denoms: [String; 2], pair: Pair) -> StdResult<()> {
+pub fn add_path(store: &mut dyn Storage, pair: Pair) -> StdResult<()> {
+    let denoms = pair.get_denoms();
     let existing_path = get_path(store, denoms.clone())?;
     if !existing_path.is_empty() {
         return Ok(());
@@ -77,7 +78,6 @@ mod path_tests {
             .unwrap();
         add_path(
             deps.as_mut().storage,
-            ["denom_a".to_string(), "denom_b".to_string()],
             Pair::Fin {
                 address: Addr::unchecked("addr"),
                 base_denom: "denom_a".to_string(),
@@ -103,7 +103,6 @@ mod path_tests {
 
         add_path(
             deps.as_mut().storage,
-            ["denom_a".to_string(), "denom_b".to_string()],
             Pair::Fin {
                 address: Addr::unchecked("addr"),
                 base_denom: "denom_a".to_string(),
@@ -114,7 +113,6 @@ mod path_tests {
 
         add_path(
             deps.as_mut().storage,
-            ["denom_a".to_string(), "denom_b".to_string()],
             Pair::Fin {
                 address: Addr::unchecked("addr"),
                 base_denom: "denom_a".to_string(),
@@ -158,7 +156,6 @@ mod path_tests {
 
         add_path(
             deps.as_mut().storage,
-            ["denom_a".to_string(), "denom_b".to_string()],
             Pair::Fin {
                 address: Addr::unchecked("addr"),
                 base_denom: "denom_a".to_string(),
@@ -194,7 +191,6 @@ mod path_tests {
 
         add_path(
             deps.as_mut().storage,
-            ["denom_a".to_string(), "denom_b".to_string()],
             Pair::Fin {
                 address: Addr::unchecked("addr_1"),
                 base_denom: "denom_a".to_string(),
@@ -205,7 +201,6 @@ mod path_tests {
 
         add_path(
             deps.as_mut().storage,
-            ["denom_c".to_string(), "denom_d".to_string()],
             Pair::Fin {
                 address: Addr::unchecked("addr_2"),
                 base_denom: "denom_c".to_string(),
@@ -234,7 +229,6 @@ mod path_tests {
 
         add_path(
             deps.as_mut().storage,
-            ["denom_a".to_string(), "denom_b".to_string()],
             Pair::Fin {
                 address: Addr::unchecked("addr_1"),
                 base_denom: "denom_a".to_string(),
@@ -245,7 +239,6 @@ mod path_tests {
 
         add_path(
             deps.as_mut().storage,
-            ["denom_b".to_string(), "denom_c".to_string()],
             Pair::Fin {
                 address: Addr::unchecked("addr_2"),
                 base_denom: "denom_b".to_string(),

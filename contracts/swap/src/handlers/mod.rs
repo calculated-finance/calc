@@ -1,4 +1,4 @@
-pub mod add_path;
+pub mod add_pair;
 pub mod continue_swap;
 pub mod create_swap;
 pub mod swap_on_fin;
