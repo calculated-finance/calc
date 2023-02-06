@@ -44,6 +44,11 @@ pub fn query_price(
         )));
     }
 
+    let position_type = match swap_amount.denom == pair.quote_denom {
+        true => PositionType::Enter,
+        false => PositionType::Exit,
+    };
+
     let mut spent = Uint128::zero();
     let mut received = Uint128::zero();
     let mut limit = 20;
@@ -57,11 +62,6 @@ pub fn query_price(
                 offset,
             },
         )?;
-
-        let position_type = match swap_amount.denom == pair.quote_denom {
-            true => PositionType::Enter,
-            false => PositionType::Exit,
-        };
 
         let book = match position_type {
             PositionType::Enter => book_response.base,
