@@ -1,6 +1,6 @@
 use cosmwasm_schema::write_api;
 
-use fund::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use fund_core::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 fn main() {
     write_api! {
