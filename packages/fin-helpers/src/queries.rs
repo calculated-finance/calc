@@ -39,7 +39,7 @@ pub fn query_price(
 ) -> StdResult<Decimal256> {
     if ![pair.base_denom.clone(), pair.quote_denom.clone()].contains(&swap_amount.denom) {
         return Err(StdError::generic_err(format!(
-            "Invalid swap amount {} for pair {:?}",
+            "Provided swap denom {} not in pair {:?}",
             swap_amount, pair
         )));
     }
@@ -73,22 +73,22 @@ pub fn query_price(
         }
 
         book.iter().for_each(|order| {
-            let order_price_in_swap_denom = match position_type {
+            let price_in_swap_denom = match position_type {
                 PositionType::Enter => order.quote_price,
                 PositionType::Exit => Decimal::one()
                     .checked_div(order.quote_price)
                     .expect("order price in swap denom"),
             };
-            let order_cost = order.total_offer_amount * order_price_in_swap_denom;
+            let cost_in_swap_denom = order.total_offer_amount * price_in_swap_denom;
             let swap_amount_remaining = swap_amount.amount - spent;
 
-            if order_cost < swap_amount_remaining {
-                spent += order_cost;
+            if cost_in_swap_denom < swap_amount_remaining {
+                spent += cost_in_swap_denom;
                 received += order.total_offer_amount;
             } else {
                 spent = swap_amount.amount;
                 let portion_of_order_to_fill =
-                    Decimal::from_ratio(swap_amount_remaining, order_cost);
+                    Decimal::from_ratio(swap_amount_remaining, cost_in_swap_denom);
                 received += order.total_offer_amount * portion_of_order_to_fill;
                 return;
             }

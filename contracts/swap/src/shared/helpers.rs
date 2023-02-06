@@ -33,7 +33,7 @@ pub fn get_swap_paths_with_price(
         .map(|pairs| Path {
             price: pairs
                 .iter()
-                .map(|pair| get_price(deps.querier, pair, swap_amount))
+                .map(|pair| get_price_for_pair(deps.querier, pair, swap_amount))
                 .flatten()
                 .reduce(|acc, price| acc * price)
                 .expect("total price of the swap"),
@@ -46,7 +46,7 @@ pub fn get_swap_paths_with_price(
     Ok(paths)
 }
 
-pub fn get_price(
+pub fn get_price_for_pair(
     querier: QuerierWrapper,
     pair: &Pair,
     swap_amount: &Coin,

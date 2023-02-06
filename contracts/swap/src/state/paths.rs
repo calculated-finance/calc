@@ -68,6 +68,7 @@ pub fn get_all_paths(store: &dyn Storage, from: &str, to: &str) -> StdResult<Vec
     let nodes = [from, to].map(|denom| graph.node_indices().find(|node| graph[*node] == denom));
     Ok(match nodes {
         [Some(node_a), Some(node_b)] => {
+            // use the all_simple_paths algorithm to find all paths with 0 min and no max intermediate nodes
             all_simple_paths::<Vec<_>, _>(&graph, node_a, node_b, 0, None)
                 .map(|path| {
                     path.windows(2)
