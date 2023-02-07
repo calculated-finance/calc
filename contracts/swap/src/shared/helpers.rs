@@ -3,8 +3,12 @@ use crate::{
     types::{pair::Pair, path::Path},
 };
 use base::pair::Pair as FinPair;
-use cosmwasm_std::{Coin, Decimal256, Deps, QuerierWrapper, StdError, StdResult};
+use cosmwasm_std::{Coin, Decimal, Deps, QuerierWrapper, StdError, StdResult};
 use fin_helpers::queries::query_price;
+
+pub fn get_price(deps: Deps, swap_amount: &Coin, target_denom: &String) -> StdResult<Decimal> {
+    get_cheapest_swap_path(deps, swap_amount, target_denom).map(|path| path.price)
+}
 
 pub fn get_cheapest_swap_path(
     deps: Deps,
@@ -49,7 +53,7 @@ pub fn get_price_for_pair(
     querier: QuerierWrapper,
     pair: &Pair,
     swap_amount: &Coin,
-) -> StdResult<Decimal256> {
+) -> StdResult<Decimal> {
     match pair.clone() {
         Pair::Fin {
             address,
