@@ -4,6 +4,7 @@ use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response};
 // use cw2::set_contract_version;
 
 use crate::error::ContractError;
+use crate::handlers::rebalance::rebalance_handler;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 /*
@@ -26,12 +27,17 @@ pub fn instantiate(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-    _deps: DepsMut,
-    _env: Env,
+    deps: DepsMut,
+    env: Env,
     _info: MessageInfo,
-    _msg: ExecuteMsg,
+    msg: ExecuteMsg,
 ) -> ContractResult<Response> {
-    unimplemented!()
+    match msg {
+        ExecuteMsg::Rebalance {
+            allocations,
+            slippage_tolerance,
+        } => rebalance_handler(deps.as_ref(), env, allocations, slippage_tolerance),
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
