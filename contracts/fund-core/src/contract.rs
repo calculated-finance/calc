@@ -26,8 +26,23 @@ pub fn instantiate(
 
     Ok(Response::new()
         .add_attribute("router", msg.router.to_string())
-        .add_attribute("swap", msg.swapper.to_string())
+        .add_attribute("swapper", msg.swapper.to_string())
         .add_attribute("base_asset", msg.base_denom.to_string()))
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn execute(
+    deps: DepsMut,
+    env: Env,
+    _info: MessageInfo,
+    msg: ExecuteMsg,
+) -> ContractResult<Response> {
+    match msg {
+        ExecuteMsg::Rebalance {
+            allocations,
+            slippage_tolerance,
+        } => rebalance_handler(deps.as_ref(), env, allocations, slippage_tolerance),
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

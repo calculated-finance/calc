@@ -1,5 +1,6 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Addr;
+use cosmwasm_std::{Addr, Decimal, Decimal256};
+use std::collections::HashMap;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -10,7 +11,10 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    Rebalance {},
+    Rebalance {
+        allocations: HashMap<String, Decimal>,
+        slippage_tolerance: Option<Decimal256>,
+    },
 }
 
 #[cw_serde]
