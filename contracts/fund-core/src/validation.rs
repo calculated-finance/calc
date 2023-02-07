@@ -8,3 +8,12 @@ pub fn assert_sender_is_router(store: &dyn Storage, sender: Addr) -> ContractRes
     }
     Ok(())
 }
+
+pub fn assert_allocations_sum_to_one(allocations: &HashMap<String, Decimal>) -> ContractResult<()> {
+    if allocations.values().sum::<Decimal>() != Decimal::one() {
+        return Err(ContractError::CustomError {
+            val: "provided allocations must sum to 1".to_string(),
+        });
+    }
+    Ok(())
+}

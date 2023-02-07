@@ -14,9 +14,15 @@ pub enum ExecuteMsg {
     Rebalance {
         allocations: HashMap<String, Decimal>,
         slippage_tolerance: Option<Decimal256>,
+        failure_behaviour: Option<FailureBehaviour>,
     },
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum QueryMsg {}
+pub enum QueryMsg {
+    #[returns(Config)]
+    GetConfig,
+    #[returns(HashMap<String, Decimal>)]
+    GetAllocations,
+}

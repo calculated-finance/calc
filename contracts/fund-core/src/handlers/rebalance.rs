@@ -1,17 +1,26 @@
-use crate::{contract::ContractResult, state::get_config};
+use crate::{
+    contract::{ContractResult, AFTER_FAILED_SWAP_REPLY_ID},
+    state::get_config,
+    types::failure_behaviour::FailureBehaviour,
+    validation::{assert_allocations_sum_to_one, assert_sender_is_router},
+};
 use cosmwasm_std::{
-    to_binary, Coin, CosmosMsg, Decimal, Decimal256, Deps, Env, Response, Uint128, WasmMsg,
+    to_binary, Coin, CosmosMsg, Decimal, Decimal256, Deps, Env, MessageInfo, ReplyOn, Response,
+    SubMsg, Uint128, WasmMsg,
 };
 use std::collections::{HashMap, VecDeque};
-use swap::{msg::ExecuteMsg, shared::helpers::get_cheapest_swap_path};
+use swapper::{msg::ExecuteMsg, shared::helpers::get_cheapest_swap_path};
 
 pub fn rebalance_handler(
     deps: Deps,
     env: Env,
-    new_allocations: HashMap<String, Decimal>,
+    info: MessageInfo,
+    new_allocations: &HashMap<String, Decimal>,
     slippage_tolerance: Option<Decimal256>,
+    failure_behaviour: Option<FailureBehaviour>,
 ) -> ContractResult<Response> {
-    let config = get_config(deps.storage)?;
+    assert_sender_is_router(deps, info.sender)?;
+    assert_allocations_sum_to_one(new_allocations)?;
 
     let current_balances = deps
         .querier
@@ -19,6 +28,8 @@ pub fn rebalance_handler(
         .into_iter()
         .map(|coin| (coin.denom.clone(), coin))
         .collect::<HashMap<_, _>>();
+
+    let config = get_config(deps.storage)?;
 
     let current_balance_values = current_balances
         .values()
@@ -70,7 +81,7 @@ pub fn rebalance_handler(
     let swap_messages = over_allocations
         .iter()
         .map(|(swap_denom, over_allocation_value)| {
-            let mut swap_messages = Vec::<CosmosMsg>::new();
+            let mut swap_messages = Vec::<SubMsg>::new();
 
             let mut swap_denom_balance = current_balances
                 .get(*swap_denom)
@@ -96,7 +107,7 @@ pub fn rebalance_handler(
 
                 let current_balance_of_swap_denom = current_balances
                     .get(*swap_denom)
-                    .expect(&format!("{} balance", swap_denom))
+                    .expect(&format!("current balance of {}", swap_denom))
                     .amount;
 
                 let swap_amount = Coin::new(
@@ -114,22 +125,37 @@ pub fn rebalance_handler(
                         .push_front((target_denom, under_allocation_value - value_to_be_swapped));
                 };
 
-                swap_messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: config.swapper.to_string(),
-                    msg: to_binary(&ExecuteMsg::CreateSwap {
-                        target_denom: target_denom.clone(),
-                        slippage_tolerance,
-                        on_complete: None,
-                    })
-                    .expect("message binary"),
-                    funds: vec![swap_amount],
-                }));
+                swap_messages.push(SubMsg {
+                    id: AFTER_FAILED_SWAP_REPLY_ID,
+                    msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: config.swapper.to_string(),
+                        msg: to_binary(&ExecuteMsg::CreateSwap {
+                            target_denom: target_denom.clone(),
+                            slippage_tolerance,
+                            on_complete: None,
+                        })
+                        .expect("message binary"),
+                        funds: vec![swap_amount],
+                    }),
+                    gas_limit: None,
+                    reply_on: match failure_behaviour
+                        .as_ref()
+                        .unwrap_or(&FailureBehaviour::BestEffort)
+                    {
+                        FailureBehaviour::BestEffort => ReplyOn::Error,
+                        FailureBehaviour::Rollback => ReplyOn::Never,
+                    },
+                });
             }
 
             swap_messages
         })
         .flatten()
-        .collect::<Vec<CosmosMsg>>();
+        .collect::<Vec<SubMsg>>();
 
-    Ok(Response::new().add_messages(swap_messages))
+    Ok(Response::new().add_submessages(swap_messages))
+}
+
+pub fn after_failed_swap_handler() -> ContractResult<Response> {
+    Ok(Response::new().add_attribute("has_failures", "true"))
 }

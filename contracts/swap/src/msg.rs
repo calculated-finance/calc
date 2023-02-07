@@ -1,5 +1,5 @@
-use crate::types::callback::Callback;
-use crate::{state::config::Config, types::pair::Pair};
+use crate::types::pair::Pair;
+use crate::{state::config::Config, types::callback::Callback};
 use base::pair::Pair as FinPair;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Coin, Decimal256};

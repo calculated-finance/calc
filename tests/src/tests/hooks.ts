@@ -158,12 +158,8 @@ export const instantiateFinPairContract = async (
   adminContractAddress: string,
   baseDenom: string = 'ukuji',
   quoteDenom: string = 'udemo',
-  orders: Record<string, number | Coin>[] = [
-    { price: 1.02, amount: coin('1000000', baseDenom) },
-    { price: 1.01, amount: coin('1000000', baseDenom) },
-    { price: 0.99, amount: coin('1000000', quoteDenom) },
-    { price: 0.98, amount: coin('1000000', quoteDenom) },
-  ],
+  beleifPrice: number = 1.0,
+  orders: Record<string, number | Coin>[] = [],
 ): Promise<string> => {
   const finContractAddress = await uploadAndInstantiate(
     '../artifacts/fin.wasm',
@@ -180,6 +176,15 @@ export const instantiateFinPairContract = async (
   await execute(cosmWasmClient, adminContractAddress, finContractAddress, {
     launch: {},
   });
+
+  orders =
+    (orders.length == 0 && [
+      { price: beleifPrice + 0.02, amount: coin('1000000', baseDenom) },
+      { price: beleifPrice + 0.01, amount: coin('1000000', baseDenom) },
+      { price: beleifPrice - 0.01, amount: coin('1000000', quoteDenom) },
+      { price: beleifPrice - 0.02, amount: coin('1000000', quoteDenom) },
+    ]) ||
+    orders;
 
   for (const order of orders) {
     await execute(
@@ -208,6 +213,27 @@ export const instantiateSwapContract = async (
       admin: adminContractAddress,
     },
     'swap',
+  );
+
+  return address;
+};
+
+export const instatiateFundCoreContract = async (
+  cosmWasmClient: SigningCosmWasmClient,
+  routerContractAddress: string,
+  swapperContractAddress: string,
+  baseAsset: string = 'usk',
+): Promise<string> => {
+  const address = await uploadAndInstantiate(
+    '../artifacts/fund_core.wasm',
+    cosmWasmClient,
+    routerContractAddress,
+    {
+      router: routerContractAddress,
+      swapper: swapperContractAddress,
+      base_asset: baseAsset,
+    },
+    'fund-core',
   );
 
   return address;

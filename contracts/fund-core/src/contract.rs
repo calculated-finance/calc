@@ -1,10 +1,17 @@
+use crate::error::ContractError;
+use crate::handlers::rebalance::{after_failed_swap_handler, rebalance_handler};
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::shared::helpers::get_allocations;
+use crate::state::{get_config, update_config, Config};
+use crate::state::{update_config, Config};
 use base::ContractError;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
+use cosmwasm_std::{
+    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
+};
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response};
-
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{update_config, Config};
 
 pub type ContractResult<T> = Result<T, ContractError>;
 
@@ -27,25 +34,48 @@ pub fn instantiate(
     Ok(Response::new()
         .add_attribute("router", msg.router.to_string())
         .add_attribute("swapper", msg.swapper.to_string())
-        .add_attribute("base_asset", msg.base_denom.to_string()))
+        .add_attribute("base_denom", msg.base_denom.to_string()))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: ExecuteMsg,
 ) -> ContractResult<Response> {
     match msg {
         ExecuteMsg::Rebalance {
             allocations,
             slippage_tolerance,
-        } => rebalance_handler(deps.as_ref(), env, allocations, slippage_tolerance),
+            failure_behaviour,
+        } => rebalance_handler(
+            deps.as_ref(),
+            env,
+            info,
+            &allocations,
+            slippage_tolerance,
+            failure_behaviour,
+        ),
+    }
+}
+
+pub const AFTER_FAILED_SWAP_REPLY_ID: u64 = 1;
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(_deps: DepsMut, _env: Env, reply: Reply) -> ContractResult<Response> {
+    match reply.id {
+        AFTER_FAILED_SWAP_REPLY_ID => after_failed_swap_handler(),
+        id => Err(ContractError::CustomError {
+            val: format!("Reply id {} has no after handler", id),
+        }),
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> ContractResult<Binary> {
-    unimplemented!()
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::GetConfig => to_binary(&get_config(deps.storage)?),
+        QueryMsg::GetAllocations => to_binary(&get_allocations(deps, env)?),
+    }
 }
