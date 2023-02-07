@@ -32,11 +32,7 @@ pub fn query_quote_price(querier: QuerierWrapper, pair_address: Addr) -> Decimal
     book_response.quote[0].quote_price.into()
 }
 
-pub fn query_price(
-    querier: QuerierWrapper,
-    pair: Pair,
-    swap_amount: &Coin,
-) -> StdResult<Decimal256> {
+pub fn query_price(querier: QuerierWrapper, pair: Pair, swap_amount: &Coin) -> StdResult<Decimal> {
     if ![pair.base_denom.clone(), pair.quote_denom.clone()].contains(&swap_amount.denom) {
         return Err(StdError::generic_err(format!(
             "Provided swap denom {} not in pair {:?}",
@@ -108,7 +104,7 @@ pub fn query_price(
         )));
     }
 
-    Ok(Decimal::from_ratio(swap_amount.amount, received).into())
+    Ok(Decimal::from_ratio(swap_amount.amount, received))
 }
 
 pub fn query_order_details(
