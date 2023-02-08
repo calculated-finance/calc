@@ -20,7 +20,13 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     deps.api.addr_validate(&msg.admin.to_string())?;
 
-    update_config(deps.storage, Config { admin: msg.admin })?;
+    update_config(
+        deps.storage,
+        Config {
+            admin: msg.admin,
+            router_code_id: msg.router_code_id,
+        },
+    )?;
 
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
@@ -32,9 +38,16 @@ pub fn execute(
     _deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    _msg: ExecuteMsg,
+    msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    unimplemented!()
+    match msg {
+        ExecuteMsg::UpdateConfig {
+            admin,
+            router_code_id,
+        } => {
+            unimplemented!()
+        }
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

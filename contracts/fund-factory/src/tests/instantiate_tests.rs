@@ -16,6 +16,7 @@ fn with_valid_admin_should_succeed() {
 
     let msg = InstantiateMsg {
         admin: Addr::unchecked(ADMIN),
+        router_code_id: 0
     };
 
     let res = instantiate(deps.as_mut(), env, info, msg);
@@ -31,6 +32,7 @@ fn with_invalid_admin_should_fail() {
 
     let msg = InstantiateMsg {
         admin: Addr::unchecked(""),
+        router_code_id: 0
     };
 
     let res = instantiate(deps.as_mut(), env, info, msg);
