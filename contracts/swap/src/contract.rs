@@ -1,20 +1,26 @@
+use crate::{
+    errors::contract_error::ContractError,
+    handlers::{
+        add_path::add_path_handler,
+        continue_swap::continue_swap_handler,
+        create_swap::create_swap_handler,
+        send_funds::send_funds_handler,
+        swap_on_fin::{after_swap_on_fin_handler, swap_on_fin_handler},
+        update_config::update_config_handler,
+    },
+    msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg},
+    shared::helpers::get_swap_paths_with_price,
+    state::config::{get_config, update_config, Config},
+};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };
 use cw2::set_contract_version;
 
-use crate::{
-    errors::contract_error::ContractError,
-    handlers::{add_path::add_path_handler, update_config::update_config_handler},
-    msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg},
-    state::{
-        config::{get_config, update_config, Config},
-        paths::get_path,
-    },
-};
-
 pub const CONTRACT_NAME: &str = "crates.io:calc-swap";
 pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+pub type ContractResult<T> = core::result::Result<T, ContractError>;
 
 #[entry_point]
 pub fn migrate(_: DepsMut, _: Env, _: MigrateMsg) -> Result<Response, ContractError> {
@@ -27,7 +33,7 @@ pub fn instantiate(
     _env: Env,
     _info: MessageInfo,
     msg: InstantiateMsg,
-) -> Result<Response, ContractError> {
+) -> ContractResult<Response> {
     deps.api.addr_validate(&msg.admin.to_string())?;
 
     update_config(
@@ -48,15 +54,46 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    _: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> Result<Response, ContractError> {
+) -> ContractResult<Response> {
     match msg {
         ExecuteMsg::UpdateConfig { admin, paused } => {
             update_config_handler(deps, info, Config { admin, paused })
         }
-        ExecuteMsg::AddPath { denoms, pair } => add_path_handler(deps, denoms, pair),
+        ExecuteMsg::AddPath { pair } => add_path_handler(deps, info, pair),
+        ExecuteMsg::CreateSwap {
+            target_denom,
+            slippage_tolerance,
+            on_complete,
+        } => create_swap_handler(
+            deps,
+            env,
+            info,
+            target_denom,
+            slippage_tolerance,
+            on_complete,
+        ),
+        ExecuteMsg::ContinueSwap { swap_id } => continue_swap_handler(deps, info, swap_id),
+        ExecuteMsg::SwapOnFin {
+            pair,
+            slippage_tolerance,
+            callback,
+        } => swap_on_fin_handler(deps, &env, &info, pair, slippage_tolerance, callback),
+        ExecuteMsg::SendFunds { address } => send_funds_handler(info, address),
+    }
+}
+
+pub const AFTER_FIN_SWAP_REPLY_ID: u64 = 0;
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> ContractResult<Response> {
+    match reply.id {
+        AFTER_FIN_SWAP_REPLY_ID => after_swap_on_fin_handler(deps, env),
+        id => Err(ContractError::CustomError {
+            val: format!("Reply id {} has no after handler", id),
+        }),
     }
 }
 
@@ -64,6 +101,13 @@ pub fn execute(
 pub fn query(deps: Deps, _: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetConfig {} => to_binary(&get_config(deps.storage)?),
-        QueryMsg::GetPath { denoms } => to_binary(&get_path(deps.storage, denoms)?),
+        QueryMsg::GetPaths {
+            swap_amount,
+            target_denom,
+        } => to_binary(&get_swap_paths_with_price(
+            deps,
+            &swap_amount,
+            &target_denom,
+        )?),
     }
 }
