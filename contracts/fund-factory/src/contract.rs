@@ -3,9 +3,10 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
 
-use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::config::{update_config, Config};
+
+use base::ContractError;
 
 const CONTRACT_NAME: &str = "crates.io:fund-factory";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
