@@ -7,6 +7,7 @@ use cw2::set_contract_version;
 
 use crate::handlers::create_managed_fund::create_managed_fund;
 use crate::handlers::get_config::get_config_handler;
+use crate::handlers::get_managed_funds::get_managed_funds;
 use crate::handlers::save_fund_router_address::save_fund_router_address;
 use crate::handlers::update_config::update_config_handler;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -75,5 +76,8 @@ pub fn reply(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetConfig {} => to_binary(&get_config_handler(deps)?),
+        QueryMsg::GetManagedFundsByAddress { address } => {
+            to_binary(&get_managed_funds(deps, address)?)
+        }
     }
 }

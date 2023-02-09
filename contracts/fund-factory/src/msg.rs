@@ -27,9 +27,16 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(ConfigResponse)]
     GetConfig {},
+    #[returns(ManagedFundsResponse)]
+    GetManagedFundsByAddress { address: Addr },
 }
 
 #[cw_serde]
 pub struct ConfigResponse {
     pub config: Config,
+}
+
+#[cw_serde]
+pub struct ManagedFundsResponse {
+    pub managed_funds: Vec<Addr>,
 }

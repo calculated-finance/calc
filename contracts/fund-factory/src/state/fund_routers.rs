@@ -1,5 +1,7 @@
-use cosmwasm_std::{Addr, StdResult, Storage};
+use cosmwasm_std::{Addr, Order, StdResult, Storage};
 use cw_storage_plus::{Item, Map};
+
+use crate::msg::ManagedFundsResponse;
 
 use super::state_helpers::fetch_and_increment_counter;
 
@@ -15,4 +17,19 @@ pub fn save_fund_router(
     let id = fetch_and_increment_counter(storage, FUND_ROUTER_COUNTER)?;
     FUND_ROUTERS.save(storage, (owner.clone(), id), &owner)?;
     Ok(router_address)
+}
+
+pub fn get_fund_routers_by_address(
+    storage: &dyn Storage,
+    address: Addr,
+) -> StdResult<ManagedFundsResponse> {
+    let fund_routers: Vec<Addr> = FUND_ROUTERS
+        .prefix(address)
+        .range(storage, None, None, Order::Ascending)
+        .map(|fund_router| fund_router.expect("an id and fund router").1)
+        .collect();
+
+    Ok(ManagedFundsResponse {
+        managed_funds: fund_routers,
+    })
 }
