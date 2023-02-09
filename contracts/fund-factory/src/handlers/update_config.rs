@@ -23,6 +23,8 @@ pub fn update_config_handler(
 
     let config = update_config(deps.storage, config)?;
 
+    deps.api.addr_validate(&config.admin.to_string())?;
+
     Ok(Response::new()
         .add_attribute("method", "update_config")
         .add_attribute("router_code_id", config.router_code_id.to_string()))

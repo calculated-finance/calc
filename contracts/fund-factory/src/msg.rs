@@ -1,6 +1,8 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
+use crate::state::config::Config;
+
 #[cw_serde]
 pub struct InstantiateMsg {
     pub admin: Addr,
@@ -17,4 +19,12 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum QueryMsg {}
+pub enum QueryMsg {
+    #[returns(ConfigResponse)]
+    GetConfig {},
+}
+
+#[cw_serde]
+pub struct ConfigResponse {
+    pub config: Config,
+}

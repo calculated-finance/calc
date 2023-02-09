@@ -39,3 +39,19 @@ fn with_invalid_admin_should_fail() {
 
     assert!(res.is_err())
 }
+
+#[test]
+fn with_valid_code_id_should_succeed() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(ADMIN, &vec![]);
+
+    let msg = InstantiateMsg {
+        admin: Addr::unchecked(ADMIN),
+        router_code_id: 1,
+    };
+
+    let res = instantiate(deps.as_mut(), env, info, msg);
+
+    assert!(res.is_ok())
+}
