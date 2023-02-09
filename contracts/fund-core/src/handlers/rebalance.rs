@@ -1,5 +1,6 @@
 use crate::{
     contract::{ContractResult, AFTER_FAILED_SWAP_REPLY_ID},
+    shared::helpers::get_current_balance_values,
     state::get_config,
     types::failure_behaviour::FailureBehaviour,
     validation::{assert_allocations_sum_to_one, assert_sender_is_router},
@@ -9,18 +10,24 @@ use cosmwasm_std::{
     SubMsg, Uint128, WasmMsg,
 };
 use std::collections::{HashMap, VecDeque};
-use swapper::{msg::ExecuteMsg, shared::helpers::get_cheapest_swap_path};
+use swapper::msg::ExecuteMsg;
 
 pub fn rebalance_handler(
     deps: Deps,
     env: Env,
     info: MessageInfo,
-    new_allocations: &HashMap<String, Decimal>,
+    allocations: &Vec<(String, Decimal)>,
     slippage_tolerance: Option<Decimal256>,
     failure_behaviour: Option<FailureBehaviour>,
 ) -> ContractResult<Response> {
     assert_sender_is_router(deps, info.sender)?;
-    assert_allocations_sum_to_one(new_allocations)?;
+
+    let new_allocations = allocations
+        .iter()
+        .map(|(denom, allocation)| (denom.clone(), *allocation))
+        .collect::<HashMap<_, _>>();
+
+    assert_allocations_sum_to_one(&new_allocations)?;
 
     let current_balances = deps
         .querier
@@ -31,17 +38,7 @@ pub fn rebalance_handler(
 
     let config = get_config(deps.storage)?;
 
-    let current_balance_values = current_balances
-        .values()
-        .flat_map(|asset| {
-            get_cheapest_swap_path(deps, asset, &config.base_asset).map(|path| {
-                (
-                    asset.denom.clone(),
-                    asset.amount * (Decimal::one() / path.price),
-                )
-            })
-        })
-        .collect::<HashMap<_, _>>();
+    let current_balance_values = get_current_balance_values(deps, &current_balances)?;
 
     let total_fund_value = current_balance_values
         .iter()
@@ -58,72 +55,71 @@ pub fn rebalance_handler(
         })
         .collect::<HashMap<_, _>>();
 
-    let mut over_allocations = VecDeque::new();
-    let mut under_allocations = VecDeque::new();
+    let mut over_allocations = VecDeque::<(&String, Uint128)>::new();
+    let mut under_allocations = VecDeque::<(&String, Uint128)>::new();
 
     current_allocations
         .iter()
         .for_each(|(denom, current_allocation)| {
-            let new_allocation = new_allocations
-                .get(denom)
-                .expect(&format!("new allocation for {}", denom));
+            let new_allocation = if new_allocations.contains_key(denom) {
+                new_allocations[denom]
+            } else {
+                Decimal::zero()
+            };
 
             let allocation_delta_value =
-                (current_allocation).abs_diff(*new_allocation) * total_fund_value;
+                (current_allocation).abs_diff(new_allocation) * total_fund_value;
 
-            if current_allocation > new_allocation {
+            if current_allocation > &new_allocation {
                 over_allocations.push_front((denom, allocation_delta_value))
-            } else {
+            } else if current_allocation < &new_allocation {
                 under_allocations.push_front((denom, allocation_delta_value))
             }
         });
 
+    over_allocations
+        .make_contiguous()
+        .sort_by(|(_, allocation_a), (_, allocation_b)| allocation_a.cmp(allocation_b));
+
+    let oa = over_allocations.clone();
+    let ua = under_allocations.clone();
+
     let swap_messages = over_allocations
         .iter()
-        .map(|(swap_denom, over_allocation_value)| {
+        .map(|(swap_denom, mut over_allocation_value)| {
             let mut swap_messages = Vec::<SubMsg>::new();
 
-            let mut swap_denom_balance = current_balances
-                .get(*swap_denom)
-                .expect("swap denom balance")
-                .clone();
-
-            while swap_denom_balance.amount > Uint128::zero() && !under_allocations.is_empty() {
+            while over_allocation_value > Uint128::zero() && !under_allocations.is_empty() {
                 let (target_denom, under_allocation_value) = under_allocations
                     .pop_front()
                     .expect("next under allocation");
 
-                let value_to_be_swapped = if *over_allocation_value > under_allocation_value {
+                let value_to_be_swapped = if over_allocation_value > under_allocation_value {
                     under_allocation_value
                 } else {
-                    *over_allocation_value
+                    over_allocation_value
                 };
 
-                let total_value_of_swap_denom =
-                    current_balance_values.get(*swap_denom).expect(&format!(
-                        "total value of {} in terms of {}",
-                        swap_denom, config.base_asset
-                    ));
+                let total_value_of_swap_denom = current_balance_values[*swap_denom];
 
-                let current_balance_of_swap_denom = current_balances
-                    .get(*swap_denom)
-                    .expect(&format!("current balance of {}", swap_denom))
-                    .amount;
+                let current_balance_of_swap_denom = current_balances[*swap_denom].amount;
 
-                let swap_amount = Coin::new(
-                    (value_to_be_swapped / total_value_of_swap_denom
-                        * current_balance_of_swap_denom)
-                        .into(),
+                let portion_of_swap_denom_to_send =
+                    Decimal::from_ratio(value_to_be_swapped, total_value_of_swap_denom);
+
+                let mut swap_amount = Coin::new(
+                    (portion_of_swap_denom_to_send * current_balance_of_swap_denom).into(),
                     swap_denom.clone(),
                 );
 
-                if *over_allocation_value > under_allocation_value {
-                    swap_denom_balance.amount -= swap_amount.amount;
-                } else {
-                    swap_denom_balance.amount = Uint128::zero();
-                    under_allocations
-                        .push_front((target_denom, under_allocation_value - value_to_be_swapped));
-                };
+                if current_balance_of_swap_denom - swap_amount.amount < Uint128::new(50000) {
+                    swap_amount =
+                        Coin::new(current_balance_of_swap_denom.into(), swap_denom.clone());
+                }
+
+                if swap_amount.amount < Uint128::new(50000) {
+                    continue;
+                }
 
                 swap_messages.push(SubMsg {
                     id: AFTER_FAILED_SWAP_REPLY_ID,
@@ -146,6 +142,13 @@ pub fn rebalance_handler(
                         FailureBehaviour::Rollback => ReplyOn::Never,
                     },
                 });
+
+                over_allocation_value -= value_to_be_swapped;
+
+                if over_allocation_value == Uint128::zero() {
+                    under_allocations
+                        .push_front((target_denom, under_allocation_value - value_to_be_swapped));
+                }
             }
 
             swap_messages
@@ -153,7 +156,20 @@ pub fn rebalance_handler(
         .flatten()
         .collect::<Vec<SubMsg>>();
 
-    Ok(Response::new().add_submessages(swap_messages))
+    Ok(Response::new()
+        .add_submessages(swap_messages.clone())
+        .add_attribute("new_allocations", format!("{:?}", new_allocations))
+        .add_attribute("current_allocations", format!("{:?}", current_allocations))
+        .add_attribute("current_balances", format!("{:?}", current_balances))
+        .add_attribute(
+            "current_balance_values",
+            format!("{:?}", current_balance_values),
+        )
+        .add_attribute("has_failures", "false")
+        .add_attribute("total_fund_value", format!("{:?}", total_fund_value))
+        .add_attribute("over_allocations", format!("{:?}", oa))
+        .add_attribute("under_allocations", format!("{:?}", ua))
+        .add_attribute("swap_messages", format!("{:?}", swap_messages)))
 }
 
 pub fn after_failed_swap_handler() -> ContractResult<Response> {

@@ -22,6 +22,7 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
+base = { path = "../../packages/base" }
 cosmwasm-schema = "1.1.3"
 cosmwasm-std = "1.1.3"
 cosmwasm-storage = "1.1.3"
@@ -29,7 +30,7 @@ cw-storage-plus = "1.0.1"
 cw2 = "1.0.1"
 schemars = "0.8.10"
 serde = { version = "1.0.145", default-features = false, features = ["derive"] }
-swapper = { path = "../swapper" }
+swapper = { path = "../swapper", features = ["library"] }
 thiserror = { version = "1.0.31" }
 base = { path = "../../packages/base" }
 

@@ -4,7 +4,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { Context } from 'mocha';
 import { execute } from '../../shared/cosmwasm';
 import { Vault } from '../../types/dca/response/get_vaults';
-import { createVault, getBalances, getVaultLastUpdatedTime, isWithinFivePercent, provideAuthGrant } from '../helpers';
+import { createVault, getBalances, getVaultLastUpdatedTime, isWithinPercent, provideAuthGrant } from '../helpers';
 import { setTimeout } from 'timers/promises';
 import { EventData } from '../../types/dca/response/get_events';
 import { find, map } from 'ramda';

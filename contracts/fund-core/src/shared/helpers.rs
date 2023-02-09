@@ -1,11 +1,10 @@
 use crate::state::get_config;
-use cosmwasm_std::{Decimal, Deps, Env, StdResult, Uint128};
+use base::price_type::PriceType;
+use cosmwasm_std::{Coin, Decimal, Deps, Env, StdResult, Uint128};
 use std::collections::HashMap;
-use swapper::shared::helpers::get_cheapest_swap_path;
+use swapper::msg::QueryMsg;
 
-pub fn get_allocations(deps: Deps, env: Env) -> StdResult<HashMap<String, Decimal>> {
-    let config = get_config(deps.storage)?;
-
+pub fn get_allocations(deps: Deps, env: Env) -> StdResult<Vec<(String, Decimal)>> {
     let current_balances = deps
         .querier
         .query_all_balances(env.contract.address)?
@@ -13,17 +12,7 @@ pub fn get_allocations(deps: Deps, env: Env) -> StdResult<HashMap<String, Decima
         .map(|coin| (coin.denom.clone(), coin))
         .collect::<HashMap<_, _>>();
 
-    let current_balance_values = current_balances
-        .values()
-        .flat_map(|asset| {
-            get_cheapest_swap_path(deps, asset, &config.base_asset).map(|path| {
-                (
-                    asset.denom.clone(),
-                    asset.amount * (Decimal::one() / path.price),
-                )
-            })
-        })
-        .collect::<HashMap<_, _>>();
+    let current_balance_values = get_current_balance_values(deps, &current_balances)?;
 
     let total_fund_value = current_balance_values
         .iter()
@@ -37,6 +26,37 @@ pub fn get_allocations(deps: Deps, env: Env) -> StdResult<HashMap<String, Decima
                 denom.clone(),
                 Decimal::from_ratio(*denom_value, total_fund_value),
             )
+        })
+        .collect::<Vec<_>>())
+}
+
+pub fn get_current_balance_values(
+    deps: Deps,
+    current_balances: &HashMap<String, Coin>,
+) -> StdResult<HashMap<String, Uint128>> {
+    let config = get_config(deps.storage)?;
+
+    Ok(current_balances
+        .values()
+        .map(|asset| {
+            let price: Decimal = deps
+                .querier
+                .query_wasm_smart(
+                    config.swapper.clone(),
+                    &QueryMsg::GetPrice {
+                        swap_amount: asset.clone(),
+                        target_denom: config.base_asset.clone(),
+                        price_type: PriceType::Belief,
+                    },
+                )
+                .expect(&format!(
+                    "price for swapping {:?} into {}",
+                    asset, config.base_asset
+                ));
+
+            let asset_value_in_terms_of_base_denom = asset.amount * (Decimal::one() / price);
+
+            (asset.denom.clone(), asset_value_in_terms_of_base_denom)
         })
         .collect::<HashMap<_, _>>())
 }

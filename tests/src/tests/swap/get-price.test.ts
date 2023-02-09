@@ -5,7 +5,7 @@ import { execute } from '../../shared/cosmwasm';
 import { instantiateFinPairContract, instantiateSwapContract } from '../hooks';
 import { expect } from '../shared.test';
 
-describe('when fetching paths', () => {
+describe('when fetching prices', () => {
   let finPairAddress: string;
   let swapContractAddress: string;
   let baseDenom = 'ukuji';
@@ -40,31 +40,25 @@ describe('when fetching paths', () => {
     });
   });
 
-  it('returns a path with an accurate quote price', async function (this: Context) {
-    const paths = await this.cosmWasmClient.queryContractSmart(swapContractAddress, {
-      get_paths: {
+  it('returns an accurate quote price', async function (this: Context) {
+    const price = await this.cosmWasmClient.queryContractSmart(swapContractAddress, {
+      get_price: {
         swap_amount: coin(300, quoteDenom),
         target_denom: baseDenom,
       },
     });
 
-    expect(paths[0].price).to.equal(`${300 / (200 / 2 + 100 / 4)}`);
-    expect(paths[0].pairs).to.deep.equal([
-      { fin: { address: finPairAddress, base_denom: baseDenom, quote_denom: quoteDenom } },
-    ]);
+    expect(price).to.equal(`${300 / (200 / 2 + 100 / 4)}`);
   });
 
-  it('returns a path with an accurate base price', async function (this: Context) {
-    const paths = await this.cosmWasmClient.queryContractSmart(swapContractAddress, {
-      get_paths: {
+  it('returns an accurate base price', async function (this: Context) {
+    const price = await this.cosmWasmClient.queryContractSmart(swapContractAddress, {
+      get_price: {
         swap_amount: coin(300, baseDenom),
         target_denom: quoteDenom,
       },
     });
 
-    expect(paths[0].price).to.equal(`${300 / (200 / 2 + 100 / 4)}`);
-    expect(paths[0].pairs).to.deep.equal([
-      { fin: { address: finPairAddress, base_denom: baseDenom, quote_denom: quoteDenom } },
-    ]);
+    expect(price).to.equal(`${300 / (200 / 2 + 100 / 4)}`);
   });
 });

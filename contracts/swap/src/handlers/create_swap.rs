@@ -4,9 +4,9 @@ use crate::{
     shared::helpers::get_cheapest_swap_path,
     state::swap_messages::{get_next_swap_id, save_swap_messages},
     types::{callback::Callback, pair::Pair},
-    validation::assert_exactly_one_asset,
+    validation::{assert_exactly_one_asset, assert_swap_amount_is_greater_than_50000},
 };
-use base::pair::Pair as FinPair;
+use base::{pair::Pair as FinPair, price_type::PriceType};
 use cosmwasm_std::{
     to_binary, Binary, CosmosMsg, Decimal256, DepsMut, Env, MessageInfo, Response, StdResult,
     WasmMsg,
@@ -22,8 +22,14 @@ pub fn create_swap_handler(
     on_complete: Option<Callback>,
 ) -> ContractResult<Response> {
     assert_exactly_one_asset(&info.funds)?;
+    assert_swap_amount_is_greater_than_50000(info.funds[0].amount)?;
 
-    let cheapest_swap_path = get_cheapest_swap_path(deps.as_ref(), &info.funds[0], &target_denom)?;
+    let cheapest_swap_path = get_cheapest_swap_path(
+        deps.as_ref(),
+        &info.funds[0],
+        &target_denom,
+        PriceType::Actual,
+    )?;
 
     let swap_id = get_next_swap_id(deps.storage)?;
     let on_continue = to_binary(&ExecuteMsg::ContinueSwap { swap_id })?;

@@ -75,7 +75,9 @@ pub fn reply(_deps: DepsMut, _env: Env, reply: Reply) -> ContractResult<Response
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetConfig => to_binary(&get_config(deps.storage)?),
-        QueryMsg::GetAllocations => to_binary(&get_allocations(deps, env)?),
+        QueryMsg::GetConfig {} => to_binary(&get_config(deps.storage)?),
+        QueryMsg::GetAllocations {} => to_binary(&AllocationsResponse {
+            allocations: get_allocations(deps, env)?,
+        }),
     }
 }
