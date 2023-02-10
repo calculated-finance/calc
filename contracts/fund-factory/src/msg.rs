@@ -28,7 +28,7 @@ pub enum QueryMsg {
     #[returns(ConfigResponse)]
     GetConfig {},
     #[returns(FundRoutersResponse)]
-    GetFundRouters { address: Addr },
+    GetFundRouters { owner: Addr },
 }
 
 #[cw_serde]

@@ -76,8 +76,8 @@ pub fn reply(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetConfig {} => to_binary(&get_config_handler(deps)?),
-        QueryMsg::GetFundRouters { address } => {
-            to_binary(&get_fund_routers_by_address_handler(deps, address)?)
+        QueryMsg::GetFundRouters { owner } => {
+            to_binary(&get_fund_routers_by_address_handler(deps, owner)?)
         }
     }
 }

@@ -42,7 +42,7 @@ fn saves_fund_router_address() {
     .unwrap();
 
     let get_managed_funds_by_address_msg = QueryMsg::GetFundRouters {
-        address: Addr::unchecked(USER),
+        owner: Addr::unchecked(USER),
     };
 
     let binary = query(
@@ -99,7 +99,7 @@ fn saves_multiple_fund_router_addresses() {
     .unwrap();
 
     let get_managed_funds_by_address_msg = QueryMsg::GetFundRouters {
-        address: Addr::unchecked(USER),
+        owner: Addr::unchecked(USER),
     };
 
     let binary = query(
