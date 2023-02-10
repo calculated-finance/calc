@@ -53,7 +53,7 @@ pub fn save_fund_router_handler(deps: DepsMut, reply: Reply) -> Result<Response,
     );
 
     Ok(Response::new()
-        .add_attribute("method", "save_fund_router_address")
+        .add_attribute("method", "save_fund_router_handler")
         .add_attribute("fund_router_address", fund_router_address)
         .add_submessage(fund_core_instantiate_msg))
 }
