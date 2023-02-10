@@ -39,6 +39,10 @@ pub fn get_current_balance_values(
     Ok(current_balances
         .values()
         .map(|asset| {
+            if asset.denom == config.base_asset {
+                return (asset.denom.clone(), asset.amount);
+            }
+
             let price: Decimal = deps
                 .querier
                 .query_wasm_smart(

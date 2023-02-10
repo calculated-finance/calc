@@ -1,12 +1,12 @@
 import { coin } from '@cosmjs/proto-signing';
 import { Context } from 'mocha';
-import { keys, length, map, omit, reduce, toPairs, values, forEach } from 'ramda';
+import { keys, map, omit, reduce, toPairs, values, forEach } from 'ramda';
 import { execute } from '../../shared/cosmwasm';
 import { getBalances, isWithinPercent, sendTokens } from '../helpers';
 import { instantiateFinPairContract, instantiateSwapContract, instantiateFundCoreContract } from '../hooks';
 import { expect } from '../shared.test';
 
-describe.only('when rebalancing a fund', () => {
+describe.only('when rebalancing a fund with all the same assets', () => {
   let fundContractAddress: string;
   let swapperContractAddress: string;
   let balancesAfterExecution: Record<string, Record<string, number>>;
@@ -74,10 +74,10 @@ describe.only('when rebalancing a fund', () => {
       this.cosmWasmClient,
       this.adminContractAddress,
       fundContractAddress,
-      map((denom) => coin(originalFundTokens / length(keys(originalAllocations)), denom), keys(originalAllocations)),
+      map(([denom, allocation]) => coin(originalFundTokens * allocation, denom), toPairs(originalAllocations)),
     );
 
-    const response = await execute(this.cosmWasmClient, this.adminContractAddress, fundContractAddress, {
+    await execute(this.cosmWasmClient, this.adminContractAddress, fundContractAddress, {
       rebalance: {
         allocations: map(([denom, allocation]) => [denom, `${allocation}`], toPairs(newAllocations)),
         slippage_tolerance: null,
@@ -85,18 +85,14 @@ describe.only('when rebalancing a fund', () => {
       },
     });
 
-    console.log(response);
-
     balancesAfterExecution = await getBalances(this.cosmWasmClient, [fundContractAddress], keys(newAllocations));
   });
 
   it('rebalances the fund correctly', async function (this: Context) {
-    const newFundBalances = balancesAfterExecution[fundContractAddress];
-    const totalFundBalance = reduce((acc, amount) => acc + amount, 0, values(omit(['address'], newFundBalances)));
-
+    const newFundBalances = omit(['address'], balancesAfterExecution[fundContractAddress]);
+    const totalFundBalance = reduce((acc, amount) => acc + amount, 0, values(newFundBalances));
     forEach(([denom, allocation]) => {
-      expect(isWithinPercent(newFundBalances[denom], totalFundBalance * allocation, 2) || newFundBalances[denom] == 0)
-        .to.be.true;
+      expect(isWithinPercent(totalFundBalance, newFundBalances[denom], totalFundBalance * allocation, 2)).to.be.true;
     }, toPairs(newAllocations));
   });
 });

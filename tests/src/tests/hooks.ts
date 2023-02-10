@@ -83,7 +83,6 @@ export const mochaHooks = async (): Promise<Mocha.RootHookObject> => {
         validatorAddress,
       };
 
-      console.log('Test context:\n', context);
       Object.assign(this, context);
     },
   };

@@ -142,5 +142,5 @@ export const sendTokens = async (
   }
 };
 
-export const isWithinPercent = (value: number, expected: number, percent: number) =>
-  Math.abs(value - expected) <= expected * (percent / 100);
+export const isWithinPercent = (total: number, actual: number, expected: number, percent: number) =>
+  Math.abs(actual / total - expected / total) * 100 <= percent;

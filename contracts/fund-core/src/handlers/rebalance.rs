@@ -77,12 +77,17 @@ pub fn rebalance_handler(
             }
         });
 
-    over_allocations
-        .make_contiguous()
-        .sort_by(|(_, allocation_a), (_, allocation_b)| allocation_a.cmp(allocation_b));
+    new_allocations.iter().for_each(|(denom, new_allocation)| {
+        if !current_allocations.contains_key(denom) {
+            under_allocations.push_front((denom, *new_allocation * total_fund_value))
+        }
+    });
 
-    let oa = over_allocations.clone();
-    let ua = under_allocations.clone();
+    over_allocations.make_contiguous().sort_by(
+        |(_, allocation_value_a), (_, allocation_value_b)| {
+            allocation_value_b.cmp(allocation_value_a)
+        },
+    );
 
     let swap_messages = over_allocations
         .iter()
@@ -107,19 +112,10 @@ pub fn rebalance_handler(
                 let portion_of_swap_denom_to_send =
                     Decimal::from_ratio(value_to_be_swapped, total_value_of_swap_denom);
 
-                let mut swap_amount = Coin::new(
+                let swap_amount = Coin::new(
                     (portion_of_swap_denom_to_send * current_balance_of_swap_denom).into(),
                     swap_denom.clone(),
                 );
-
-                if current_balance_of_swap_denom - swap_amount.amount < Uint128::new(50000) {
-                    swap_amount =
-                        Coin::new(current_balance_of_swap_denom.into(), swap_denom.clone());
-                }
-
-                if swap_amount.amount < Uint128::new(50000) {
-                    continue;
-                }
 
                 swap_messages.push(SubMsg {
                     id: AFTER_FAILED_SWAP_REPLY_ID,
@@ -131,14 +127,14 @@ pub fn rebalance_handler(
                             on_complete: None,
                         })
                         .expect("message binary"),
-                        funds: vec![swap_amount],
+                        funds: vec![swap_amount.clone()],
                     }),
                     gas_limit: None,
                     reply_on: match failure_behaviour
                         .as_ref()
-                        .unwrap_or(&FailureBehaviour::BestEffort)
+                        .unwrap_or(&FailureBehaviour::Continue)
                     {
-                        FailureBehaviour::BestEffort => ReplyOn::Error,
+                        FailureBehaviour::Continue => ReplyOn::Error,
                         FailureBehaviour::Rollback => ReplyOn::Never,
                     },
                 });
@@ -160,6 +156,8 @@ pub fn rebalance_handler(
         .add_submessages(swap_messages.clone())
         .add_attribute("new_allocations", format!("{:?}", new_allocations))
         .add_attribute("current_allocations", format!("{:?}", current_allocations))
+        .add_attribute("over_allocations", format!("{:?}", over_allocations))
+        .add_attribute("under_allocations", format!("{:?}", under_allocations))
         .add_attribute("current_balances", format!("{:?}", current_balances))
         .add_attribute(
             "current_balance_values",
@@ -167,8 +165,6 @@ pub fn rebalance_handler(
         )
         .add_attribute("has_failures", "false")
         .add_attribute("total_fund_value", format!("{:?}", total_fund_value))
-        .add_attribute("over_allocations", format!("{:?}", oa))
-        .add_attribute("under_allocations", format!("{:?}", ua))
         .add_attribute("swap_messages", format!("{:?}", swap_messages)))
 }
 
