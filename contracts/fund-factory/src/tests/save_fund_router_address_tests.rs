@@ -25,6 +25,7 @@ fn saves_fund_router_address() {
             mock_deps.as_mut().storage,
             &Cache {
                 owner: Addr::unchecked(USER),
+                fund_router_address: None,
             },
         )
         .unwrap();
@@ -70,6 +71,7 @@ fn saves_multiple_fund_router_addresses() {
             mock_deps.as_mut().storage,
             &Cache {
                 owner: Addr::unchecked(USER),
+                fund_router_address: None,
             },
         )
         .unwrap();

@@ -5,6 +5,7 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 
+use crate::handlers::assign_fund_core_to_fund_router::assign_fund_core_to_fund_router;
 use crate::handlers::create_managed_fund::create_managed_fund;
 use crate::handlers::get_config::get_config_handler;
 use crate::handlers::get_managed_funds::get_managed_funds;
@@ -61,11 +62,13 @@ pub fn execute(
 }
 
 pub const AFTER_INSTANTIATE_FUND_ROUTER_REPLY_ID: u64 = 1;
+pub const AFTER_INSTANTIATE_FUND_CORE_REPLY_ID: u64 = 2;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
     match reply.id {
         AFTER_INSTANTIATE_FUND_ROUTER_REPLY_ID => save_fund_router_address(deps, reply),
+        AFTER_INSTANTIATE_FUND_CORE_REPLY_ID => assign_fund_core_to_fund_router(deps, reply),
         id => Err(ContractError::CustomError {
             val: format!("unknown reply id: {}", id),
         }),

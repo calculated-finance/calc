@@ -622,6 +622,7 @@ dependencies = [
 name = "fund-router"
 version = "0.1.0"
 dependencies = [
+ "base",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",

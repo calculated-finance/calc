@@ -26,7 +26,13 @@ pub fn create_managed_fund(
         AFTER_INSTANTIATE_FUND_ROUTER_REPLY_ID,
     );
 
-    CACHE.save(deps.storage, &Cache { owner: info.sender })?;
+    CACHE.save(
+        deps.storage,
+        &Cache {
+            owner: info.sender,
+            fund_router_address: None,
+        },
+    )?;
 
     Ok(Response::new()
         .add_attribute("method", "create_managed_fund")
