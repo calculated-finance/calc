@@ -10,7 +10,7 @@ use cosmwasm_std::{
     SubMsg, Uint128, WasmMsg,
 };
 use std::collections::{HashMap, VecDeque};
-use swapper::msg::ExecuteMsg;
+use swap::msg::ExecuteMsg;
 
 pub fn rebalance_handler(
     deps: Deps,
@@ -120,7 +120,7 @@ pub fn rebalance_handler(
                 swap_messages.push(SubMsg {
                     id: AFTER_FAILED_SWAP_REPLY_ID,
                     msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                        contract_addr: config.swapper.to_string(),
+                        contract_addr: config.swap.to_string(),
                         msg: to_binary(&ExecuteMsg::CreateSwap {
                             target_denom: target_denom.clone(),
                             slippage_tolerance,
@@ -152,20 +152,7 @@ pub fn rebalance_handler(
         .flatten()
         .collect::<Vec<SubMsg>>();
 
-    Ok(Response::new()
-        .add_submessages(swap_messages.clone())
-        .add_attribute("new_allocations", format!("{:?}", new_allocations))
-        .add_attribute("current_allocations", format!("{:?}", current_allocations))
-        .add_attribute("over_allocations", format!("{:?}", over_allocations))
-        .add_attribute("under_allocations", format!("{:?}", under_allocations))
-        .add_attribute("current_balances", format!("{:?}", current_balances))
-        .add_attribute(
-            "current_balance_values",
-            format!("{:?}", current_balance_values),
-        )
-        .add_attribute("has_failures", "false")
-        .add_attribute("total_fund_value", format!("{:?}", total_fund_value))
-        .add_attribute("swap_messages", format!("{:?}", swap_messages)))
+    Ok(Response::new().add_submessages(swap_messages.clone()))
 }
 
 pub fn after_failed_swap_handler() -> ContractResult<Response> {

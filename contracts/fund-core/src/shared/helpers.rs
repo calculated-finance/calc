@@ -2,7 +2,7 @@ use crate::state::get_config;
 use base::price_type::PriceType;
 use cosmwasm_std::{Coin, Decimal, Deps, Env, StdResult, Uint128};
 use std::collections::HashMap;
-use swapper::msg::QueryMsg;
+use swap::msg::QueryMsg;
 
 pub fn get_allocations(deps: Deps, env: Env) -> StdResult<Vec<(String, Decimal)>> {
     let current_balances = deps
@@ -46,7 +46,7 @@ pub fn get_current_balance_values(
             let price: Decimal = deps
                 .querier
                 .query_wasm_smart(
-                    config.swapper.clone(),
+                    config.swap.clone(),
                     &QueryMsg::GetPrice {
                         swap_amount: asset.clone(),
                         target_denom: config.base_asset.clone(),

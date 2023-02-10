@@ -4,7 +4,7 @@ use crate::{
     shared::helpers::get_cheapest_swap_path,
     state::swap_messages::{get_next_swap_id, save_swap_messages},
     types::{callback::Callback, pair::Pair},
-    validation::{assert_exactly_one_asset, assert_swap_amount_is_greater_than_50000},
+    validation::assert_exactly_one_asset,
 };
 use base::{pair::Pair as FinPair, price_type::PriceType};
 use cosmwasm_std::{
@@ -22,7 +22,6 @@ pub fn create_swap_handler(
     on_complete: Option<Callback>,
 ) -> ContractResult<Response> {
     assert_exactly_one_asset(&info.funds)?;
-    assert_swap_amount_is_greater_than_50000(info.funds[0].amount)?;
 
     let cheapest_swap_path = get_cheapest_swap_path(
         deps.as_ref(),

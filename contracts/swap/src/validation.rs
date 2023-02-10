@@ -26,12 +26,3 @@ pub fn assert_exactly_one_asset(funds: &Vec<Coin>) -> ContractResult<()> {
     }
     Ok(())
 }
-
-pub fn assert_swap_amount_is_greater_than_50000(swap_amount: Uint128) -> Result<(), ContractError> {
-    if swap_amount <= Uint128::from(50000u128) {
-        return Err(ContractError::CustomError {
-            val: String::from("swap amount must be greater than 50000"),
-        });
-    }
-    Ok(())
-}

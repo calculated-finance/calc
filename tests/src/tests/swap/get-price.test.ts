@@ -40,25 +40,51 @@ describe('when fetching prices', () => {
     });
   });
 
-  it('returns an accurate quote price', async function (this: Context) {
+  it('returns an actual quote price', async function (this: Context) {
     const price = await this.cosmWasmClient.queryContractSmart(swapContractAddress, {
       get_price: {
         swap_amount: coin(300, quoteDenom),
         target_denom: baseDenom,
+        price_type: 'actual',
       },
     });
 
     expect(price).to.equal(`${300 / (200 / 2 + 100 / 4)}`);
   });
 
-  it('returns an accurate base price', async function (this: Context) {
+  it('returns a belief quote price', async function (this: Context) {
+    const price = await this.cosmWasmClient.queryContractSmart(swapContractAddress, {
+      get_price: {
+        swap_amount: coin(300, quoteDenom),
+        target_denom: baseDenom,
+        price_type: 'belief',
+      },
+    });
+
+    expect(price).to.equal(`${300 / (300 / 2)}`);
+  });
+
+  it('returns an actual base price', async function (this: Context) {
     const price = await this.cosmWasmClient.queryContractSmart(swapContractAddress, {
       get_price: {
         swap_amount: coin(300, baseDenom),
         target_denom: quoteDenom,
+        price_type: 'actual',
       },
     });
 
     expect(price).to.equal(`${300 / (200 / 2 + 100 / 4)}`);
+  });
+
+  it('returns an belief base price', async function (this: Context) {
+    const price = await this.cosmWasmClient.queryContractSmart(swapContractAddress, {
+      get_price: {
+        swap_amount: coin(300, baseDenom),
+        target_denom: quoteDenom,
+        price_type: 'belief',
+      },
+    });
+
+    expect(price).to.equal(`${300 / (300 / 2)}`);
   });
 });

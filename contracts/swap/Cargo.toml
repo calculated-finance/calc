@@ -1,5 +1,5 @@
 [package]
-name = "swapper"
+name = "swap"
 version = "0.1.0"
 authors = ["James Gaddum <james@calculated.fi>"]
 edition = "2021"
