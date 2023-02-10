@@ -12,7 +12,7 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    CreateManagedFund {
+    CreateFundRouter {
         token_name: String,
     },
     UpdateConfig {
@@ -27,8 +27,8 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(ConfigResponse)]
     GetConfig {},
-    #[returns(ManagedFundsResponse)]
-    GetManagedFundsByAddress { address: Addr },
+    #[returns(FundRoutersResponse)]
+    GetFundRouters { owner: Addr },
 }
 
 #[cw_serde]
@@ -37,6 +37,6 @@ pub struct ConfigResponse {
 }
 
 #[cw_serde]
-pub struct ManagedFundsResponse {
-    pub managed_funds: Vec<Addr>,
+pub struct FundRoutersResponse {
+    pub fund_routers: Vec<Addr>,
 }

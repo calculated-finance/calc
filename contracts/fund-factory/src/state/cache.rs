@@ -8,4 +8,4 @@ pub struct Cache {
     pub fund_router_address: Option<Addr>,
 }
 
-pub const CACHE: Item<Cache> = Item::new("cache_v20");
+pub const CACHE: Item<Cache> = Item::new("cache_v1");
