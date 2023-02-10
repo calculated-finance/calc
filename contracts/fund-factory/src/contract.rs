@@ -5,9 +5,9 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 
-use crate::handlers::create_managed_fund::create_managed_fund;
+use crate::handlers::create_fund_router::create_fund_router;
 use crate::handlers::get_config::get_config_handler;
-use crate::handlers::get_managed_funds::get_managed_funds;
+use crate::handlers::get_fund_routers_by_address::get_fund_routers_by_address_handler;
 use crate::handlers::save_fund_router_address::save_fund_router_address;
 use crate::handlers::update_config::update_config_handler;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -50,7 +50,7 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::CreateManagedFund { token_name } => {
-            create_managed_fund(deps, env, info, token_name)
+            create_fund_router(deps, env, info, token_name)
         }
         ExecuteMsg::UpdateConfig {
             admin,
@@ -76,8 +76,8 @@ pub fn reply(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetConfig {} => to_binary(&get_config_handler(deps)?),
-        QueryMsg::GetManagedFundsByAddress { address } => {
-            to_binary(&get_managed_funds(deps, address)?)
+        QueryMsg::GetFundRouters { address } => {
+            to_binary(&get_fund_routers_by_address_handler(deps, address)?)
         }
     }
 }

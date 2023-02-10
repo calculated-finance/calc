@@ -5,7 +5,7 @@ use cosmwasm_std::WasmMsg::Instantiate as WasmInstantiate;
 use cosmwasm_std::{to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, SubMsg};
 use fund_router::msg::InstantiateMsg as RouterInstantiateMsg;
 
-pub fn create_managed_fund(
+pub fn create_fund_router(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,

@@ -7,7 +7,7 @@ use cosmwasm_std::{
 use crate::{
     contract::{query, AFTER_INSTANTIATE_FUND_ROUTER_REPLY_ID},
     handlers::save_fund_router_address::save_fund_router_address,
-    msg::{ManagedFundsResponse, QueryMsg},
+    msg::{FundRoutersResponse, QueryMsg},
     state::cache::{Cache, CACHE},
     tests::helpers::{instantiate_contract, USER},
 };
@@ -41,7 +41,7 @@ fn saves_fund_router_address() {
     )
     .unwrap();
 
-    let get_managed_funds_by_address_msg = QueryMsg::GetManagedFundsByAddress {
+    let get_managed_funds_by_address_msg = QueryMsg::GetFundRouters {
         address: Addr::unchecked(USER),
     };
 
@@ -52,9 +52,9 @@ fn saves_fund_router_address() {
     )
     .unwrap();
 
-    let res: ManagedFundsResponse = from_binary(&binary).unwrap();
+    let res: FundRoutersResponse = from_binary(&binary).unwrap();
 
-    assert_eq!(res.managed_funds[0], Addr::unchecked("test"));
+    assert_eq!(res.fund_routers[0], Addr::unchecked("test"));
 }
 
 #[test]
@@ -98,7 +98,7 @@ fn saves_multiple_fund_router_addresses() {
     )
     .unwrap();
 
-    let get_managed_funds_by_address_msg = QueryMsg::GetManagedFundsByAddress {
+    let get_managed_funds_by_address_msg = QueryMsg::GetFundRouters {
         address: Addr::unchecked(USER),
     };
 
@@ -109,8 +109,8 @@ fn saves_multiple_fund_router_addresses() {
     )
     .unwrap();
 
-    let res: ManagedFundsResponse = from_binary(&binary).unwrap();
+    let res: FundRoutersResponse = from_binary(&binary).unwrap();
 
-    assert_eq!(res.managed_funds[0], Addr::unchecked("test"));
-    assert_eq!(res.managed_funds[1], Addr::unchecked("test2"));
+    assert_eq!(res.fund_routers[0], Addr::unchecked("test"));
+    assert_eq!(res.fund_routers[1], Addr::unchecked("test2"));
 }
