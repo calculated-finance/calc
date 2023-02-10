@@ -21,6 +21,6 @@ pub fn get_fund_routers_by_address(storage: &dyn Storage, address: Addr) -> StdR
     Ok(FUND_ROUTERS
         .prefix(address)
         .range(storage, None, None, Order::Ascending)
-        .map(|fund_router| fund_router.expect("an id and fund router").1)
+        .flat_map(|fund_router| fund_router.map(|(_id, fund_router)| fund_router))
         .collect::<Vec<Addr>>())
 }
