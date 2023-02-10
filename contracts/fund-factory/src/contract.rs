@@ -65,7 +65,7 @@ pub const AFTER_INSTANTIATE_FUND_ROUTER_REPLY_ID: u64 = 1;
 pub const AFTER_INSTANTIATE_FUND_CORE_REPLY_ID: u64 = 2;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
+pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
     match reply.id {
         AFTER_INSTANTIATE_FUND_ROUTER_REPLY_ID => save_fund_router_handler(deps, reply),
         AFTER_INSTANTIATE_FUND_CORE_REPLY_ID => assign_fund_core_to_fund_router(deps, reply),
