@@ -18,7 +18,7 @@ pub fn create_fund_router(
             admin: None,
             label: format!("CALC-MF-ROUTER"),
             code_id: config.fund_router_code_id,
-            funds: vec![],
+            funds: vec![info.funds[0].clone()],
             msg: to_binary(&RouterInstantiateMsg {
                 token_name: token_name.clone(),
             })?,
