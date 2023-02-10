@@ -6,7 +6,7 @@ use cosmwasm_std::{
 
 use crate::{
     contract::{query, AFTER_INSTANTIATE_FUND_ROUTER_REPLY_ID},
-    handlers::save_fund_router_address::save_fund_router_address,
+    handlers::save_fund_router::save_fund_router_handler,
     msg::{FundRoutersResponse, QueryMsg},
     state::cache::{Cache, CACHE},
     tests::helpers::{instantiate_contract, USER},
@@ -30,7 +30,7 @@ fn saves_fund_router_address() {
         )
         .unwrap();
 
-    save_fund_router_address(
+    save_fund_router_handler(
         mock_deps.as_mut(),
         Reply {
             id: AFTER_INSTANTIATE_FUND_ROUTER_REPLY_ID,
@@ -76,7 +76,7 @@ fn saves_multiple_fund_router_addresses() {
         )
         .unwrap();
 
-    save_fund_router_address(
+    save_fund_router_handler(
         mock_deps.as_mut(),
         Reply {
             id: AFTER_INSTANTIATE_FUND_ROUTER_REPLY_ID,
@@ -88,7 +88,7 @@ fn saves_multiple_fund_router_addresses() {
     )
     .unwrap();
 
-    save_fund_router_address(
+    save_fund_router_handler(
         mock_deps.as_mut(),
         Reply {
             id: AFTER_INSTANTIATE_FUND_ROUTER_REPLY_ID,

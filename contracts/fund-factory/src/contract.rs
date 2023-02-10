@@ -9,7 +9,7 @@ use crate::handlers::assign_fund_core_to_fund_router::assign_fund_core_to_fund_r
 use crate::handlers::create_fund_router::create_fund_router;
 use crate::handlers::get_config::get_config_handler;
 use crate::handlers::get_fund_routers_by_address::get_fund_routers_by_address_handler;
-use crate::handlers::save_fund_router_address::save_fund_router_address;
+use crate::handlers::save_fund_router::save_fund_router_handler;
 use crate::handlers::update_config::update_config_handler;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::config::{update_config, Config};
@@ -67,7 +67,7 @@ pub const AFTER_INSTANTIATE_FUND_CORE_REPLY_ID: u64 = 2;
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
     match reply.id {
-        AFTER_INSTANTIATE_FUND_ROUTER_REPLY_ID => save_fund_router_address(deps, reply),
+        AFTER_INSTANTIATE_FUND_ROUTER_REPLY_ID => save_fund_router_handler(deps, reply),
         AFTER_INSTANTIATE_FUND_CORE_REPLY_ID => assign_fund_core_to_fund_router(deps, reply),
         id => Err(ContractError::CustomError {
             val: format!("unknown reply id: {}", id),

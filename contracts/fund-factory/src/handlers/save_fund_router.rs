@@ -14,7 +14,7 @@ use crate::{
 };
 use fund_core::msg::InstantiateMsg as CoreInstantiateMsg;
 
-pub fn save_fund_router_address(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
+pub fn save_fund_router_handler(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
     let cache = CACHE.load(deps.storage)?;
 
     let instantiate_fund_router_response = reply.result.unwrap();
