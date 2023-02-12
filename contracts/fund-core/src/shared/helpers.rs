@@ -4,32 +4,6 @@ use cosmwasm_std::{Coin, Decimal, Deps, Env, StdResult, Uint128};
 use std::collections::HashMap;
 use swap::msg::QueryMsg;
 
-pub fn get_allocations(deps: Deps, env: Env) -> StdResult<Vec<(String, Decimal)>> {
-    let current_balances = deps
-        .querier
-        .query_all_balances(env.contract.address)?
-        .into_iter()
-        .map(|coin| (coin.denom.clone(), coin))
-        .collect::<HashMap<_, _>>();
-
-    let current_balance_values = get_current_balance_values(deps, &current_balances)?;
-
-    let total_fund_value = current_balance_values
-        .iter()
-        .map(|(_, denom_value)| denom_value)
-        .sum::<Uint128>();
-
-    Ok(current_balance_values
-        .iter()
-        .map(|(denom, denom_value)| {
-            (
-                denom.clone(),
-                Decimal::from_ratio(*denom_value, total_fund_value),
-            )
-        })
-        .collect::<Vec<_>>())
-}
-
 pub fn get_current_balance_values(
     deps: Deps,
     current_balances: &HashMap<String, Coin>,

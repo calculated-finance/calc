@@ -22,11 +22,4 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(Config)]
     GetConfig {},
-    #[returns(AllocationsResponse)]
-    GetAllocations {},
-}
-
-#[cw_serde]
-pub struct AllocationsResponse {
-    pub allocations: Vec<(String, Decimal)>,
 }

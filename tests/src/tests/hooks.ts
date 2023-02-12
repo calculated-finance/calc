@@ -201,8 +201,8 @@ export const instantiateFinPairContract = async (
 export const instantiateSwapContract = async (
   cosmWasmClient: SigningCosmWasmClient,
   adminContractAddress: string,
-): Promise<string> => {
-  const address = await uploadAndInstantiate(
+): Promise<string> =>
+  uploadAndInstantiate(
     '../artifacts/swap.wasm',
     cosmWasmClient,
     adminContractAddress,
@@ -212,16 +212,13 @@ export const instantiateSwapContract = async (
     'swap',
   );
 
-  return address;
-};
-
 export const instantiateFundCoreContract = async (
   cosmWasmClient: SigningCosmWasmClient,
   routerContractAddress: string,
   swapContractAddress: string,
   baseAsset: string = 'uusk',
-): Promise<string> => {
-  const address = await uploadAndInstantiate(
+): Promise<string> =>
+  uploadAndInstantiate(
     '../artifacts/fund_core.wasm',
     cosmWasmClient,
     routerContractAddress,
@@ -232,6 +229,3 @@ export const instantiateFundCoreContract = async (
     },
     'fund-core',
   );
-
-  return address;
-};

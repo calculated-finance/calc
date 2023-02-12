@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Decimal};
+use cosmwasm_std::Addr;
 
 #[cw_serde]
 pub enum Pair {
@@ -20,10 +20,4 @@ impl Pair {
             } => [base_denom.clone(), quote_denom.clone()],
         }
     }
-}
-
-#[cw_serde]
-pub struct WeightedPair {
-    pub pair: Pair,
-    pub price: Decimal,
 }
