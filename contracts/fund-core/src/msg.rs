@@ -20,6 +20,11 @@ pub enum ExecuteMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    #[returns(Config)]
+    #[returns(ConfigResponse)]
     GetConfig {},
+}
+
+#[cw_serde]
+pub struct ConfigResponse {
+    pub config: Config,
 }

@@ -61,18 +61,18 @@ pub fn rebalance_handler(
     current_allocations
         .iter()
         .for_each(|(denom, current_allocation)| {
-            let new_allocation = if new_allocations.contains_key(denom) {
-                new_allocations[denom]
-            } else {
-                Decimal::zero()
-            };
+            let new_allocation = new_allocations
+                .get(denom)
+                .map_or(Decimal::zero(), |result| *result);
 
             let allocation_delta_value =
                 (current_allocation).abs_diff(new_allocation) * total_fund_value;
 
             if current_allocation > &new_allocation {
                 over_allocations.push_front((denom, allocation_delta_value))
-            } else if current_allocation < &new_allocation {
+            }
+
+            if current_allocation < &new_allocation {
                 under_allocations.push_front((denom, allocation_delta_value))
             }
         });

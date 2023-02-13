@@ -1,6 +1,6 @@
 use crate::state::get_config;
 use base::price_type::PriceType;
-use cosmwasm_std::{Coin, Decimal, Deps, Env, StdResult, Uint128};
+use cosmwasm_std::{Coin, Decimal, Deps, StdResult, Uint128};
 use std::collections::HashMap;
 use swap::msg::QueryMsg;
 

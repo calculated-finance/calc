@@ -1,7 +1,7 @@
 use crate::{
     contract::ContractResult, errors::contract_error::ContractError, state::config::get_config,
 };
-use cosmwasm_std::{Addr, Coin, Env, Storage, Uint128};
+use cosmwasm_std::{Addr, Coin, Env, Storage};
 
 pub fn assert_sender_is_admin(storage: &mut dyn Storage, sender: Addr) -> ContractResult<()> {
     let config = get_config(storage)?;
