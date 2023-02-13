@@ -4,7 +4,7 @@ use cosmwasm_std::{
 };
 use kujira::{denom::Denom, msg::DenomMsg};
 
-use crate::{contract::instantiate, msg::InstantiateMsg, state::fund_cores::FUND_CORES};
+use crate::{contract::instantiate, msg::InstantiateMsg, state::funds::FUNDS};
 
 pub const USER: &str = "user";
 
@@ -26,7 +26,7 @@ fn creates_new_denom() {
 }
 
 #[test]
-fn initialises_fund_cores() {
+fn initialises_funds() {
     let mut deps = mock_dependencies();
     let mock_env = mock_env();
     let info = mock_info(USER, &[]);
@@ -37,5 +37,5 @@ fn initialises_fund_cores() {
 
     instantiate(deps.as_mut(), mock_env.clone(), info, instantiate_msg).unwrap();
 
-    assert!(FUND_CORES.load(deps.as_mut().storage).is_ok());
+    assert!(FUNDS.load(deps.as_mut().storage).is_ok());
 }

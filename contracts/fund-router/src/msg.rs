@@ -8,17 +8,17 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    AssignFundCore { fund_core_address: Addr },
+    AssignFund { fund_address: Addr },
 }
 
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    #[returns(FundCoreResponse)]
-    GetFundCore {},
+    #[returns(FundResponse)]
+    GetFund {},
 }
 
 #[cw_serde]
-pub struct FundCoreResponse {
+pub struct FundResponse {
     pub address: Addr,
 }

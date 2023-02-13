@@ -1,1 +1,1 @@
-pub mod fund_cores;
+pub mod funds;

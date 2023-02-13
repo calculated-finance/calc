@@ -7,10 +7,10 @@ use cosmwasm_std::{
 use kujira::denom::Denom;
 use kujira::msg::{DenomMsg, KujiraMsg};
 
-use crate::handlers::assign_fund_core::assign_fund_core;
-use crate::handlers::get_fund_core::get_fund_core;
+use crate::handlers::assign_fund::assign_fund;
+use crate::handlers::get_fund::get_fund;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::fund_cores::initialise_fund_cores;
+use crate::state::funds::initialise_funds;
 
 pub const AFTER_INSTANTIATE_REPLY_ID: u64 = 1;
 
@@ -21,7 +21,7 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response<KujiraMsg>, ContractError> {
-    initialise_fund_cores(deps)?;
+    initialise_funds(deps)?;
 
     Ok(Response::new()
         .add_attribute("method", "instantiate")
@@ -38,8 +38,8 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::AssignFundCore { fund_core_address } => {
-            assign_fund_core(deps, fund_core_address)
+        ExecuteMsg::AssignFund { fund_address } => {
+            assign_fund(deps, fund_address)
         }
     }
 }
@@ -47,6 +47,6 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetFundCore {} => to_binary(&get_fund_core(deps)?),
+        QueryMsg::GetFund {} => to_binary(&get_fund(deps)?),
     }
 }

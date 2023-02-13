@@ -4,7 +4,7 @@ use crate::{contract::instantiate, msg::InstantiateMsg};
 
 pub const USER: &str = "user";
 pub const ADMIN: &str = "admin";
-pub const FUND_CORE_ADDRESS: &str = "test";
+pub const FUND_ADDRESS: &str = "test";
 pub const TOKEN_NAME: &str = "test_token";
 
 pub fn instantiate_contract(deps: DepsMut, env: Env, info: MessageInfo) -> () {

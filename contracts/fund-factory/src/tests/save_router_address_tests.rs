@@ -5,15 +5,15 @@ use cosmwasm_std::{
 };
 
 use crate::{
-    contract::{query, AFTER_INSTANTIATE_FUND_ROUTER_REPLY_ID},
-    handlers::save_fund_router::save_fund_router_handler,
-    msg::{FundRoutersResponse, QueryMsg},
+    contract::{query, AFTER_INSTANTIATE_ROUTER_REPLY_ID},
+    handlers::save_router::save_router_handler,
+    msg::{RoutersResponse, QueryMsg},
     state::cache::{Cache, CACHE},
     tests::helpers::{instantiate_contract, USER},
 };
 
 #[test]
-fn saves_fund_router_address() {
+fn saves_router_address() {
     let mut mock_deps = mock_dependencies();
     let mock_env = mock_env();
     let mock_info = mock_info(USER, &vec![]);
@@ -25,15 +25,15 @@ fn saves_fund_router_address() {
             mock_deps.as_mut().storage,
             &Cache {
                 owner: Addr::unchecked(USER),
-                fund_router_address: None,
+                router_address: None,
             },
         )
         .unwrap();
 
-    save_fund_router_handler(
+    save_router_handler(
         mock_deps.as_mut(),
         Reply {
-            id: AFTER_INSTANTIATE_FUND_ROUTER_REPLY_ID,
+            id: AFTER_INSTANTIATE_ROUTER_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
                 data: None,
                 events: vec![Event::new("instantiate").add_attribute("_contract_address", "test")],
@@ -42,24 +42,24 @@ fn saves_fund_router_address() {
     )
     .unwrap();
 
-    let get_fund_routers_by_address_msg = QueryMsg::GetFundRouters {
+    let get_routers_by_address_msg = QueryMsg::GetRouters {
         owner: Addr::unchecked(USER),
     };
 
     let binary = query(
         mock_deps.as_ref(),
         mock_env,
-        get_fund_routers_by_address_msg,
+        get_routers_by_address_msg,
     )
     .unwrap();
 
-    let res: FundRoutersResponse = from_binary(&binary).unwrap();
+    let res: RoutersResponse = from_binary(&binary).unwrap();
 
-    assert_eq!(res.fund_routers[0], Addr::unchecked("test"));
+    assert_eq!(res.routers[0], Addr::unchecked("test"));
 }
 
 #[test]
-fn saves_multiple_fund_router_addresses() {
+fn saves_multiple_router_addresses() {
     let mut mock_deps = mock_dependencies();
     let mock_env = mock_env();
     let mock_info = mock_info(USER, &vec![]);
@@ -71,15 +71,15 @@ fn saves_multiple_fund_router_addresses() {
             mock_deps.as_mut().storage,
             &Cache {
                 owner: Addr::unchecked(USER),
-                fund_router_address: None,
+                router_address: None,
             },
         )
         .unwrap();
 
-    save_fund_router_handler(
+    save_router_handler(
         mock_deps.as_mut(),
         Reply {
-            id: AFTER_INSTANTIATE_FUND_ROUTER_REPLY_ID,
+            id: AFTER_INSTANTIATE_ROUTER_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
                 data: None,
                 events: vec![Event::new("instantiate").add_attribute("_contract_address", "test")],
@@ -88,10 +88,10 @@ fn saves_multiple_fund_router_addresses() {
     )
     .unwrap();
 
-    save_fund_router_handler(
+    save_router_handler(
         mock_deps.as_mut(),
         Reply {
-            id: AFTER_INSTANTIATE_FUND_ROUTER_REPLY_ID,
+            id: AFTER_INSTANTIATE_ROUTER_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
                 data: None,
                 events: vec![Event::new("instantiate").add_attribute("_contract_address", "test2")],
@@ -100,19 +100,19 @@ fn saves_multiple_fund_router_addresses() {
     )
     .unwrap();
 
-    let get_fund_routers_by_address_msg = QueryMsg::GetFundRouters {
+    let get_routers_by_address_msg = QueryMsg::GetRouters {
         owner: Addr::unchecked(USER),
     };
 
     let binary = query(
         mock_deps.as_ref(),
         mock_env,
-        get_fund_routers_by_address_msg,
+        get_routers_by_address_msg,
     )
     .unwrap();
 
-    let res: FundRoutersResponse = from_binary(&binary).unwrap();
+    let res: RoutersResponse = from_binary(&binary).unwrap();
 
-    assert_eq!(res.fund_routers[0], Addr::unchecked("test"));
-    assert_eq!(res.fund_routers[1], Addr::unchecked("test2"));
+    assert_eq!(res.routers[0], Addr::unchecked("test"));
+    assert_eq!(res.routers[1], Addr::unchecked("test2"));
 }

@@ -5,7 +5,7 @@ use cw_storage_plus::Item;
 #[cw_serde]
 pub struct Cache {
     pub owner: Addr,
-    pub fund_router_address: Option<Addr>,
+    pub router_address: Option<Addr>,
 }
 
 pub const CACHE: Item<Cache> = Item::new("cache_v1");
