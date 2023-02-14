@@ -1,3 +1,4 @@
+use crate::{state::Config, types::failure_behaviour::FailureBehaviour};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Decimal, Decimal256};
 

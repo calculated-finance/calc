@@ -20,7 +20,7 @@ pub fn rebalance_handler(
     slippage_tolerance: Option<Decimal256>,
     failure_behaviour: Option<FailureBehaviour>,
 ) -> ContractResult<Response> {
-    assert_sender_is_router(deps, info.sender)?;
+    assert_sender_is_router(deps.storage, info.sender)?;
 
     let new_allocations = allocations
         .iter()
@@ -120,7 +120,7 @@ pub fn rebalance_handler(
                 swap_messages.push(SubMsg {
                     id: AFTER_FAILED_SWAP_REPLY_ID,
                     msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                        contract_addr: config.swap.to_string(),
+                        contract_addr: config.swapper.to_string(),
                         msg: to_binary(&ExecuteMsg::CreateSwap {
                             target_denom: target_denom.clone(),
                             slippage_tolerance,

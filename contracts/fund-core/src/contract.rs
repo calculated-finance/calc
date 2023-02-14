@@ -1,17 +1,12 @@
-use crate::error::ContractError;
 use crate::handlers::rebalance::{after_failed_swap_handler, rebalance_handler};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::shared::helpers::get_allocations;
 use crate::state::{get_config, update_config, Config};
-use crate::state::{update_config, Config};
 use base::ContractError;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response};
 
 pub type ContractResult<T> = Result<T, ContractError>;
 

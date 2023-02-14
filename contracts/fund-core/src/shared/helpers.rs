@@ -13,23 +13,23 @@ pub fn get_current_balance_values(
     Ok(current_balances
         .values()
         .map(|asset| {
-            if asset.denom == config.base_asset {
+            if asset.denom == config.base_denom {
                 return (asset.denom.clone(), asset.amount);
             }
 
             let price: Decimal = deps
                 .querier
                 .query_wasm_smart(
-                    config.swap.clone(),
+                    config.swapper.clone(),
                     &QueryMsg::GetPrice {
                         swap_amount: asset.clone(),
-                        target_denom: config.base_asset.clone(),
+                        target_denom: config.base_denom.clone(),
                         price_type: PriceType::Belief,
                     },
                 )
                 .expect(&format!(
                     "price for swapping {:?} into {}",
-                    asset, config.base_asset
+                    asset, config.base_denom
                 ));
 
             let asset_value_in_terms_of_base_denom = asset.amount * (Decimal::one() / price);
