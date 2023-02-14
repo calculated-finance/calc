@@ -1,6 +1,6 @@
+use base::ContractError;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use base::ContractError;
 use cosmwasm_std::{
     to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg,
 };
@@ -10,6 +10,7 @@ use kujira::msg::{DenomMsg, KujiraMsg};
 use crate::handlers::assign_fund::assign_fund;
 use crate::handlers::get_fund::get_fund;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::state::config::{update_config, Config};
 use crate::state::funds::initialise_funds;
 
 pub const AFTER_INSTANTIATE_REPLY_ID: u64 = 1;
@@ -18,10 +19,18 @@ pub const AFTER_INSTANTIATE_REPLY_ID: u64 = 1;
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response<KujiraMsg>, ContractError> {
-    initialise_funds(deps)?;
+    initialise_funds(deps.storage)?;
+
+    update_config(
+        deps.storage,
+        Config {
+            factory: info.sender.clone(),
+            owner: msg.owner,
+        },
+    )?;
 
     Ok(Response::new()
         .add_attribute("method", "instantiate")
@@ -38,9 +47,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::AssignFund { fund_address } => {
-            assign_fund(deps, fund_address)
-        }
+        ExecuteMsg::AssignFund { fund_address } => assign_fund(deps, fund_address),
     }
 }
 

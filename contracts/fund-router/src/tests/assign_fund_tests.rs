@@ -31,10 +31,7 @@ fn with_valid_address_should_save_fund_address() {
 
     let fund_response: FundResponse = from_binary(&binary).unwrap();
 
-    assert_eq!(
-        fund_response.address,
-        Addr::unchecked(FUND_ADDRESS)
-    );
+    assert_eq!(fund_response.address, Addr::unchecked(FUND_ADDRESS));
 }
 
 #[test]
@@ -66,13 +63,7 @@ fn multiple_funds_returns_the_latest_fund() {
         fund_address: Addr::unchecked(FUND_ADDRESS),
     };
 
-    execute(
-        deps.as_mut(),
-        env.clone(),
-        info.clone(),
-        assign_fund_msg,
-    )
-    .unwrap();
+    execute(deps.as_mut(), env.clone(), info.clone(), assign_fund_msg).unwrap();
 
     let assign_fund_msg = ExecuteMsg::AssignFund {
         fund_address: Addr::unchecked("fund_address_2"),
@@ -86,8 +77,5 @@ fn multiple_funds_returns_the_latest_fund() {
 
     let fund_response: FundResponse = from_binary(&binary).unwrap();
 
-    assert_eq!(
-        fund_response.address,
-        Addr::unchecked("fund_address_2")
-    );
+    assert_eq!(fund_response.address, Addr::unchecked("fund_address_2"));
 }

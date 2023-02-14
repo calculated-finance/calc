@@ -3,6 +3,7 @@ use cosmwasm_std::Addr;
 
 #[cw_serde]
 pub struct InstantiateMsg {
+    pub owner: Addr,
     pub token_name: String,
 }
 
