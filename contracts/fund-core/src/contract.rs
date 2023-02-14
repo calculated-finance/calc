@@ -1,16 +1,8 @@
 use base::ContractError;
-#[cfg(not(feature = "library"))]
-use cosmwasm_std::entry_point;
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{update_config, Config};
-
-/*
-// version info for migration info
-const CONTRACT_NAME: &str = "crates.io:fund-core";
-const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-*/
 
 pub type ContractResult<T> = Result<T, ContractError>;
 
