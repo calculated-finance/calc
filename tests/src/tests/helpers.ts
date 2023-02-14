@@ -70,8 +70,8 @@ export const getBalances = async (
     prop('address'),
     await Promise.all(
       map(
-        async (address) =>
-          mergeAll(
+        async (address) => ({
+          ...mergeAll(
             await Promise.all(
               map(
                 async (denom) => ({
@@ -81,6 +81,7 @@ export const getBalances = async (
               ),
             ),
           ),
+        }),
         addresses,
       ),
     ),

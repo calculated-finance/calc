@@ -1,12 +1,12 @@
 import { coin } from '@cosmjs/proto-signing';
 import { Context } from 'mocha';
-import { keys, map, omit, reduce, toPairs, values, forEach } from 'ramda';
+import { keys, map, reduce, toPairs, values, forEach } from 'ramda';
 import { execute } from '../../shared/cosmwasm';
 import { getBalances, isWithinPercent, sendTokens } from '../helpers';
 import { instantiateFinPairContract, instantiateSwapContract, instantiateFundCoreContract } from '../hooks';
 import { expect } from '../shared.test';
 
-describe('when rebalancing a fund', () => {
+describe.only('when rebalancing a fund', () => {
   const baseAsset = 'uusk';
   const denoms = ['ukuji', 'udemo', 'utest', 'uatom', 'uosmo', 'uaxlusdc', 'uusk', 'umars', 'uweth', 'uwbtc'];
   const pairs = map((denom) => ({ baseDenom: denom, quoteDenom: baseAsset }), denoms);

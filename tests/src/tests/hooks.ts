@@ -224,7 +224,7 @@ export const instantiateFundCoreContract = async (
     routerContractAddress,
     {
       router: routerContractAddress,
-      swap: swapContractAddress,
+      swapper: swapContractAddress,
       base_denom: baseAsset,
     },
     'fund-core',
