@@ -1,14 +1,12 @@
 use base::ContractError;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{
-    to_binary, BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
-};
+use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
 use crate::handlers::get_config::get_config_handler;
+use crate::handlers::migrate::migrate;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{update_config, Config};
-use crate::validation::assert_sender_is_router;
 
 pub type ContractResult<T> = Result<T, ContractError>;
 
@@ -37,22 +35,12 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
-    _msg: ExecuteMsg,
+    msg: ExecuteMsg,
 ) -> ContractResult<Response> {
-    match _msg {
-        ExecuteMsg::Migrate { new_fund_address } => {
-            assert_sender_is_router(deps.storage, info.sender.clone())?;
-
-            let balance = deps.querier.query_all_balances(new_fund_address)?;
-            Ok(Response::new()
-                .add_message(BankMsg::Send {
-                    to_address: info.sender.to_string(),
-                    amount: balance,
-                })
-                .add_attribute("method", "migrate"))
-        }
+    match msg {
+        ExecuteMsg::Migrate { new_fund_address } => migrate(deps, env, info, new_fund_address),
     }
 }
 
