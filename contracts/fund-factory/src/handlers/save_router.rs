@@ -43,7 +43,11 @@ pub fn save_router_handler(deps: DepsMut, reply: Reply) -> Result<Response, Cont
             label: format!("CALC-MF-FUND"),
             code_id: config.fund_code_id,
             funds: vec![],
-            msg: to_binary(&FundInstantiateMsg {})?,
+            msg: to_binary(&FundInstantiateMsg {
+                router: Addr::unchecked("router"),
+                swapper: Addr::unchecked("swapper"),
+                base_denom: String::from("uusd"),
+            })?,
         }),
         AFTER_INSTANTIATE_FUND_REPLY_ID,
     );
