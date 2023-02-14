@@ -7,7 +7,7 @@ use cosmwasm_std::{
 use crate::{
     contract::{query, AFTER_INSTANTIATE_ROUTER_REPLY_ID},
     handlers::save_router::save_router_handler,
-    msg::{RoutersResponse, QueryMsg},
+    msg::{QueryMsg, RoutersResponse},
     state::cache::{Cache, CACHE},
     tests::helpers::{instantiate_contract, USER},
 };
@@ -46,12 +46,7 @@ fn saves_router_address() {
         owner: Addr::unchecked(USER),
     };
 
-    let binary = query(
-        mock_deps.as_ref(),
-        mock_env,
-        get_routers_by_address_msg,
-    )
-    .unwrap();
+    let binary = query(mock_deps.as_ref(), mock_env, get_routers_by_address_msg).unwrap();
 
     let res: RoutersResponse = from_binary(&binary).unwrap();
 
@@ -104,12 +99,7 @@ fn saves_multiple_router_addresses() {
         owner: Addr::unchecked(USER),
     };
 
-    let binary = query(
-        mock_deps.as_ref(),
-        mock_env,
-        get_routers_by_address_msg,
-    )
-    .unwrap();
+    let binary = query(mock_deps.as_ref(), mock_env, get_routers_by_address_msg).unwrap();
 
     let res: RoutersResponse = from_binary(&binary).unwrap();
 

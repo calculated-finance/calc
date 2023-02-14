@@ -25,11 +25,7 @@ pub fn save_router_handler(deps: DepsMut, reply: Reply) -> Result<Response, Cont
         "_contract_address",
     )?);
 
-    save_router(
-        deps.storage,
-        cache.owner.clone(),
-        router_address.clone(),
-    )?;
+    save_router(deps.storage, cache.owner.clone(), router_address.clone())?;
 
     CACHE.save(
         deps.storage,

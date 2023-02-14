@@ -6,7 +6,7 @@ use cosmwasm_std::{
 };
 use fund_router::msg::ExecuteMsg as RouterExecuteMsg;
 
-pub fn assign_fund_to_router(
+pub fn assign_initial_fund_to_router(
     deps: DepsMut,
     reply: Reply,
 ) -> Result<Response, ContractError> {
@@ -32,7 +32,7 @@ pub fn assign_fund_to_router(
     }));
 
     Ok(Response::new()
-        .add_attribute("method", "assign_fund_to_router")
+        .add_attribute("method", "assign_initial_fund_to_router")
         .add_attribute("fund_address", fund_address)
         .add_submessage(assign_fund_msg))
 }
