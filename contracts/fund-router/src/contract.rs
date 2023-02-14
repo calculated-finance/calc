@@ -43,11 +43,11 @@ pub fn instantiate(
 pub fn execute(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::AssignFund { fund_address } => assign_fund(deps, fund_address),
+        ExecuteMsg::AssignFund { fund_address } => assign_fund(deps, info, fund_address),
     }
 }
 

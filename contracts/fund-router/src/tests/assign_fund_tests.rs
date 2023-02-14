@@ -7,6 +7,7 @@ use cosmwasm_std::{
 use crate::{
     contract::{execute, query},
     msg::{ExecuteMsg, FundResponse, QueryMsg},
+    tests::helpers::ADMIN,
 };
 
 use super::helpers::{instantiate_contract, FUND_ADDRESS, USER};
@@ -78,4 +79,46 @@ fn multiple_funds_returns_the_latest_fund() {
     let fund_response: FundResponse = from_binary(&binary).unwrap();
 
     assert_eq!(fund_response.address, Addr::unchecked("fund_address_2"));
+}
+
+#[test]
+fn with_permission_should_fail() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(ADMIN, &vec![]);
+
+    instantiate_contract(deps.as_mut(), env.clone(), info.clone());
+
+    let assign_fund_msg = ExecuteMsg::AssignFund {
+        fund_address: Addr::unchecked(FUND_ADDRESS),
+    };
+
+    let unauthorized_info = mock_info("unauthorized", &vec![]);
+
+    let response = execute(
+        deps.as_mut(),
+        env.clone(),
+        unauthorized_info,
+        assign_fund_msg,
+    )
+    .unwrap_err();
+
+    assert_eq!(response.to_string(), "Unauthorized");
+}
+
+#[test]
+fn with_permission_should_succeed() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(ADMIN, &vec![]);
+
+    instantiate_contract(deps.as_mut(), env.clone(), info.clone());
+
+    let assign_fund_msg = ExecuteMsg::AssignFund {
+        fund_address: Addr::unchecked(FUND_ADDRESS),
+    };
+
+    let response = execute(deps.as_mut(), env.clone(), info, assign_fund_msg).unwrap();
+
+    assert_eq!(response.messages.len(), 0);
 }
