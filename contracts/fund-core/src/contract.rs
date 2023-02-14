@@ -1,10 +1,14 @@
 use base::ContractError;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{
+    to_binary, BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+};
 
+use crate::handlers::get_config::get_config_handler;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{update_config, Config};
+use crate::validation::assert_sender_is_router;
 
 pub type ContractResult<T> = Result<T, ContractError>;
 
@@ -32,15 +36,29 @@ pub fn instantiate(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     _msg: ExecuteMsg,
 ) -> ContractResult<Response> {
-    unimplemented!()
+    match _msg {
+        ExecuteMsg::Migrate { new_fund_address } => {
+            assert_sender_is_router(deps.storage, info.sender.clone())?;
+
+            let balance = deps.querier.query_all_balances(new_fund_address)?;
+            Ok(Response::new()
+                .add_message(BankMsg::Send {
+                    to_address: info.sender.to_string(),
+                    amount: balance,
+                })
+                .add_attribute("method", "migrate"))
+        }
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
-    unimplemented!()
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::GetConfig {} => to_binary(&get_config_handler(deps)?),
+    }
 }

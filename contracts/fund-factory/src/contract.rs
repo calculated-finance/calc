@@ -12,6 +12,7 @@ use crate::handlers::get_config::get_config_handler;
 use crate::handlers::get_routers_by_address::get_routers_by_address_handler;
 use crate::handlers::migrate_to_latest_code_id::migrate_to_latest_code_id;
 use crate::handlers::save_router::save_router_handler;
+use crate::handlers::transfer_all_fund_assets::transfer_all_fund_assets;
 use crate::handlers::update_config::update_config_handler;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::config::{update_config, Config};
@@ -67,13 +68,15 @@ pub fn execute(
 pub const AFTER_INSTANTIATE_ROUTER_REPLY_ID: u64 = 1;
 pub const AFTER_INSTANTIATE_FUND_REPLY_ID: u64 = 2;
 pub const AFTER_INSTANTIATE_FUND_FOR_MIGRATION_REPLY_ID: u64 = 3;
+pub const AFTER_TRANSFER_ALL_FUND_ASSETS_REPLY_ID: u64 = 4;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
     match reply.id {
         AFTER_INSTANTIATE_ROUTER_REPLY_ID => save_router_handler(deps, reply),
         AFTER_INSTANTIATE_FUND_REPLY_ID => assign_initial_fund_to_router(deps, reply),
-        AFTER_INSTANTIATE_FUND_FOR_MIGRATION_REPLY_ID => assign_new_fund_to_router(deps, reply),
+        AFTER_INSTANTIATE_FUND_FOR_MIGRATION_REPLY_ID => transfer_all_fund_assets(deps, reply),
+        AFTER_TRANSFER_ALL_FUND_ASSETS_REPLY_ID => assign_new_fund_to_router(deps, reply),
         id => Err(ContractError::CustomError {
             val: format!("unknown reply id: {}", id),
         }),

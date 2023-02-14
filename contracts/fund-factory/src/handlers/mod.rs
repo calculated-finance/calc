@@ -5,4 +5,5 @@ pub mod get_config;
 pub mod get_routers_by_address;
 pub mod migrate_to_latest_code_id;
 pub mod save_router;
+pub mod transfer_all_fund_assets;
 pub mod update_config;
