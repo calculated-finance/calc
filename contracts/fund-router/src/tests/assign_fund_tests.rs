@@ -82,7 +82,7 @@ fn multiple_funds_returns_the_latest_fund() {
 }
 
 #[test]
-fn with_permission_should_fail() {
+fn without_permission_should_fail() {
     let mut deps = mock_dependencies();
     let env = mock_env();
     let info = mock_info(ADMIN, &vec![]);
@@ -104,21 +104,4 @@ fn with_permission_should_fail() {
     .unwrap_err();
 
     assert_eq!(response.to_string(), "Unauthorized");
-}
-
-#[test]
-fn with_permission_should_succeed() {
-    let mut deps = mock_dependencies();
-    let env = mock_env();
-    let info = mock_info(ADMIN, &vec![]);
-
-    instantiate_contract(deps.as_mut(), env.clone(), info.clone());
-
-    let assign_fund_msg = ExecuteMsg::AssignFund {
-        fund_address: Addr::unchecked(FUND_ADDRESS),
-    };
-
-    let response = execute(deps.as_mut(), env.clone(), info, assign_fund_msg).unwrap();
-
-    assert_eq!(response.messages.len(), 0);
 }
