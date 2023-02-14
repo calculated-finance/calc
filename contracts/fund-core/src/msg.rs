@@ -1,4 +1,4 @@
-use crate::{state::Config, types::failure_behaviour::FailureBehaviour};
+use crate::types::failure_behaviour::FailureBehaviour;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Decimal, Decimal256};
 
@@ -20,12 +20,4 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 #[derive(QueryResponses)]
-pub enum QueryMsg {
-    #[returns(ConfigResponse)]
-    GetConfig {},
-}
-
-#[cw_serde]
-pub struct ConfigResponse {
-    pub config: Config,
-}
+pub enum QueryMsg {}

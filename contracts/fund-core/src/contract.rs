@@ -1,12 +1,10 @@
 use crate::handlers::rebalance::{after_failed_swap_handler, rebalance_handler};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{get_config, update_config, Config};
+use crate::state::{update_config, Config};
 use base::ContractError;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
-};
+use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult};
 
 pub type ContractResult<T> = Result<T, ContractError>;
 
@@ -68,8 +66,6 @@ pub fn reply(_deps: DepsMut, _env: Env, reply: Reply) -> ContractResult<Response
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
-    match msg {
-        QueryMsg::GetConfig {} => to_binary(&get_config(deps.storage)?),
-    }
+pub fn query(_deps: Deps, _env: Env, _msg: QueryMsg) -> StdResult<Binary> {
+    unimplemented!()
 }

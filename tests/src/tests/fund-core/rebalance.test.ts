@@ -95,7 +95,7 @@ describe('when rebalancing a fund', () => {
     });
 
     it('rebalances the fund correctly', async function (this: Context) {
-      const newFundBalances = omit(['address'], balancesAfterExecution[fundContractAddress]);
+      const newFundBalances = balancesAfterExecution[fundContractAddress];
       const totalFundBalance = reduce((acc, amount) => acc + amount, 0, values(newFundBalances));
       forEach(([denom, allocation]) => {
         expect(isWithinPercent(totalFundBalance, newFundBalances[denom], totalFundBalance * allocation, 2)).to.be.true;
@@ -156,7 +156,7 @@ describe('when rebalancing a fund', () => {
     });
 
     it('rebalances the fund correctly', async function (this: Context) {
-      const newFundBalances = omit(['address'], balancesAfterExecution[fundContractAddress]);
+      const newFundBalances = balancesAfterExecution[fundContractAddress];
       const totalFundBalance = reduce((acc, amount) => acc + amount, 0, values(newFundBalances));
       forEach(([denom, allocation]) => {
         expect(isWithinPercent(totalFundBalance, newFundBalances[denom], totalFundBalance * allocation, 2)).to.be.true;
@@ -212,7 +212,7 @@ describe('when rebalancing a fund', () => {
     });
 
     it('rebalances the fund correctly', async function (this: Context) {
-      const newFundBalances = omit(['address'], balancesAfterExecution[fundContractAddress]);
+      const newFundBalances = balancesAfterExecution[fundContractAddress];
       const totalFundBalance = reduce((acc, amount) => acc + amount, 0, values(newFundBalances));
       forEach(([denom, allocation]) => {
         expect(isWithinPercent(totalFundBalance, newFundBalances[denom], totalFundBalance * allocation, 2)).to.be.true;
