@@ -1,8 +1,10 @@
-use crate::{contract::instantiate, msg::InstantiateMsg, state::get_config};
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
     Addr,
 };
+
+use crate::{contract::instantiate, msg::InstantiateMsg, state::get_config};
+
 pub const USER: &str = "user";
 
 #[test]

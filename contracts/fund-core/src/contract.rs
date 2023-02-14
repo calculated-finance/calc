@@ -1,4 +1,6 @@
 use base::ContractError;
+#[cfg(not(feature = "library"))]
+use cosmwasm_std::entry_point;
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -24,7 +26,7 @@ pub fn instantiate(
 
     Ok(Response::new()
         .add_attribute("router", msg.router.to_string())
-        .add_attribute("swapper", msg.swapper.to_string())
+        .add_attribute("swap", msg.swapper.to_string())
         .add_attribute("base_asset", msg.base_denom.to_string()))
 }
 
