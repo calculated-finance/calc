@@ -71,6 +71,7 @@ export const getBalances = async (
     await Promise.all(
       map(
         async (address) => ({
+          address,
           ...mergeAll(
             await Promise.all(
               map(
