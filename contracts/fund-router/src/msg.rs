@@ -2,6 +2,7 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Addr;
 
 use crate::state::config::Config;
+use fund_core::msg::ConfigResponse as FundConfigResponse;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -19,7 +20,7 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(FundResponse)]
     GetFund {},
-    #[returns(ConfigResponse)]
+    #[returns(FundConfigResponse)]
     GetFundConfig {},
     #[returns(ConfigResponse)]
     GetConfig {},
