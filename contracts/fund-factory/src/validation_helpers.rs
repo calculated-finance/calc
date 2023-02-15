@@ -20,9 +20,8 @@ pub fn assert_sender_is_router_owner_or_admin(
     sender: Addr,
     router_config: &ConfigResponse,
 ) -> Result<(), ContractError> {
-    let config = get_config(storage)?;
-    if sender != config.admin && sender != router_config.config.owner {
-        return Err(ContractError::Unauthorized {});
+    if sender != router_config.config.owner {
+        assert_sender_is_admin(storage, sender)?;
     }
     Ok(())
 }
