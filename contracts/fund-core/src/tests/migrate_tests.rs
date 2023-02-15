@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    Addr, Coin, Uint128,
+    Addr, BankMsg, Coin, SubMsg, Uint128,
 };
 
 use super::helpers::{instantiate_contract, USER};
@@ -26,12 +26,10 @@ fn should_transfer_funds_to_new_contract_address() {
 
     let response = execute(deps.as_mut(), env, info, migrate_msg).unwrap();
 
-    assert!(response
-        .messages
-        .contains(&cosmwasm_std::SubMsg::new(cosmwasm_std::BankMsg::Send {
-            to_address: new_fund_address.to_string(),
-            amount: vec![Coin::new(Uint128::new(100).into(), "usdc".to_string(),)]
-        })));
+    assert!(response.messages.contains(&SubMsg::new(BankMsg::Send {
+        to_address: new_fund_address.to_string(),
+        amount: vec![Coin::new(Uint128::new(100).into(), "usdc".to_string(),)]
+    })));
 }
 
 #[test]
