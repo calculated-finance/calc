@@ -12,8 +12,8 @@ pub fn initialise_funds(storage: &mut dyn Storage) -> StdResult<()> {
 }
 
 pub fn get_current_fund(storage: &dyn Storage) -> StdResult<Option<Addr>> {
-    let funds = FUNDS.load(storage)?;
-    let current_fund = funds.front().map(|fund| fund.to_owned());
+    let mut funds = FUNDS.load(storage)?;
+    let current_fund = funds.pop_front();
     Ok(current_fund.clone())
 }
 
