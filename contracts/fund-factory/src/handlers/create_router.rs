@@ -30,7 +30,7 @@ pub fn create_router(
     CACHE.save(
         deps.storage,
         &Cache {
-            owner: info.sender,
+            owner: Some(info.sender),
             router_address: None,
         },
     )?;

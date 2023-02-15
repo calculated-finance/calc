@@ -15,7 +15,7 @@ pub fn assert_sender_is_admin(
     Ok(())
 }
 
-pub fn assert_sender_is_owner_or_admin(
+pub fn assert_sender_is_router_owner_or_admin(
     storage: &mut dyn Storage,
     sender: Addr,
     router_config: &ConfigResponse,

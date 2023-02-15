@@ -11,9 +11,9 @@ pub fn initialise_funds(storage: &mut dyn Storage) -> StdResult<()> {
     Ok(())
 }
 
-pub fn get_current_fund(storage: &dyn Storage) -> StdResult<Addr> {
+pub fn get_current_fund(storage: &dyn Storage) -> StdResult<Option<Addr>> {
     let funds = FUNDS.load(storage)?;
-    let current_fund = funds.front().expect("funds should not be empty");
+    let current_fund = funds.front().map(|fund| fund.to_owned());
     Ok(current_fund.clone())
 }
 

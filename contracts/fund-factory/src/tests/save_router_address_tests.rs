@@ -24,7 +24,7 @@ fn saves_router_address() {
         .save(
             deps.as_mut().storage,
             &Cache {
-                owner: Addr::unchecked(USER),
+                owner: Some(Addr::unchecked(USER)),
                 router_address: None,
             },
         )
@@ -65,7 +65,7 @@ fn saves_multiple_router_addresses() {
         .save(
             deps.as_mut().storage,
             &Cache {
-                owner: Addr::unchecked(USER),
+                owner: Some(Addr::unchecked(USER)),
                 router_address: None,
             },
         )

@@ -5,14 +5,14 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 
-use crate::handlers::assign_initial_fund_to_router::assign_initial_fund_to_router;
-use crate::handlers::assign_new_fund_to_router::assign_new_fund_to_router;
+use crate::handlers::assign_fund_to_router::assign_fund_to_router;
+//use crate::handlers::assign_new_fund_to_router::assign_new_fund_to_router;
 use crate::handlers::create_router::create_router;
 use crate::handlers::get_config::get_config_handler;
 use crate::handlers::get_routers_by_address::get_routers_by_address_handler;
-use crate::handlers::migrate_to_latest_code_id::migrate_to_latest_code_id;
+use crate::handlers::migrate_fund::migrate_fund;
 use crate::handlers::save_router::save_router_handler;
-use crate::handlers::transfer_all_fund_assets::transfer_all_fund_assets;
+//use crate::handlers::transfer_all_fund_assets::transfer_all_fund_assets;
 use crate::handlers::update_config::update_config_handler;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::config::{update_config, Config};
@@ -59,9 +59,7 @@ pub fn execute(
             router_code_id,
             fund_code_id,
         } => update_config_handler(deps, info, admin, router_code_id, fund_code_id),
-        ExecuteMsg::MigrateToLatestCodeId { router } => {
-            migrate_to_latest_code_id(deps, info, router)
-        }
+        ExecuteMsg::MigrateToLatestCodeId { router } => migrate_fund(deps, info, router),
     }
 }
 
@@ -74,9 +72,9 @@ pub const AFTER_TRANSFER_ALL_FUND_ASSETS_REPLY_ID: u64 = 4;
 pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
     match reply.id {
         AFTER_INSTANTIATE_ROUTER_REPLY_ID => save_router_handler(deps, reply),
-        AFTER_INSTANTIATE_FUND_REPLY_ID => assign_initial_fund_to_router(deps, reply),
-        AFTER_INSTANTIATE_FUND_FOR_MIGRATION_REPLY_ID => transfer_all_fund_assets(deps, reply),
-        AFTER_TRANSFER_ALL_FUND_ASSETS_REPLY_ID => assign_new_fund_to_router(deps, reply),
+        AFTER_INSTANTIATE_FUND_REPLY_ID => assign_fund_to_router(deps, reply),
+        AFTER_INSTANTIATE_FUND_FOR_MIGRATION_REPLY_ID => assign_fund_to_router(deps, reply),
+        //AFTER_TRANSFER_ALL_FUND_ASSETS_REPLY_ID => assign_new_fund_to_router(deps, reply),
         id => Err(ContractError::CustomError {
             val: format!("unknown reply id: {}", id),
         }),

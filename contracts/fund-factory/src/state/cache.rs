@@ -4,7 +4,7 @@ use cw_storage_plus::Item;
 
 #[cw_serde]
 pub struct Cache {
-    pub owner: Addr,
+    pub owner: Option<Addr>,
     pub router_address: Option<Addr>,
 }
 

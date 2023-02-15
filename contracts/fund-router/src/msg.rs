@@ -20,12 +20,14 @@ pub enum QueryMsg {
     #[returns(FundResponse)]
     GetFund {},
     #[returns(ConfigResponse)]
+    GetFundConfig {},
+    #[returns(ConfigResponse)]
     GetConfig {},
 }
 
 #[cw_serde]
 pub struct FundResponse {
-    pub address: Addr,
+    pub address: Option<Addr>,
 }
 
 #[cw_serde]

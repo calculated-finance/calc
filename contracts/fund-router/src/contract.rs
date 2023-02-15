@@ -10,6 +10,7 @@ use kujira::msg::{DenomMsg, KujiraMsg};
 use crate::handlers::assign_fund::assign_fund;
 use crate::handlers::get_config::get_config_handler;
 use crate::handlers::get_fund::get_fund;
+use crate::handlers::get_fund_config::get_fund_config;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::config::{update_config, Config};
 use crate::state::funds::initialise_funds;
@@ -56,6 +57,7 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetFund {} => to_binary(&get_fund(deps)?),
+        QueryMsg::GetFundConfig {} => to_binary(&get_fund_config(deps)?),
         QueryMsg::GetConfig {} => to_binary(&get_config_handler(deps)?),
     }
 }
