@@ -8,7 +8,6 @@ use cosmwasm_std::{
     WasmMsg::Execute as WasmExecuteMsg,
 };
 use fund_core::msg::ExecuteMsg as FundExecuteMsg;
-use fund_router::msg::ExecuteMsg as RouterExecuteMsg;
 
 pub fn transfer_all_fund_assets(deps: DepsMut, reply: Reply) -> Result<Response, ContractError> {
     let cache = MIGRATION_CACHE.load(deps.storage)?;

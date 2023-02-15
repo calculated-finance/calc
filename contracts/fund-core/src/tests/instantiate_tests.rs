@@ -3,9 +3,12 @@ use cosmwasm_std::{
     Addr,
 };
 
-use crate::{contract::instantiate, msg::InstantiateMsg, state::get_config};
-
-pub const USER: &str = "user";
+use crate::{
+    contract::instantiate,
+    msg::InstantiateMsg,
+    state::get_config,
+    tests::helpers::{BASE_DENOM, ROUTER_ADDRESS, SWAPPER_ADDRESS, USER},
+};
 
 #[test]
 fn saves_config() {
@@ -13,9 +16,9 @@ fn saves_config() {
     let mock_env = mock_env();
     let info = mock_info(USER, &[]);
 
-    let router = Addr::unchecked("router");
-    let swapper = Addr::unchecked("swapper");
-    let base_denom = String::from("ukuji");
+    let router = Addr::unchecked(ROUTER_ADDRESS);
+    let swapper = Addr::unchecked(SWAPPER_ADDRESS);
+    let base_denom = BASE_DENOM.to_string();
 
     let instantiate_msg = InstantiateMsg {
         router: router.clone(),

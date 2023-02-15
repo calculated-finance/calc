@@ -14,15 +14,15 @@ use crate::{
 
 #[test]
 fn saves_router_address() {
-    let mut mock_deps = mock_dependencies();
+    let mut deps = mock_dependencies();
     let mock_env = mock_env();
     let mock_info = mock_info(USER, &vec![]);
 
-    instantiate_contract(mock_deps.as_mut(), mock_env.clone(), mock_info.clone());
+    instantiate_contract(deps.as_mut(), mock_env.clone(), mock_info.clone());
 
     CACHE
         .save(
-            mock_deps.as_mut().storage,
+            deps.as_mut().storage,
             &Cache {
                 owner: Addr::unchecked(USER),
                 router_address: None,
@@ -31,7 +31,7 @@ fn saves_router_address() {
         .unwrap();
 
     save_router_handler(
-        mock_deps.as_mut(),
+        deps.as_mut(),
         Reply {
             id: AFTER_INSTANTIATE_ROUTER_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
@@ -46,7 +46,7 @@ fn saves_router_address() {
         owner: Addr::unchecked(USER),
     };
 
-    let binary = query(mock_deps.as_ref(), mock_env, get_routers_by_address_msg).unwrap();
+    let binary = query(deps.as_ref(), mock_env, get_routers_by_address_msg).unwrap();
 
     let res: RoutersResponse = from_binary(&binary).unwrap();
 
@@ -55,15 +55,15 @@ fn saves_router_address() {
 
 #[test]
 fn saves_multiple_router_addresses() {
-    let mut mock_deps = mock_dependencies();
+    let mut deps = mock_dependencies();
     let mock_env = mock_env();
     let mock_info = mock_info(USER, &vec![]);
 
-    instantiate_contract(mock_deps.as_mut(), mock_env.clone(), mock_info.clone());
+    instantiate_contract(deps.as_mut(), mock_env.clone(), mock_info.clone());
 
     CACHE
         .save(
-            mock_deps.as_mut().storage,
+            deps.as_mut().storage,
             &Cache {
                 owner: Addr::unchecked(USER),
                 router_address: None,
@@ -72,7 +72,7 @@ fn saves_multiple_router_addresses() {
         .unwrap();
 
     save_router_handler(
-        mock_deps.as_mut(),
+        deps.as_mut(),
         Reply {
             id: AFTER_INSTANTIATE_ROUTER_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
@@ -84,7 +84,7 @@ fn saves_multiple_router_addresses() {
     .unwrap();
 
     save_router_handler(
-        mock_deps.as_mut(),
+        deps.as_mut(),
         Reply {
             id: AFTER_INSTANTIATE_ROUTER_REPLY_ID,
             result: SubMsgResult::Ok(SubMsgResponse {
@@ -99,7 +99,7 @@ fn saves_multiple_router_addresses() {
         owner: Addr::unchecked(USER),
     };
 
-    let binary = query(mock_deps.as_ref(), mock_env, get_routers_by_address_msg).unwrap();
+    let binary = query(deps.as_ref(), mock_env, get_routers_by_address_msg).unwrap();
 
     let res: RoutersResponse = from_binary(&binary).unwrap();
 
