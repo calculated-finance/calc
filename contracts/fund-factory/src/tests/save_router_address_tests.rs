@@ -42,11 +42,11 @@ fn saves_router_address() {
     )
     .unwrap();
 
-    let get_routers_by_address_msg = QueryMsg::GetRouters {
+    let get_routers_msg = QueryMsg::GetRouters {
         owner: Addr::unchecked(USER),
     };
 
-    let binary = query(deps.as_ref(), mock_env, get_routers_by_address_msg).unwrap();
+    let binary = query(deps.as_ref(), mock_env, get_routers_msg).unwrap();
 
     let res: RoutersResponse = from_binary(&binary).unwrap();
 
@@ -95,11 +95,11 @@ fn saves_multiple_router_addresses() {
     )
     .unwrap();
 
-    let get_routers_by_address_msg = QueryMsg::GetRouters {
+    let get_routers_msg = QueryMsg::GetRouters {
         owner: Addr::unchecked(USER),
     };
 
-    let binary = query(deps.as_ref(), mock_env, get_routers_by_address_msg).unwrap();
+    let binary = query(deps.as_ref(), mock_env, get_routers_msg).unwrap();
 
     let res: RoutersResponse = from_binary(&binary).unwrap();
 

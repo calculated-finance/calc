@@ -8,7 +8,7 @@ use cw2::set_contract_version;
 use crate::handlers::assign_fund_to_router::assign_fund_to_router;
 use crate::handlers::create_router::create_router;
 use crate::handlers::get_config::get_config_handler;
-use crate::handlers::get_routers_by_address::get_routers_by_address_handler;
+use crate::handlers::get_routers::get_routers;
 use crate::handlers::migrate_fund::migrate_fund;
 use crate::handlers::save_router::save_router_handler;
 use crate::handlers::update_config::update_config_handler;
@@ -81,6 +81,6 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetConfig {} => to_binary(&get_config_handler(deps)?),
-        QueryMsg::GetRouters { owner } => to_binary(&get_routers_by_address_handler(deps, owner)?),
+        QueryMsg::GetRouters { owner } => to_binary(&get_routers(deps, owner)?),
     }
 }
