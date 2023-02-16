@@ -1,20 +1,18 @@
+use crate::{contract::instantiate, msg::InstantiateMsg, state::get_config};
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
     Addr,
 };
 
 use crate::{
-    contract::instantiate,
-    msg::InstantiateMsg,
-    state::get_config,
-    tests::helpers::{BASE_DENOM, ROUTER_ADDRESS, SWAPPER_ADDRESS, USER},
+    tests::helpers::{BASE_DENOM, ROUTER_ADDRESS, SWAPPER_ADDRESS},
 };
 
 #[test]
 fn saves_config() {
     let mut deps = mock_dependencies();
     let mock_env = mock_env();
-    let info = mock_info(USER, &[]);
+    let info = mock_info("factory", &[]);
 
     let router = Addr::unchecked(ROUTER_ADDRESS);
     let swapper = Addr::unchecked(SWAPPER_ADDRESS);
