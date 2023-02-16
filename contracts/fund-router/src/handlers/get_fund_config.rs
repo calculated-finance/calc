@@ -8,7 +8,7 @@ use fund_core::msg::QueryMsg as FundQueryMsg;
 
 pub fn get_fund_config(deps: Deps) -> StdResult<FundConfigResponse> {
     let fund =
-        get_current_fund(deps.storage)?.expect("config should be set after fund is assigned");
+        get_current_fund(deps.storage)?.expect("a fund should exist to get its config");
 
     deps.querier
         .query_wasm_smart(fund.clone(), &FundQueryMsg::GetConfig {})
