@@ -9,3 +9,6 @@ pub mod get_allowed_z_callers_test;
 
 #[cfg(test)]
 pub mod mocks;
+
+#[cfg(test)]
+pub mod z_delegate_tests;

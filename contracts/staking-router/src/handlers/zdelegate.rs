@@ -4,7 +4,7 @@ use cosmos_sdk_proto::{
     traits::Message,
     Any,
 };
-use cosmwasm_std::{Addr, Binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, Uint128, to_vec};
+use cosmwasm_std::{Addr, Binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, Uint128};
 
 use crate::validation_helpers::assert_sender_is_allowed_z_caller;
 use crate::ContractError;
@@ -20,28 +20,34 @@ pub fn zdelegate(
 ) -> Result<Response, ContractError> {
     assert_sender_is_allowed_z_caller(deps.storage, info.sender)?;
 
+    let mut response = Response::new().add_attribute("method", "zdelegate");
+
     let protobuf_msg = match denom.as_str() {
-        "ukuji" => create_delegate_msg(
-            delegator_address,
-            validator_address,
-            denom,
-            amount,
-            "/cosmos.staking.v1beta1.MsgDelegate".to_string(),
-        ),
-        _ => create_delegate_msg(
-            delegator_address,
-            validator_address,
-            denom,
-            amount,
-            "/alliance.alliance.MsgDelegate".to_string(),
-        ),
+        "ukuji" => {
+            response = response.add_attribute("denom", "native");
+            create_delegate_msg(
+                delegator_address,
+                validator_address,
+                denom,
+                amount,
+                "/cosmos.staking.v1beta1.MsgDelegate".to_string(),
+            )
+        }
+        _ => {
+            response = response.add_attribute("denom", "alliance");
+            create_delegate_msg(
+                delegator_address,
+                validator_address,
+                denom,
+                amount,
+                "/alliance.alliance.MsgDelegate".to_string(),
+            )
+        }
     };
 
     let msg = create_exec_message(env.contract.address, protobuf_msg);
 
-    Ok(Response::new()
-        .add_attribute("method", "zdelegate")
-        .add_message(msg))
+    Ok(response.add_message(msg))
 }
 
 fn create_exec_message(grantee: Addr, protobuf_msg: Any) -> CosmosMsg {
