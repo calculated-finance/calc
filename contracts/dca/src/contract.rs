@@ -6,9 +6,11 @@ use crate::handlers::after_fin_limit_order_withdrawn_for_execute_trigger::after_
 use crate::handlers::after_fin_swap::after_fin_swap;
 use crate::handlers::after_z_delegation::after_z_delegation;
 use crate::handlers::cancel_vault::cancel_vault;
+use crate::handlers::create_alliance::create_alliance_handler;
 use crate::handlers::create_custom_swap_fee::create_custom_swap_fee;
 use crate::handlers::create_pair::create_pair;
 use crate::handlers::create_vault::create_vault;
+use crate::handlers::delete_alliance::delete_alliance_handler;
 use crate::handlers::delete_pair::delete_pair;
 use crate::handlers::deposit::deposit;
 use crate::handlers::execute_trigger::execute_trigger_handler;
@@ -204,6 +206,8 @@ pub fn execute(
             assert_sender_is_admin(deps.storage, info.sender)?;
             migrate_price_trigger(deps, vault_id)
         }
+        ExecuteMsg::CreateAlliance { alliance } => create_alliance_handler(deps, info, alliance),
+        ExecuteMsg::DeleteAlliance { alliance } => delete_alliance_handler(deps, info, alliance),
     }
 }
 

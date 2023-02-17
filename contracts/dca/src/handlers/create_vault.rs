@@ -84,7 +84,7 @@ pub fn create_vault(
         pair.quote_denom.clone()
     };
 
-    assert_delegation_denom_is_stakeable(&destinations, receive_denom)?;
+    assert_delegation_denom_is_stakeable(deps.storage, &destinations, receive_denom)?;
 
     let vault_builder = VaultBuilder {
         owner,

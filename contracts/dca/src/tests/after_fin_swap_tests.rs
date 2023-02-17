@@ -6,8 +6,8 @@ use base::{
 };
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    BankMsg, Coin, Decimal, Decimal256, Reply, SubMsg, SubMsgResponse, SubMsgResult,
-    Timestamp, Uint128,
+    BankMsg, Coin, Decimal, Decimal256, Reply, SubMsg, SubMsgResponse, SubMsgResult, Timestamp,
+    Uint128,
 };
 use fin_helpers::codes::ERROR_SWAP_SLIPPAGE_EXCEEDED;
 use std::{cmp::min, str::FromStr};

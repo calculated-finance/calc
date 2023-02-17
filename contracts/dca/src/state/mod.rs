@@ -1,3 +1,4 @@
+pub mod alliance;
 pub mod cache;
 pub mod config;
 pub mod data_fixes;

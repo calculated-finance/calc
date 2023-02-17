@@ -1,4 +1,5 @@
 use crate::error::ContractError;
+use crate::state::alliance::is_alliance;
 use crate::state::config::{get_config, FeeCollector};
 use crate::types::vault::Vault;
 use base::pair::Pair;
@@ -181,6 +182,7 @@ pub fn assert_destination_validator_addresses_are_valid(
 }
 
 pub fn assert_delegation_denom_is_stakeable(
+    storage: &mut dyn Storage,
     destinations: &[Destination],
     receive_denom: String,
 ) -> Result<(), ContractError> {
@@ -188,7 +190,9 @@ pub fn assert_delegation_denom_is_stakeable(
         .iter()
         .any(|d| d.action == PostExecutionAction::ZDelegate)
     {
-        assert_denom_is_bond_denom(receive_denom)?;
+        if !is_alliance(storage, receive_denom.clone())? {
+            assert_denom_is_bond_denom(receive_denom)?;
+        }
     }
     Ok(())
 }

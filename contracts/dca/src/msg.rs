@@ -89,6 +89,12 @@ pub enum ExecuteMsg {
     MigratePriceTrigger {
         vault_id: Uint128,
     },
+    CreateAlliance {
+        alliance: String,
+    },
+    DeleteAlliance {
+        alliance: String,
+    },
 }
 
 #[cw_serde]

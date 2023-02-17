@@ -474,6 +474,48 @@
           }
         },
         "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "create_alliance"
+        ],
+        "properties": {
+          "create_alliance": {
+            "type": "object",
+            "required": [
+              "alliance"
+            ],
+            "properties": {
+              "alliance": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "delete_alliance"
+        ],
+        "properties": {
+          "delete_alliance": {
+            "type": "object",
+            "required": [
+              "alliance"
+            ],
+            "properties": {
+              "alliance": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
       }
     ],
     "definitions": {
