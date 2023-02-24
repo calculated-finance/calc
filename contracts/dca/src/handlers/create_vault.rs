@@ -1,6 +1,7 @@
 use crate::constants::TWO_MICRONS;
 use crate::contract::AFTER_FIN_LIMIT_ORDER_SUBMITTED_REPLY_ID;
 use crate::error::ContractError;
+
 use crate::state::cache::{Cache, CACHE};
 use crate::state::config::get_config;
 use crate::state::events::create_event;
