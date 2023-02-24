@@ -183,10 +183,10 @@ pub fn execute(
             dca_plus_escrow_level,
         ),
         ExecuteMsg::UpdateVault {
-            address,
+            address: _,
             vault_id,
             label,
-        } => update_vault_label(deps, info, address, vault_id, label),
+        } => update_vault_label(deps, info, vault_id, label),
         ExecuteMsg::CreateCustomSwapFee {
             denom,
             swap_fee_percent,
