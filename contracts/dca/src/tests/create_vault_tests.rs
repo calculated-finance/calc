@@ -2080,3 +2080,70 @@ fn with_long_execution_duration_should_select_longer_duration_model() {
         })
     );
 }
+
+#[test]
+fn with_small_deposit_should_select_shorter_duration_model() {
+    let user_address = Addr::unchecked(USER);
+    let user_balance = TEN;
+    let vault_deposit = ONE;
+    let swap_amount = TEN;
+    let mut mock = MockApp::new(fin_contract_unfilled_limit_order()).with_funds_for(
+        &user_address,
+        user_balance,
+        DENOM_UKUJI,
+    );
+
+    assert_address_balances(
+        &mock,
+        &[
+            (&user_address, DENOM_UKUJI, user_balance),
+            (&user_address, DENOM_UTEST, Uint128::new(0)),
+            (&mock.dca_contract_address, DENOM_UKUJI, ONE_THOUSAND),
+            (&mock.dca_contract_address, DENOM_UTEST, ONE_THOUSAND),
+            (&mock.fin_contract_address, DENOM_UKUJI, ONE_THOUSAND),
+            (&mock.fin_contract_address, DENOM_UTEST, ONE_THOUSAND),
+        ],
+    );
+
+    let create_vault_response = mock
+        .app
+        .execute_contract(
+            Addr::unchecked(USER),
+            mock.dca_contract_address.clone(),
+            &ExecuteMsg::CreateVault {
+                owner: None,
+                minimum_receive_amount: None,
+                label: Some("label".to_string()),
+                destinations: None,
+                pair_address: mock.fin_contract_address.clone(),
+                position_type: None,
+                slippage_tolerance: None,
+                swap_amount,
+                time_interval: TimeInterval::Daily,
+                target_receive_amount: Some(swap_amount),
+                target_start_time_utc_seconds: None,
+                adjust_swap_amount: Some(true),
+            },
+            &vec![Coin::new(vault_deposit.into(), String::from(DENOM_UKUJI))],
+        )
+        .unwrap();
+
+    let vault_id = Uint128::from_str(
+        &get_flat_map_for_event_type(&create_vault_response.events, "wasm").unwrap()["vault_id"],
+    )
+    .unwrap();
+
+    let vault_response: VaultResponse = mock
+        .app
+        .wrap()
+        .query_wasm_smart(&mock.dca_contract_address, &QueryMsg::GetVault { vault_id })
+        .unwrap();
+
+    assert_eq!(
+        vault_response.vault.dca_plus_config,
+        Some(DCAPlusConfig {
+            escrow_level: Decimal::percent(5),
+            model_id: 30
+        })
+    );
+}
