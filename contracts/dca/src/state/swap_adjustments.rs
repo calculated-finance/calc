@@ -1,4 +1,4 @@
-use cosmwasm_std::{Decimal, StdResult, Storage};
+use cosmwasm_std::{Decimal, Order, StdResult, Storage};
 use cw_storage_plus::Map;
 
 use crate::types::dca_plus_config::DCAPlusDirection;
