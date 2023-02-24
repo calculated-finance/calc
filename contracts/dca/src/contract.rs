@@ -26,6 +26,7 @@ use crate::handlers::migrate_fin_limit_order::{
     after_fin_limit_order_submitted_for_migrate_trigger, migrate_price_trigger,
 };
 use crate::handlers::remove_custom_swap_fee::remove_custom_swap_fee;
+use crate::handlers::save_buy_adjustments_handler::save_buy_adjustments_handler;
 use crate::handlers::update_config::update_config_handler;
 use crate::handlers::update_vault_label::update_vault_label;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
@@ -210,6 +211,9 @@ pub fn execute(
         ExecuteMsg::MigratePriceTrigger { vault_id } => {
             assert_sender_is_admin(deps.storage, info.sender)?;
             migrate_price_trigger(deps, vault_id)
+        }
+        ExecuteMsg::SaveBuyAdjustments { adjustments } => {
+            save_buy_adjustments_handler(deps, adjustments)
         }
     }
 }

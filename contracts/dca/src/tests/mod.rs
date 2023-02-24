@@ -60,3 +60,6 @@ pub mod get_vaults_tests;
 
 #[cfg(test)]
 pub mod get_config_tests;
+
+#[cfg(test)]
+pub mod save_buy_adjustments_tests;
