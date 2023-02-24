@@ -23,6 +23,7 @@ use crate::handlers::get_vault::get_vault;
 use crate::handlers::get_vaults::get_vaults_handler;
 use crate::handlers::get_vaults_by_address::get_vaults_by_address;
 use crate::handlers::remove_custom_swap_fee::remove_custom_swap_fee;
+use crate::handlers::save_buy_adjustments_handler::save_buy_adjustments_handler;
 use crate::handlers::update_config::update_config_handler;
 use crate::handlers::update_swap_adjustments_handler::update_swap_adjustments_handler;
 use crate::handlers::update_vault::update_vault_handler;
