@@ -1,4 +1,4 @@
-use cosmwasm_std::{Decimal, Order, StdResult, Storage};
+use cosmwasm_std::{Decimal, StdResult, Storage};
 use cw_storage_plus::Map;
 
 const SWAP_ADJUSTMENTS: Map<u8, Decimal> = Map::new("swap_adjustments_v20");
