@@ -58,15 +58,12 @@ pub fn get_total_execution_duration(
     let mut start_time = Utc
         .timestamp_opt(block_time.seconds().try_into().unwrap(), 0)
         .unwrap();
-    let mut total_duration = Duration::zero();
 
-    for _ in 0..iterations {
+    (0..iterations).fold(Duration::zero(), |acc, _| {
         let duration = get_duration(start_time, interval);
-        total_duration = total_duration + duration;
         start_time = start_time + duration;
-    }
-
-    total_duration
+        acc + duration
+    })
 }
 
 fn get_duration(previous: DateTime<Utc>, interval: &TimeInterval) -> Duration {
@@ -538,7 +535,7 @@ mod get_total_execution_duration_tests {
 
     use super::{get_total_execution_duration, shift_months};
 
-    fn assert_total_execution_durations(
+    fn assert_total_execution_duration(
         block_time: Timestamp,
         iterations: u128,
         execution_interval: TimeInterval,
@@ -554,76 +551,61 @@ mod get_total_execution_duration_tests {
         let block_timestamp =
             Timestamp::from_seconds(block_time_utc.timestamp().try_into().unwrap());
 
-        assert_total_execution_durations(
+        assert_total_execution_duration(
             block_timestamp,
             1,
             TimeInterval::Hourly,
             Duration::hours(1),
         );
-        assert_total_execution_durations(
+        assert_total_execution_duration(
             block_timestamp,
             2,
             TimeInterval::Hourly,
             Duration::hours(2),
         );
-        assert_total_execution_durations(
+        assert_total_execution_duration(
             block_timestamp,
             3,
             TimeInterval::Hourly,
             Duration::hours(3),
         );
 
-        assert_total_execution_durations(
-            block_timestamp,
-            1,
-            TimeInterval::Daily,
-            Duration::days(1),
-        );
-        assert_total_execution_durations(
-            block_timestamp,
-            2,
-            TimeInterval::Daily,
-            Duration::days(2),
-        );
-        assert_total_execution_durations(
-            block_timestamp,
-            3,
-            TimeInterval::Daily,
-            Duration::days(3),
-        );
+        assert_total_execution_duration(block_timestamp, 1, TimeInterval::Daily, Duration::days(1));
+        assert_total_execution_duration(block_timestamp, 2, TimeInterval::Daily, Duration::days(2));
+        assert_total_execution_duration(block_timestamp, 3, TimeInterval::Daily, Duration::days(3));
 
-        assert_total_execution_durations(
+        assert_total_execution_duration(
             block_timestamp,
             1,
             TimeInterval::Weekly,
             Duration::weeks(1),
         );
-        assert_total_execution_durations(
+        assert_total_execution_duration(
             block_timestamp,
             2,
             TimeInterval::Weekly,
             Duration::weeks(2),
         );
-        assert_total_execution_durations(
+        assert_total_execution_duration(
             block_timestamp,
             3,
             TimeInterval::Weekly,
             Duration::weeks(3),
         );
 
-        assert_total_execution_durations(
+        assert_total_execution_duration(
             block_timestamp,
             1,
             TimeInterval::Monthly,
             shift_months(block_time_utc, 1) - block_time_utc,
         );
-        assert_total_execution_durations(
+        assert_total_execution_duration(
             block_timestamp,
             2,
             TimeInterval::Monthly,
             shift_months(block_time_utc, 2) - block_time_utc,
         );
-        assert_total_execution_durations(
+        assert_total_execution_duration(
             block_timestamp,
             3,
             TimeInterval::Monthly,
