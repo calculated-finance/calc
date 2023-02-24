@@ -92,7 +92,7 @@ pub enum ExecuteMsg {
     MigratePriceTrigger {
         vault_id: Uint128,
     },
-    SaveBuyAdjustments {
+    UpdateSwapAdjustments {
         adjustments: Vec<(u8, Decimal)>,
     },
 }
