@@ -528,12 +528,10 @@ mod tests {
 
 #[cfg(test)]
 mod get_total_execution_duration_tests {
+    use super::{get_total_execution_duration, shift_months};
+    use crate::triggers::trigger::TimeInterval;
     use chrono::{Duration, TimeZone, Utc};
     use cosmwasm_std::Timestamp;
-
-    use crate::triggers::trigger::TimeInterval;
-
-    use super::{get_total_execution_duration, shift_months};
 
     fn assert_total_execution_duration(
         block_time: Timestamp,
