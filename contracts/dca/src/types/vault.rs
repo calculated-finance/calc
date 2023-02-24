@@ -50,16 +50,6 @@ impl Vault {
         self.pair.quote_denom.clone()
     }
 
-    // pub fn get_swap_amount(&self) -> Coin {
-    //     Coin {
-    //         denom: self.get_swap_denom(),
-    //         amount: match self.low_funds() {
-    //             true => self.balance.amount,
-    //             false => self.swap_amount,
-    //         },
-    //     }
-    // }
-
     pub fn get_target_price(
         &self,
         target_receive_amount: Uint128,

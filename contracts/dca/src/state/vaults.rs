@@ -228,17 +228,16 @@ pub fn get_vaults(
         .collect::<Vec<Vault>>())
 }
 
-pub fn update_vault(store: &mut dyn Storage, vault: &Vault) -> StdResult<Vault> {
+pub fn update_vault(store: &mut dyn Storage, vault: &Vault) -> StdResult<()> {
     DESTINATIONS.save(
         store,
         vault.id.into(),
         &to_binary(&vault.destinations).expect("serialised destinations"),
     )?;
-    if let Some(dca_plus_config) = vault.dca_plus_config.clone() {
-        DCA_PLUS_CONFIGS.save(store, vault.id.into(), &dca_plus_config)?;
+    if let Some(dca_plus_config) = &vault.dca_plus_config {
+        DCA_PLUS_CONFIGS.save(store, vault.id.into(), dca_plus_config)?;
     }
-    vault_store().save(store, vault.id.into(), &vault.clone().into())?;
-    Ok(vault.clone())
+    vault_store().save(store, vault.id.into(), &vault.clone().into())
 }
 
 pub fn clear_vaults(store: &mut dyn Storage) {
