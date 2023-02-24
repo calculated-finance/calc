@@ -1,4 +1,4 @@
-use cosmwasm_std::{Decimal, StdResult, Storage};
+use cosmwasm_std::{Decimal, Order, StdResult, Storage};
 use cw_storage_plus::Map;
 
 const SWAP_ADJUSTMENTS: Map<u8, Decimal> = Map::new("swap_adjustments_v20");
@@ -13,6 +13,12 @@ pub fn update_swap_adjustments(
     Ok(())
 }
 
-pub fn get_buy_adjustment(storage: &dyn Storage, model: u8) -> StdResult<Decimal> {
+pub fn get_swap_adjustments(storage: &dyn Storage) -> StdResult<Vec<(u8, Decimal)>> {
+    SWAP_ADJUSTMENTS
+        .range(storage, None, None, Order::Ascending)
+        .collect()
+}
+
+pub fn get_swap_adjustment(storage: &dyn Storage, model: u8) -> StdResult<Decimal> {
     SWAP_ADJUSTMENTS.load(storage, model)
 }
