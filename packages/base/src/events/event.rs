@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{BlockInfo, Coin, Decimal, Decimal256, Timestamp, Uint128};
+use cosmwasm_std::{BlockInfo, Coin, Decimal256, Timestamp, Uint128};
 
 #[cw_serde]
 pub enum ExecutionSkippedReason {
@@ -40,12 +40,6 @@ pub enum EventData {
         delegation: Coin,
     },
     DcaVaultDelegationFailed {},
-    DcaPlusVaultExecutionCompleted {
-        swap_adjustment: Decimal,
-        sent: Coin,
-        received: Coin,
-        fee: Coin,
-    },
 }
 
 #[cw_serde]
