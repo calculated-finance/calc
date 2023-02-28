@@ -97,7 +97,12 @@ pub fn create_vault(
         };
         Some(DCAPlusConfig {
             escrow_level: config.dca_plus_escrow_level,
-            model_id: get_dca_plus_model_id(&env, &info, &swap_amount, &time_interval),
+            model_id: get_dca_plus_model_id(
+                &env.block.time,
+                &info.funds[0],
+                &swap_amount,
+                &time_interval,
+            ),
             escrowed_balance: Uint128::zero(),
             standard_dca_received_amount: Uint128::zero(),
         })

@@ -1,6 +1,6 @@
 use crate::{state::swap_adjustments::get_swap_adjustment, types::vault::Vault};
 use base::{helpers::time_helpers::get_total_execution_duration, triggers::trigger::TimeInterval};
-use cosmwasm_std::{Coin, Deps, Env, MessageInfo, StdResult, Uint128};
+use cosmwasm_std::{Coin, Deps, StdResult, Timestamp, Uint128};
 
 pub fn get_swap_amount(deps: &Deps, vault: Vault) -> StdResult<Coin> {
     let initial_amount = match vault.low_funds() {
@@ -29,14 +29,14 @@ pub fn has_sufficient_funds(deps: &Deps, vault: Vault) -> StdResult<bool> {
 }
 
 pub fn get_dca_plus_model_id(
-    env: &Env,
-    info: &MessageInfo,
+    block_time: &Timestamp,
+    balance: &Coin,
     swap_amount: &Uint128,
     time_interval: &TimeInterval,
 ) -> u8 {
     let execution_duration = get_total_execution_duration(
-        env.block.time,
-        (info.funds[0]
+        *block_time,
+        (balance
             .amount
             .checked_div(*swap_amount)
             .expect("deposit divided by swap amount should be larger than 0"))
