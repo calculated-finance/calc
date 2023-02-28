@@ -18,6 +18,7 @@ use base::helpers::math_helpers::checked_mul;
 use base::vaults::vault::{Destination, PostExecutionAction, VaultStatus};
 use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, Uint128};
 use cw_multi_test::Executor;
+use fin_helpers::position_type::PositionType;
 use std::str::FromStr;
 
 #[test]
@@ -1184,7 +1185,7 @@ fn for_ready_time_trigger_with_dca_plus_should_withhold_escrow() {
             Addr::unchecked(ADMIN),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::UpdateSwapAdjustments {
-                direction: DCAPlusDirection::In,
+                position_type: PositionType::Enter,
                 adjustments: vec![
                     (30, Decimal::from_str("1.0").unwrap()),
                     (35, Decimal::from_str("1.0").unwrap()),
@@ -1294,7 +1295,7 @@ fn for_ready_time_trigger_with_dca_plus_should_adjust_swap_amount() {
             Addr::unchecked(ADMIN),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::UpdateSwapAdjustments {
-                direction: DCAPlusDirection::In,
+                position_type: PositionType::Enter,
                 adjustments: vec![
                     (30, Decimal::from_str("1.3").unwrap()),
                     (35, Decimal::from_str("1.3").unwrap()),

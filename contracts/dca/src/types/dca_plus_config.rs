@@ -6,6 +6,7 @@ pub struct DCAPlusConfig {
     pub direction: DCAPlusDirection,
     pub escrow_level: Decimal,
     pub model_id: u8,
+    pub standard_dca_swapped_amount: Uint128,
     pub standard_dca_received_amount: Uint128,
     pub escrowed_balance: Uint128,
 }

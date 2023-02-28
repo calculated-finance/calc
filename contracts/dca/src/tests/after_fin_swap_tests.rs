@@ -33,7 +33,7 @@ use cosmwasm_std::{
     BankMsg, Coin, Decimal, Decimal256, Reply, SubMsg, SubMsgResponse, SubMsgResult, Timestamp,
     Uint128,
 };
-use fin_helpers::codes::ERROR_SWAP_SLIPPAGE_EXCEEDED;
+use fin_helpers::{codes::ERROR_SWAP_SLIPPAGE_EXCEEDED, position_type::PositionType};
 use std::{cmp::min, str::FromStr};
 
 #[test]
@@ -608,7 +608,7 @@ fn with_succcesful_swap_with_dca_plus_escrows_funds() {
 
     update_swap_adjustments(
         deps.as_mut().storage,
-        DCAPlusDirection::In,
+        PositionType::Exit,
         vec![
             (30, Decimal::from_str("1.0").unwrap()),
             (35, Decimal::from_str("1.0").unwrap()),
@@ -690,7 +690,7 @@ fn with_succcesful_swap_with_dca_plus_escrows_funds() {
 }
 
 #[test]
-fn with_succcesful_swap_with_dca_plus_updates_standard_dca_received_amount() {
+fn with_succcesful_swap_with_dca_plus_updates_standard_dca_amounts() {
     let mut deps = mock_dependencies();
     let env = mock_env();
     instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
@@ -715,7 +715,7 @@ fn with_succcesful_swap_with_dca_plus_updates_standard_dca_received_amount() {
 
     update_swap_adjustments(
         deps.as_mut().storage,
-        DCAPlusDirection::In,
+        PositionType::Exit,
         vec![
             (30, Decimal::from_str("1.3").unwrap()),
             (35, Decimal::from_str("1.3").unwrap()),
@@ -745,12 +745,14 @@ fn with_succcesful_swap_with_dca_plus_updates_standard_dca_received_amount() {
     .unwrap();
 
     let updated_vault = get_vault(&deps.storage, vault.id).unwrap();
+    let dca_plus_config = updated_vault.dca_plus_config.unwrap();
 
     assert_eq!(
-        updated_vault
-            .dca_plus_config
-            .unwrap()
-            .standard_dca_received_amount,
+        dca_plus_config.standard_dca_swapped_amount,
+        updated_vault.swapped_amount.amount * (Decimal::one() / Decimal::from_str("1.3").unwrap())
+    );
+    assert_eq!(
+        dca_plus_config.standard_dca_received_amount,
         updated_vault.received_amount.amount * Decimal::from_str("1.3").unwrap()
     );
 }

@@ -91,7 +91,10 @@ pub fn create_vault(
 
     let config = get_config(deps.storage)?;
 
-    let dca_plus_config = dca_plus_direction.map_or(None, |direction| {
+    let dca_plus_config = use_dca_plus.map_or(None, |use_dca_plus| {
+        if !use_dca_plus {
+            return None;
+        }
         Some(DCAPlusConfig {
             direction,
             escrow_level: config.dca_plus_escrow_level,
@@ -102,6 +105,7 @@ pub fn create_vault(
                 &time_interval,
             ),
             escrowed_balance: Uint128::zero(),
+            standard_dca_swapped_amount: Uint128::zero(),
             standard_dca_received_amount: Uint128::zero(),
         })
     });

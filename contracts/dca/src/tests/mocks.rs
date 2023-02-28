@@ -216,7 +216,7 @@ impl MockApp {
                     time_interval: TimeInterval::Hourly,
                     target_receive_amount: Some(swap_amount),
                     target_start_time_utc_seconds: None,
-                    dca_plus_direction: None,
+                    use_dca_plus: None,
                 },
                 &vec![balance],
             )
@@ -258,7 +258,7 @@ impl MockApp {
                     time_interval: TimeInterval::Hourly,
                     target_receive_amount: Some(swap_amount),
                     target_start_time_utc_seconds: None,
-                    dca_plus_direction: None,
+                    use_dca_plus: None,
                 },
                 &vec![balance],
             )
@@ -317,7 +317,7 @@ impl MockApp {
                     time_interval: TimeInterval::Hourly,
                     target_receive_amount: Some(swap_amount),
                     target_start_time_utc_seconds: None,
-                    dca_plus_direction: None,
+                    use_dca_plus: None,
                 },
                 &vec![balance],
             )
@@ -364,7 +364,7 @@ impl MockApp {
         swap_amount: Uint128,
         label: &str,
         minimum_receive_amount: Option<Uint128>,
-        dca_plus_direction: Option<DCAPlusDirection>,
+        use_dca_plus: Option<bool>,
     ) -> MockApp {
         let response = self
             .app
@@ -385,7 +385,7 @@ impl MockApp {
                         self.app.block_info().time.plus_seconds(2).seconds(),
                     )),
                     target_receive_amount: None,
-                    dca_plus_direction,
+                    use_dca_plus,
                 },
                 &vec![balance],
             )
@@ -428,7 +428,7 @@ impl MockApp {
                     time_interval: TimeInterval::Hourly,
                     target_start_time_utc_seconds: None,
                     target_receive_amount: None,
-                    dca_plus_direction: None,
+                    use_dca_plus: None,
                 },
                 &vec![balance],
             )
@@ -468,7 +468,7 @@ impl MockApp {
                     time_interval: TimeInterval::Hourly,
                     target_start_time_utc_seconds: None,
                     target_receive_amount: None,
-                    dca_plus_direction: None,
+                    use_dca_plus: None,
                 },
                 &vec![Coin::new(1, DENOM_UKUJI)],
             )

@@ -57,7 +57,7 @@ pub enum ExecuteMsg {
         time_interval: TimeInterval,
         target_start_time_utc_seconds: Option<Uint64>,
         target_receive_amount: Option<Uint128>,
-        dca_plus_direction: Option<DCAPlusDirection>,
+        use_dca_plus: Option<bool>,
     },
     Deposit {
         address: Addr,
@@ -91,7 +91,7 @@ pub enum ExecuteMsg {
         denom: String,
     },
     UpdateSwapAdjustments {
-        direction: DCAPlusDirection,
+        position_type: PositionType,
         adjustments: Vec<(u8, Decimal)>,
     },
 }
