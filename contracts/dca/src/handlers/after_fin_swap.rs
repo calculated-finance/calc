@@ -162,22 +162,6 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                 ),
             )?;
 
-            attributes.push(Attribute::new(
-                "received_amount",
-                coin_received.amount.to_string(),
-            ));
-            attributes.push(Attribute::new("fee_percent", fee_percent.to_string()));
-            attributes.push(Attribute::new(
-                "total_after_swap_fee",
-                total_after_swap_fee.to_string(),
-            ));
-            attributes.push(Attribute::new(
-                "total_after_total_fee",
-                total_after_total_fee.to_string(),
-            ));
-            attributes.push(Attribute::new("swap_fee", swap_fee.to_string()));
-            attributes.push(Attribute::new("automation_fee", automation_fee.to_string()));
-            attributes.push(Attribute::new("total_fee", total_fee.to_string()));
             attributes.push(Attribute::new("status", "success"));
         }
         SubMsgResult::Err(_) => {
