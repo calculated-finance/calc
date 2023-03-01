@@ -12,7 +12,7 @@ use crate::tests::mocks::{
     fin_contract_low_swap_price, fin_contract_pass_slippage_tolerance,
     fin_contract_unfilled_limit_order, MockApp, ADMIN, DENOM_UKUJI, DENOM_UTEST, USER,
 };
-use crate::types::dca_plus_config::DCAPlusDirection;
+
 use base::events::event::{EventBuilder, EventData};
 use base::helpers::math_helpers::checked_mul;
 use base::vaults::vault::{Destination, PostExecutionAction, VaultStatus};
@@ -1177,7 +1177,7 @@ fn for_ready_time_trigger_with_dca_plus_should_withhold_escrow() {
             swap_amount,
             "time",
             None,
-            Some(DCAPlusDirection::In),
+            Some(true),
         );
 
     mock.app
@@ -1287,7 +1287,7 @@ fn for_ready_time_trigger_with_dca_plus_should_adjust_swap_amount() {
             swap_amount,
             "time",
             None,
-            Some(DCAPlusDirection::In),
+            Some(true),
         );
 
     mock.app

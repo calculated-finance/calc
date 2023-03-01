@@ -8,7 +8,7 @@ use fin_helpers::position_type::PositionType;
 
 use crate::state::config::{Config, FeeCollector};
 use crate::state::data_fixes::DataFix;
-use crate::types::dca_plus_config::DCAPlusDirection;
+
 use crate::types::vault::Vault;
 
 #[cw_serde]

@@ -1,6 +1,5 @@
 use crate::{
     error::ContractError, state::swap_adjustments::update_swap_adjustments,
-    types::dca_plus_config::DCAPlusDirection,
 };
 use cosmwasm_std::{Decimal, DepsMut, Response};
 use fin_helpers::position_type::PositionType;

@@ -2,7 +2,7 @@ use crate::constants::{ONE_THOUSAND, TWO_MICRONS};
 use crate::contract::reply;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, VaultResponse};
 use crate::state::config::FeeCollector;
-use crate::types::dca_plus_config::DCAPlusDirection;
+
 use crate::types::vault::Vault;
 use base::helpers::message_helpers::get_flat_map_for_event_type;
 use base::triggers::trigger::TimeInterval;

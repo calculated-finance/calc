@@ -20,7 +20,6 @@ use crate::{
         },
         mocks::{ADMIN, DENOM_UKUJI},
     },
-    types::dca_plus_config::DCAPlusDirection,
 };
 use base::{
     events::event::{EventBuilder, EventData, ExecutionSkippedReason},
