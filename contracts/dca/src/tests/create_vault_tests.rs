@@ -1181,7 +1181,6 @@ fn with_time_trigger_with_existing_vault_should_create_vault() {
             "time",
             None,
             None,
-            None,
         );
 
     let target_start_time = mock.app.block_info().time.plus_seconds(2);
