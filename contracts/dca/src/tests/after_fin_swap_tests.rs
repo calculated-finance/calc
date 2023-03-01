@@ -712,20 +712,22 @@ fn with_succcesful_swap_with_dca_plus_updates_standard_dca_amounts() {
         vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
     );
 
+    let coefficient = Decimal::from_str("1.3").unwrap();
+
     update_swap_adjustments(
         deps.as_mut().storage,
         PositionType::Exit,
         vec![
-            (30, Decimal::from_str("1.3").unwrap()),
-            (35, Decimal::from_str("1.3").unwrap()),
-            (40, Decimal::from_str("1.3").unwrap()),
-            (45, Decimal::from_str("1.3").unwrap()),
-            (50, Decimal::from_str("1.3").unwrap()),
-            (55, Decimal::from_str("1.3").unwrap()),
-            (60, Decimal::from_str("1.3").unwrap()),
-            (70, Decimal::from_str("1.3").unwrap()),
-            (80, Decimal::from_str("1.3").unwrap()),
-            (90, Decimal::from_str("1.3").unwrap()),
+            (30, coefficient),
+            (35, coefficient),
+            (40, coefficient),
+            (45, coefficient),
+            (50, coefficient),
+            (55, coefficient),
+            (60, coefficient),
+            (70, coefficient),
+            (80, coefficient),
+            (90, coefficient),
         ],
     )
     .unwrap();
@@ -748,11 +750,11 @@ fn with_succcesful_swap_with_dca_plus_updates_standard_dca_amounts() {
 
     assert_eq!(
         dca_plus_config.standard_dca_swapped_amount,
-        updated_vault.swapped_amount.amount * (Decimal::one() / Decimal::from_str("1.3").unwrap())
+        updated_vault.swapped_amount.amount * (Decimal::one() / coefficient)
     );
     assert_eq!(
         dca_plus_config.standard_dca_received_amount,
-        updated_vault.received_amount.amount * Decimal::from_str("1.3").unwrap()
+        updated_vault.received_amount.amount * (Decimal::one() / coefficient) - Uint128::one() // account for rounding
     );
 }
 
