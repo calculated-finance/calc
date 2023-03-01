@@ -52,5 +52,10 @@ pub fn claim_escrowed_funds_handler(
             &vault,
             amount_to_disburse,
         )?)
-        .add_submessages(get_fee_messages(deps.as_ref(), env, performance_fee)?))
+        .add_submessages(get_fee_messages(
+            deps.as_ref(),
+            env,
+            vec![performance_fee.amount],
+            vault.get_receive_denom(),
+        )?))
 }

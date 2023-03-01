@@ -81,10 +81,8 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
             sub_msgs.append(&mut get_fee_messages(
                 deps.as_ref(),
                 env.clone(),
-                Coin {
-                    denom: coin_received.denom.clone(),
-                    amount: total_fee,
-                },
+                vec![swap_fee, automation_fee],
+                coin_received.denom.clone(),
             )?);
 
             vault.balance.amount -= get_swap_amount(&deps.as_ref(), vault.clone())?.amount;

@@ -72,35 +72,42 @@ pub fn get_disbursement_messages(
         .collect::<Vec<SubMsg>>())
 }
 
-pub fn get_fee_messages(deps: Deps, env: Env, total_fee: Coin) -> StdResult<Vec<SubMsg>> {
+pub fn get_fee_messages(
+    deps: Deps,
+    env: Env,
+    fee_amounts: Vec<Uint128>,
+    denom: String,
+) -> StdResult<Vec<SubMsg>> {
     let config = get_config(deps.storage)?;
 
     Ok(config
         .fee_collectors
         .iter()
         .flat_map(|fee_collector| {
-            let fee_allocation = Coin::new(
-                checked_mul(total_fee.amount, fee_collector.allocation)
-                    .ok()
-                    .expect("amount to be distributed should be valid")
-                    .into(),
-                total_fee.denom.clone(),
-            );
+            fee_amounts.iter().flat_map(|fee| {
+                let fee_allocation = Coin::new(
+                    checked_mul(*fee, fee_collector.allocation)
+                        .ok()
+                        .expect("amount to be distributed should be valid")
+                        .into(),
+                    denom.clone(),
+                );
 
-            if fee_allocation.amount.gt(&Uint128::zero()) {
-                Some(match fee_collector.address.as_str() {
-                    "community_pool" => create_fund_community_pool_msg(
-                        env.contract.address.to_string(),
-                        vec![fee_allocation.clone()],
-                    ),
-                    _ => SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-                        to_address: fee_collector.address.to_string(),
-                        amount: vec![fee_allocation],
-                    })),
-                })
-            } else {
-                None
-            }
+                if fee_allocation.amount.gt(&Uint128::zero()) {
+                    Some(match fee_collector.address.as_str() {
+                        "community_pool" => create_fund_community_pool_msg(
+                            env.contract.address.to_string(),
+                            vec![fee_allocation.clone()],
+                        ),
+                        _ => SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+                            to_address: fee_collector.address.to_string(),
+                            amount: vec![fee_allocation],
+                        })),
+                    })
+                } else {
+                    None
+                }
+            })
         })
         .collect::<Vec<SubMsg>>())
 }
