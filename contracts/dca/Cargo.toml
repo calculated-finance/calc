@@ -23,7 +23,6 @@ library = []
 
 [dependencies]
 base = { path = "../../packages/base" }
-swap = { path = "../swap" }
 cosmwasm-std = "1.0.0"
 cosmwasm-storage = "1.1.1"
 cw-storage-plus = "0.15.0"

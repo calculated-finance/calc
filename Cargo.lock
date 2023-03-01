@@ -423,7 +423,6 @@ dependencies = [
  "schemars",
  "serde",
  "staking-router",
- "swap",
  "thiserror",
 ]
 
