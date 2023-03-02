@@ -37,8 +37,7 @@ pub fn update_swap_adjustments(
     for (model, adjustment) in adjustments {
         adjustments_store(position_type.clone()).save(storage, model, &adjustment)?;
     }
-    adjustments_updated_store(position_type).save(storage, &block_time)?;
-    Ok(())
+    adjustments_updated_store(position_type).save(storage, &block_time)
 }
 
 pub fn get_swap_adjustment(
