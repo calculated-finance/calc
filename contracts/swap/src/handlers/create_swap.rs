@@ -1,6 +1,6 @@
 use crate::{
     contract::ContractResult,
-    msg::ExecuteMsg,
+    msg::{ExecuteInternalMsg, ExecuteMsg},
     shared::helpers::get_cheapest_swap_path,
     state::swap_messages::{get_next_swap_id, save_swap_messages},
     types::{callback::Callback, pair::Pair},
@@ -31,7 +31,9 @@ pub fn create_swap_handler(
     )?;
 
     let swap_id = get_next_swap_id(deps.storage)?;
-    let on_continue = to_binary(&ExecuteMsg::ContinueSwap { swap_id })?;
+    let on_continue = to_binary(&ExecuteMsg::ExecuteInternalMessage {
+        message: ExecuteInternalMsg::ContinueSwap { swap_id },
+    })?;
 
     let mut swap_messages = cheapest_swap_path
         .pairs
@@ -49,8 +51,10 @@ pub fn create_swap_handler(
 
     swap_messages.push_back(on_complete.unwrap_or(Callback {
         address: env.contract.address.clone(),
-        msg: to_binary(&ExecuteMsg::SendFunds {
-            address: info.sender,
+        msg: to_binary(&ExecuteMsg::ExecuteInternalMessage {
+            message: ExecuteInternalMsg::SendFunds {
+                address: info.sender,
+            },
         })?,
     }));
 
@@ -92,14 +96,16 @@ fn generate_swap_message(
             quote_denom,
         } => Ok(Callback {
             address: env.contract.address,
-            msg: to_binary(&ExecuteMsg::SwapOnFin {
-                pair: FinPair {
-                    address,
-                    base_denom,
-                    quote_denom,
+            msg: to_binary(&ExecuteMsg::ExecuteInternalMessage {
+                message: ExecuteInternalMsg::SwapOnFin {
+                    pair: FinPair {
+                        address,
+                        base_denom,
+                        quote_denom,
+                    },
+                    slippage_tolerance,
+                    callback,
                 },
-                slippage_tolerance,
-                callback,
             })?,
         }),
     }

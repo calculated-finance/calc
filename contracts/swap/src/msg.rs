@@ -29,6 +29,13 @@ pub enum ExecuteMsg {
         slippage_tolerance: Option<Decimal256>,
         on_complete: Option<Callback>,
     },
+    ExecuteInternalMessage {
+        message: ExecuteInternalMsg,
+    },
+}
+
+#[cw_serde]
+pub enum ExecuteInternalMsg {
     ContinueSwap {
         swap_id: u64,
     },

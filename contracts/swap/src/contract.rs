@@ -1,12 +1,9 @@
 use crate::{
     errors::contract_error::ContractError,
     handlers::{
-        add_path::add_path_handler,
-        continue_swap::continue_swap_handler,
-        create_swap::create_swap_handler,
-        send_funds::send_funds_handler,
-        swap_on_fin::{after_swap_on_fin_handler, swap_on_fin_handler},
-        update_config::update_config_handler,
+        add_path::add_path_handler, create_swap::create_swap_handler,
+        execute_internal_message::execute_internal_message_handler,
+        swap_on_fin::after_swap_on_fin_handler, update_config::update_config_handler,
     },
     msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg},
     shared::helpers::{get_price, get_swap_paths_with_price},
@@ -76,13 +73,9 @@ pub fn execute(
             slippage_tolerance,
             on_complete,
         ),
-        ExecuteMsg::ContinueSwap { swap_id } => continue_swap_handler(deps, info, swap_id),
-        ExecuteMsg::SwapOnFin {
-            pair,
-            slippage_tolerance,
-            callback,
-        } => swap_on_fin_handler(deps, &env, &info, pair, slippage_tolerance, callback),
-        ExecuteMsg::SendFunds { address } => send_funds_handler(info, address),
+        ExecuteMsg::ExecuteInternalMessage { message } => {
+            execute_internal_message_handler(deps, env, info, message)
+        }
     }
 }
 

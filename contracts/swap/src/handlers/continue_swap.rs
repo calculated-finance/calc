@@ -30,7 +30,7 @@ pub fn continue_swap_handler(
 mod continue_swap_tests {
     use super::continue_swap_handler;
     use crate::{
-        msg::ExecuteMsg,
+        msg::{ExecuteInternalMsg, ExecuteMsg},
         state::swap_messages::{get_swap_messages, save_swap_messages},
         types::callback::Callback,
     };
@@ -49,28 +49,32 @@ mod continue_swap_tests {
 
         messages.push_front(Callback {
             address: Addr::unchecked("next-addr"),
-            msg: to_binary(&ExecuteMsg::SwapOnFin {
-                pair: Pair {
-                    address: Addr::unchecked("pair-addr"),
-                    base_denom: "base-denom".to_string(),
-                    quote_denom: "quote-denom".to_string(),
+            msg: to_binary(&ExecuteMsg::ExecuteInternalMessage {
+                message: ExecuteInternalMsg::SwapOnFin {
+                    pair: Pair {
+                        address: Addr::unchecked("pair-addr"),
+                        base_denom: "base-denom".to_string(),
+                        quote_denom: "quote-denom".to_string(),
+                    },
+                    slippage_tolerance: None,
+                    callback: to_binary(&"test").unwrap(),
                 },
-                slippage_tolerance: None,
-                callback: to_binary(&"test").unwrap(),
             })
             .unwrap(),
         });
 
         messages.push_front(Callback {
             address: Addr::unchecked("next-addr"),
-            msg: to_binary(&ExecuteMsg::SwapOnFin {
-                pair: Pair {
-                    address: Addr::unchecked("pair-addr"),
-                    base_denom: "base-denom".to_string(),
-                    quote_denom: "quote-denom".to_string(),
+            msg: to_binary(&ExecuteMsg::ExecuteInternalMessage {
+                message: ExecuteInternalMsg::SwapOnFin {
+                    pair: Pair {
+                        address: Addr::unchecked("pair-addr"),
+                        base_denom: "base-denom".to_string(),
+                        quote_denom: "quote-denom".to_string(),
+                    },
+                    slippage_tolerance: None,
+                    callback: to_binary(&"test").unwrap(),
                 },
-                slippage_tolerance: None,
-                callback: to_binary(&"test").unwrap(),
             })
             .unwrap(),
         });
@@ -101,28 +105,32 @@ mod continue_swap_tests {
 
         let final_message = Callback {
             address: Addr::unchecked("final-addr"),
-            msg: to_binary(&ExecuteMsg::SwapOnFin {
-                pair: Pair {
-                    address: Addr::unchecked("pair-addr-1"),
-                    base_denom: "base-denom".to_string(),
-                    quote_denom: "quote-denom".to_string(),
+            msg: to_binary(&ExecuteMsg::ExecuteInternalMessage {
+                message: ExecuteInternalMsg::SwapOnFin {
+                    pair: Pair {
+                        address: Addr::unchecked("pair-addr-1"),
+                        base_denom: "base-denom".to_string(),
+                        quote_denom: "quote-denom".to_string(),
+                    },
+                    slippage_tolerance: None,
+                    callback: to_binary(&"test").unwrap(),
                 },
-                slippage_tolerance: None,
-                callback: to_binary(&"test").unwrap(),
             })
             .unwrap(),
         };
 
         let next_message = Callback {
             address: Addr::unchecked("next-addr"),
-            msg: to_binary(&ExecuteMsg::SwapOnFin {
-                pair: Pair {
-                    address: Addr::unchecked("pair-addr-2"),
-                    base_denom: "base-denom".to_string(),
-                    quote_denom: "quote-denom".to_string(),
+            msg: to_binary(&ExecuteMsg::ExecuteInternalMessage {
+                message: ExecuteInternalMsg::SwapOnFin {
+                    pair: Pair {
+                        address: Addr::unchecked("pair-addr-2"),
+                        base_denom: "base-denom".to_string(),
+                        quote_denom: "quote-denom".to_string(),
+                    },
+                    slippage_tolerance: None,
+                    callback: to_binary(&"test").unwrap(),
                 },
-                slippage_tolerance: None,
-                callback: to_binary(&"test").unwrap(),
             })
             .unwrap(),
         };
