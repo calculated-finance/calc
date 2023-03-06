@@ -576,7 +576,7 @@ fn with_dca_plus_should_update_model_id() {
 
     let vault_id = mock.vault_ids.get("vault").unwrap().to_owned();
 
-    let vault = mock
+    let vault_before_deposit = mock
         .app
         .wrap()
         .query_wasm_smart::<VaultResponse>(
@@ -585,8 +585,6 @@ fn with_dca_plus_should_update_model_id() {
         )
         .unwrap()
         .vault;
-
-    assert_eq!(vault.dca_plus_config.unwrap().model_id, 30);
 
     mock.app
         .execute_contract(
@@ -603,7 +601,7 @@ fn with_dca_plus_should_update_model_id() {
         )
         .unwrap();
 
-    let vault = mock
+    let vault_after_deposit = mock
         .app
         .wrap()
         .query_wasm_smart::<VaultResponse>(
@@ -613,5 +611,6 @@ fn with_dca_plus_should_update_model_id() {
         .unwrap()
         .vault;
 
-    assert_eq!(vault.dca_plus_config.unwrap().model_id, 80);
+    assert_eq!(vault_before_deposit.dca_plus_config.unwrap().model_id, 30);
+    assert_eq!(vault_after_deposit.dca_plus_config.unwrap().model_id, 80);
 }
