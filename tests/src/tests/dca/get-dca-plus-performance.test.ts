@@ -25,11 +25,11 @@ describe.only('when fetching dca plus performance', () => {
     });
 
     it('has an empty performance fee', async function (this: Context) {
-      expect(performance.performance_fee).to.deep.equal(coin(0, 'ukuji'));
+      expect(performance.fee).to.deep.equal(coin(0, 'ukuji'));
     });
 
     it('has an even performance factor', async function (this: Context) {
-      expect(performance.performance_factor).to.equal('1');
+      expect(performance.factor).to.equal('1');
     });
   });
 
@@ -52,11 +52,11 @@ describe.only('when fetching dca plus performance', () => {
     });
 
     it('has an empty performance fee', async function (this: Context) {
-      expect(performance.performance_fee).to.deep.equal(coin(0, 'ukuji'));
+      expect(performance.fee).to.deep.equal(coin(0, 'ukuji'));
     });
 
     it('has an even performance factor', async function (this: Context) {
-      expect(performance.performance_factor).to.equal('0.999459027873087939');
+      expect(performance.factor).to.equal('0.999459027873087939');
     });
   });
 });
