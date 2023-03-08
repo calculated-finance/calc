@@ -5,7 +5,8 @@ import { map } from 'ramda';
 import { execute } from '../../shared/cosmwasm';
 import { EventData } from '../../types/dca/response/get_events';
 import { Vault } from '../../types/dca/response/get_vault';
-import { createVault, getBalances, provideAuthGrant } from '../helpers';
+import { createVault, getBalances } from '../helpers';
+import { instantiateDCAContract } from '../hooks';
 import { expect } from '../shared.test';
 
 describe('when cancelling a vault', () => {
@@ -265,6 +266,59 @@ describe('when cancelling a vault', () => {
           dca_vault_cancelled: {},
         },
       ]);
+    });
+  });
+
+  describe('with dca plus and no trigger', async () => {
+    const swapAmount = 100000;
+    let vaultBeforeExecution: Vault;
+    let vaultAfterExecution: Vault;
+    let balancesBeforeExecution: Record<string, number>;
+
+    before(async function (this: Context) {
+      const vaultId = await createVault(this, {
+        swap_amount: `${swapAmount}`,
+        use_dca_plus: true,
+      });
+
+      vaultBeforeExecution = (
+        await this.cosmWasmClient.queryContractSmart(this.dcaContractAddress, {
+          get_vault: {
+            vault_id: vaultId,
+          },
+        })
+      ).vault;
+
+      balancesBeforeExecution = await getBalances(this.cosmWasmClient, [
+        this.userWalletAddress,
+        this.dcaContractAddress,
+        this.finPairAddress,
+        this.feeCollectorAddress,
+      ]);
+
+      await execute(this.cosmWasmClient, this.adminContractAddress, this.dcaContractAddress, {
+        cancel_vault: {
+          vault_id: vaultId,
+        },
+      });
+
+      vaultAfterExecution = (
+        await this.cosmWasmClient.queryContractSmart(this.dcaContractAddress, {
+          get_vault: {
+            vault_id: vaultId,
+          },
+        })
+      ).vault;
+    });
+
+    it('returns the escrowed amount', async function (this: Context) {
+      expect(vaultBeforeExecution.dca_plus_config!.escrowed_balance).to.equal(
+        `${Math.floor(
+          parseInt(vaultBeforeExecution.received_amount.amount) *
+            parseFloat(vaultBeforeExecution.dca_plus_config.escrow_level),
+        )}`,
+      );
+      expect(vaultAfterExecution.dca_plus_config!.escrowed_balance).to.equal('0');
     });
   });
 });

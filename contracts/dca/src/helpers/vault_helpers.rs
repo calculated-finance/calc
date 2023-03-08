@@ -75,10 +75,7 @@ pub fn get_dca_plus_performance_factor(
 
     let dca_plus_total_value = vault.balance.amount + vault.received_amount.amount * current_price;
 
-    let standard_dca_remaining_balance =
-        vault.get_total_deposit_amount() - dca_plus_config.standard_dca_swapped_amount;
-
-    let standard_dca_total_value = standard_dca_remaining_balance
+    let standard_dca_total_value = dca_plus_config.standard_dca_balance
         + dca_plus_config.standard_dca_received_amount * current_price;
 
     Ok(Decimal::from_ratio(
@@ -95,10 +92,7 @@ pub fn get_dca_plus_performance_fee(vault: &Vault, current_price: Decimal) -> St
 
     let dca_plus_total_value = vault.balance.amount + vault.received_amount.amount * current_price;
 
-    let standard_dca_remaining_balance =
-        vault.get_total_deposit_amount() - dca_plus_config.standard_dca_swapped_amount;
-
-    let standard_dca_total_value = standard_dca_remaining_balance
+    let standard_dca_total_value = dca_plus_config.standard_dca_balance
         + dca_plus_config.standard_dca_received_amount * current_price;
 
     if standard_dca_total_value > dca_plus_total_value {
@@ -132,8 +126,9 @@ mod tests {
     fn get_vault(
         remaining_balance: Uint128,
         swapped_amount: Uint128,
-        standard_dca_swapped_amount: Uint128,
         received_amount: Uint128,
+        standard_dca_remaining_balance: Uint128,
+        standard_dca_swapped_amount: Uint128,
         standard_dca_received_amount: Uint128,
     ) -> Vault {
         let escrow_level = Decimal::percent(5);
@@ -152,6 +147,7 @@ mod tests {
                 amount: received_amount,
             },
             dca_plus_config: Some(DcaPlusConfig {
+                standard_dca_balance: standard_dca_remaining_balance,
                 standard_dca_swapped_amount,
                 standard_dca_received_amount,
                 escrowed_balance: received_amount * escrow_level,
@@ -181,8 +177,9 @@ mod tests {
     fn assert_peformance_factor(
         remaining_balance: Uint128,
         swapped_amount: Uint128,
-        standard_dca_swapped_amount: Uint128,
         received_amount: Uint128,
+        standard_dca_remaining_balance: Uint128,
+        standard_dca_swapped_amount: Uint128,
         standard_dca_received_amount: Uint128,
         current_price: Decimal,
         expected_performance_factor: Decimal,
@@ -190,8 +187,9 @@ mod tests {
         let vault = get_vault(
             remaining_balance,
             swapped_amount,
-            standard_dca_swapped_amount,
             received_amount,
+            standard_dca_remaining_balance,
+            standard_dca_swapped_amount,
             standard_dca_received_amount,
         );
 
@@ -204,6 +202,7 @@ mod tests {
         let remaining_balance = Uint128::new(1100);
         let swapped_amount = Uint128::new(900);
         let received_amount = Uint128::new(1100);
+        let standard_dca_remaining_balance = Uint128::new(1100);
         let standard_dca_swapped_amount = Uint128::new(900);
         let standard_dca_received_amount = Uint128::new(1100);
         let current_price = Decimal::from_str("1.1").unwrap();
@@ -212,8 +211,9 @@ mod tests {
         assert_peformance_factor(
             remaining_balance,
             swapped_amount,
-            standard_dca_swapped_amount,
             received_amount,
+            standard_dca_remaining_balance,
+            standard_dca_swapped_amount,
             standard_dca_received_amount,
             current_price,
             expected_performance_factor,
@@ -225,6 +225,7 @@ mod tests {
         let remaining_balance = Uint128::new(1100);
         let swapped_amount = Uint128::new(900);
         let received_amount = Uint128::new(1100);
+        let standard_dca_remaining_balance = Uint128::new(1100);
         let standard_dca_swapped_amount = Uint128::new(900);
         let standard_dca_received_amount = Uint128::new(1000);
         let current_price = Decimal::from_str("1.1").unwrap();
@@ -233,8 +234,9 @@ mod tests {
         assert_peformance_factor(
             remaining_balance,
             swapped_amount,
-            standard_dca_swapped_amount,
             received_amount,
+            standard_dca_remaining_balance,
+            standard_dca_swapped_amount,
             standard_dca_received_amount,
             current_price,
             expected_performance_factor,
@@ -246,6 +248,7 @@ mod tests {
         let remaining_balance = Uint128::new(1200);
         let swapped_amount = Uint128::new(800);
         let received_amount = Uint128::new(1200);
+        let standard_dca_remaining_balance = Uint128::new(1100);
         let standard_dca_swapped_amount = Uint128::new(900);
         let standard_dca_received_amount = Uint128::new(1200);
         let current_price = Decimal::from_str("1.1").unwrap();
@@ -254,8 +257,9 @@ mod tests {
         assert_peformance_factor(
             remaining_balance,
             swapped_amount,
-            standard_dca_swapped_amount,
             received_amount,
+            standard_dca_remaining_balance,
+            standard_dca_swapped_amount,
             standard_dca_received_amount,
             current_price,
             expected_performance_factor,
@@ -267,6 +271,7 @@ mod tests {
         let remaining_balance = Uint128::new(1000);
         let swapped_amount = Uint128::new(1000);
         let received_amount = Uint128::new(1200);
+        let standard_dca_remaining_balance = Uint128::new(1100);
         let standard_dca_swapped_amount = Uint128::new(900);
         let standard_dca_received_amount = Uint128::new(1200);
         let current_price = Decimal::from_str("1.1").unwrap();
@@ -275,8 +280,9 @@ mod tests {
         assert_peformance_factor(
             remaining_balance,
             swapped_amount,
-            standard_dca_swapped_amount,
             received_amount,
+            standard_dca_remaining_balance,
+            standard_dca_swapped_amount,
             standard_dca_received_amount,
             current_price,
             expected_performance_factor,
@@ -288,6 +294,7 @@ mod tests {
         let remaining_balance = Uint128::new(1000);
         let swapped_amount = Uint128::new(1000);
         let received_amount = Uint128::new(1000);
+        let standard_dca_remaining_balance = Uint128::new(1000);
         let standard_dca_swapped_amount = Uint128::new(1000);
         let standard_dca_received_amount = Uint128::new(1100);
         let current_price = Decimal::from_str("1.1").unwrap();
@@ -296,8 +303,9 @@ mod tests {
         assert_peformance_factor(
             remaining_balance,
             swapped_amount,
-            standard_dca_swapped_amount,
             received_amount,
+            standard_dca_remaining_balance,
+            standard_dca_swapped_amount,
             standard_dca_received_amount,
             current_price,
             expected_performance_factor,
@@ -307,8 +315,9 @@ mod tests {
     fn assert_fee_amount(
         remaining_balance: Uint128,
         swapped_amount: Uint128,
-        standard_dca_swapped_amount: Uint128,
         received_amount: Uint128,
+        standard_dca_remaining_balance: Uint128,
+        standard_dca_swapped_amount: Uint128,
         standard_dca_received_amount: Uint128,
         current_price: Decimal,
         expected_fee: Uint128,
@@ -316,8 +325,9 @@ mod tests {
         let vault = get_vault(
             remaining_balance,
             swapped_amount,
-            standard_dca_swapped_amount,
             received_amount,
+            standard_dca_remaining_balance,
+            standard_dca_swapped_amount,
             standard_dca_received_amount,
         );
 
@@ -330,6 +340,7 @@ mod tests {
         let remaining_balance = Uint128::new(1000);
         let swapped_amount = Uint128::new(1000);
         let received_amount = Uint128::new(1000);
+        let standard_dca_remaining_balance = Uint128::new(1000);
         let standard_dca_swapped_amount = Uint128::new(1000);
         let standard_dca_received_amount = Uint128::new(1000);
         let current_price = Decimal::from_str("1.0").unwrap();
@@ -338,8 +349,9 @@ mod tests {
         assert_fee_amount(
             remaining_balance,
             swapped_amount,
-            standard_dca_swapped_amount,
             received_amount,
+            standard_dca_remaining_balance,
+            standard_dca_swapped_amount,
             standard_dca_received_amount,
             current_price,
             expected_fee,
@@ -348,9 +360,10 @@ mod tests {
 
     #[test]
     fn fee_is_above_zero_when_less_swapped_and_price_dropped() {
-        let remaining_balance = Uint128::new(1000);
+        let remaining_balance = Uint128::new(1100);
         let swapped_amount = Uint128::new(900);
         let received_amount = Uint128::new(1000);
+        let standard_dca_remaining_balance = Uint128::new(1000);
         let standard_dca_swapped_amount = Uint128::new(1000);
         let standard_dca_received_amount = Uint128::new(1000);
         let current_price = Decimal::from_str("0.9").unwrap();
@@ -359,8 +372,9 @@ mod tests {
         assert_fee_amount(
             remaining_balance,
             swapped_amount,
-            standard_dca_swapped_amount,
             received_amount,
+            standard_dca_remaining_balance,
+            standard_dca_swapped_amount,
             standard_dca_received_amount,
             current_price,
             expected_fee,
@@ -369,9 +383,10 @@ mod tests {
 
     #[test]
     fn fee_is_equal_to_escrow_when_less_swapped_and_price_dropped_significantly() {
-        let remaining_balance = Uint128::new(1000);
+        let remaining_balance = Uint128::new(1100);
         let swapped_amount = Uint128::new(900);
         let received_amount = Uint128::new(1000);
+        let standard_dca_remaining_balance = Uint128::new(1000);
         let standard_dca_swapped_amount = Uint128::new(1000);
         let standard_dca_received_amount = Uint128::new(1000);
         let current_price = Decimal::from_str("0.2").unwrap();
@@ -380,8 +395,9 @@ mod tests {
         assert_fee_amount(
             remaining_balance,
             swapped_amount,
-            standard_dca_swapped_amount,
             received_amount,
+            standard_dca_remaining_balance,
+            standard_dca_swapped_amount,
             standard_dca_received_amount,
             current_price,
             expected_fee,
@@ -390,9 +406,10 @@ mod tests {
 
     #[test]
     fn fee_is_zero_when_more_swapped_and_price_dropped() {
-        let remaining_balance = Uint128::new(1000);
+        let remaining_balance = Uint128::new(900);
         let swapped_amount = Uint128::new(1100);
         let received_amount = Uint128::new(1000);
+        let standard_dca_remaining_balance = Uint128::new(1000);
         let standard_dca_swapped_amount = Uint128::new(1000);
         let standard_dca_received_amount = Uint128::new(1000);
         let current_price = Decimal::from_str("0.9").unwrap();
@@ -401,8 +418,9 @@ mod tests {
         assert_fee_amount(
             remaining_balance,
             swapped_amount,
-            standard_dca_swapped_amount,
             received_amount,
+            standard_dca_remaining_balance,
+            standard_dca_swapped_amount,
             standard_dca_received_amount,
             current_price,
             expected_fee,
@@ -411,9 +429,10 @@ mod tests {
 
     #[test]
     fn fee_is_above_zero_when_more_swapped_and_price_increased() {
-        let remaining_balance = Uint128::new(1000);
+        let remaining_balance = Uint128::new(900);
         let swapped_amount = Uint128::new(1100);
         let received_amount = Uint128::new(1100);
+        let standard_dca_remaining_balance = Uint128::new(1000);
         let standard_dca_swapped_amount = Uint128::new(1000);
         let standard_dca_received_amount = Uint128::new(1000);
         let current_price = Decimal::from_str("2").unwrap();
@@ -422,8 +441,9 @@ mod tests {
         assert_fee_amount(
             remaining_balance,
             swapped_amount,
-            standard_dca_swapped_amount,
             received_amount,
+            standard_dca_remaining_balance,
+            standard_dca_swapped_amount,
             standard_dca_received_amount,
             current_price,
             expected_fee,
@@ -431,10 +451,11 @@ mod tests {
     }
 
     #[test]
-    fn fee_is_equal_to_escrow_when_more_received() {
+    fn fee_is_equal_to_escrow_when_same_amount_swapped_and_more_received() {
         let remaining_balance = Uint128::new(1000);
         let swapped_amount = Uint128::new(1000);
         let received_amount = Uint128::new(2000);
+        let standard_dca_remaining_balance = Uint128::new(1000);
         let standard_dca_swapped_amount = Uint128::new(1000);
         let standard_dca_received_amount = Uint128::new(1000);
         let current_price = Decimal::from_str("1").unwrap();
@@ -443,8 +464,9 @@ mod tests {
         assert_fee_amount(
             remaining_balance,
             swapped_amount,
-            standard_dca_swapped_amount,
             received_amount,
+            standard_dca_remaining_balance,
+            standard_dca_swapped_amount,
             standard_dca_received_amount,
             current_price,
             expected_fee,
@@ -456,6 +478,7 @@ mod tests {
         let remaining_balance = Uint128::new(1100);
         let swapped_amount = Uint128::new(900);
         let received_amount = Uint128::new(900);
+        let standard_dca_remaining_balance = Uint128::new(1000);
         let standard_dca_swapped_amount = Uint128::new(1000);
         let standard_dca_received_amount = Uint128::new(1000);
         let current_price = Decimal::from_str("1.1").unwrap();
@@ -464,8 +487,9 @@ mod tests {
         assert_fee_amount(
             remaining_balance,
             swapped_amount,
-            standard_dca_swapped_amount,
             received_amount,
+            standard_dca_remaining_balance,
+            standard_dca_swapped_amount,
             standard_dca_received_amount,
             current_price,
             expected_fee,

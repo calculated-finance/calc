@@ -3,7 +3,7 @@ use crate::state::config::{get_config, FeeCollector};
 use crate::types::vault::Vault;
 use base::pair::Pair;
 use base::vaults::vault::{Destination, PostExecutionAction, VaultStatus};
-use cosmwasm_std::{Addr, Coin, Decimal, Deps, Storage, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Coin, Decimal, Deps, Env, Storage, Timestamp, Uint128};
 
 pub fn assert_exactly_one_asset(funds: Vec<Coin>) -> Result<(), ContractError> {
     if funds.is_empty() || funds.len() > 1 {
@@ -20,6 +20,13 @@ pub fn assert_contract_is_not_paused(storage: &mut dyn Storage) -> Result<(), Co
         return Err(ContractError::CustomError {
             val: "contract is paused".to_string(),
         });
+    }
+    Ok(())
+}
+
+pub fn assert_sender_is_contract(sender: &Addr, env: &Env) -> Result<(), ContractError> {
+    if sender != &env.contract.address {
+        return Err(ContractError::Unauthorized {});
     }
     Ok(())
 }

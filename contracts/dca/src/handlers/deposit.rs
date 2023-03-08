@@ -58,6 +58,7 @@ pub fn deposit(
             &vault.swap_amount,
             &vault.time_interval,
         );
+        dca_plus_config.standard_dca_balance += info.funds[0].amount;
 
         vault.dca_plus_config = Some(dca_plus_config);
     }

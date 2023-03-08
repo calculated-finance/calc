@@ -1,8 +1,8 @@
-// use super::execute_fin_swap::execute_fin_swap;
 use crate::contract::{
     AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_EXECUTE_VAULT_REPLY_ID, AFTER_FIN_SWAP_REPLY_ID,
 };
 use crate::error::ContractError;
+use crate::helpers::message_helpers::create_claim_escrowed_funds_message;
 use crate::helpers::validation_helpers::{
     assert_contract_is_not_paused, assert_target_time_is_in_past,
 };
@@ -13,11 +13,12 @@ use crate::state::cache::{
 use crate::state::events::create_event;
 use crate::state::triggers::{delete_trigger, save_trigger};
 use crate::state::vaults::{get_vault, update_vault};
+use crate::types::vault::Vault;
 use base::events::event::{EventBuilder, EventData, ExecutionSkippedReason};
 use base::helpers::time_helpers::get_next_target_time;
 use base::triggers::trigger::{Trigger, TriggerConfiguration};
 use base::vaults::vault::VaultStatus;
-use cosmwasm_std::ReplyOn;
+use cosmwasm_std::{Decimal256, ReplyOn, SubMsg};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{DepsMut, Env, Response, Uint128};
 use fin_helpers::limit_orders::create_withdraw_limit_order_sub_msg;
@@ -42,6 +43,14 @@ pub fn execute_trigger(
     response: Response,
 ) -> Result<Response, ContractError> {
     let mut vault = get_vault(deps.storage, vault_id.into())?;
+
+    CACHE.save(
+        deps.storage,
+        &Cache {
+            vault_id: vault.id,
+            owner: vault.owner.clone(),
+        },
+    )?;
 
     if vault.is_scheduled() {
         vault.status = VaultStatus::Active;
@@ -78,123 +87,129 @@ pub fn execute_trigger(
         });
     }
 
-    match vault
-        .trigger
-        .clone()
-        .expect(format!("trigger for vault id {}", vault.id).as_str())
-    {
-        TriggerConfiguration::Time { target_time } => {
-            assert_target_time_is_in_past(env.block.time, target_time)?;
+    let execute_trigger_message =
+        create_execute_fin_trigger_message(deps, &env, &vault, fin_price)?;
+    let claim_escrowed_funds_message = create_claim_escrowed_funds_message(&vault, env);
 
-            if vault.price_threshold_exceeded(fin_price) {
-                create_event(
-                    deps.storage,
-                    EventBuilder::new(
-                        vault.id,
-                        env.block.to_owned(),
-                        EventData::DcaVaultExecutionSkipped {
-                            reason: ExecutionSkippedReason::PriceThresholdExceeded {
-                                price: fin_price,
+    Ok(response.add_submessages(
+        vec![execute_trigger_message, claim_escrowed_funds_message]
+            .into_iter()
+            .flatten()
+            .collect::<Vec<SubMsg>>(),
+    ))
+}
+
+fn create_execute_fin_trigger_message(
+    deps: DepsMut,
+    env: &Env,
+    vault: &Vault,
+    fin_price: Decimal256,
+) -> Result<Option<SubMsg>, ContractError> {
+    Ok(vault.trigger.clone().map_or(
+        Err(ContractError::CustomError {
+            val: format!("Vault {} does not have a trigger", vault.id),
+        }),
+        |trigger| match trigger {
+            TriggerConfiguration::Time { target_time } => {
+                assert_target_time_is_in_past(env.block.time, target_time)?;
+
+                if vault.price_threshold_exceeded(fin_price) {
+                    create_event(
+                        deps.storage,
+                        EventBuilder::new(
+                            vault.id,
+                            env.block.to_owned(),
+                            EventData::DcaVaultExecutionSkipped {
+                                reason: ExecutionSkippedReason::PriceThresholdExceeded {
+                                    price: fin_price,
+                                },
+                            },
+                        ),
+                    )?;
+
+                    delete_trigger(deps.storage, vault.id)?;
+
+                    save_trigger(
+                        deps.storage,
+                        Trigger {
+                            vault_id: vault.id,
+                            configuration: TriggerConfiguration::Time {
+                                target_time: get_next_target_time(
+                                    env.block.time,
+                                    target_time,
+                                    vault.time_interval.clone(),
+                                ),
                             },
                         },
-                    ),
-                )?;
+                    )?;
 
-                delete_trigger(deps.storage, vault.id)?;
+                    return Ok(None);
+                }
 
-                save_trigger(
+                SWAP_CACHE.save(
                     deps.storage,
-                    Trigger {
-                        vault_id: vault.id,
-                        configuration: TriggerConfiguration::Time {
-                            target_time: get_next_target_time(
-                                env.block.time,
-                                target_time,
-                                vault.time_interval.clone(),
-                            ),
-                        },
+                    &SwapCache {
+                        swap_denom_balance: deps
+                            .querier
+                            .query_balance(&env.contract.address, &vault.get_swap_denom())?,
+                        receive_denom_balance: deps
+                            .querier
+                            .query_balance(&env.contract.address, &vault.get_receive_denom())?,
                     },
                 )?;
 
-                return Ok(response.to_owned());
-            };
+                let fin_swap_message = create_fin_swap_message(
+                    deps.querier,
+                    vault.pair.clone(),
+                    get_swap_amount(&deps.as_ref(), env, vault.clone())?,
+                    vault.slippage_tolerance,
+                    Some(AFTER_FIN_SWAP_REPLY_ID),
+                    Some(ReplyOn::Always),
+                )?;
 
-            CACHE.save(
-                deps.storage,
-                &Cache {
-                    vault_id: vault.id,
-                    owner: vault.owner.clone(),
-                },
-            )?;
+                Ok(Some(fin_swap_message))
+            }
+            TriggerConfiguration::FinLimitOrder { order_idx, .. } => {
+                if let Some(order_idx) = order_idx {
+                    let limit_order_details =
+                        query_order_details(deps.querier, vault.pair.address.clone(), order_idx)?;
 
-            SWAP_CACHE.save(
-                deps.storage,
-                &SwapCache {
-                    swap_denom_balance: deps
-                        .querier
-                        .query_balance(&env.contract.address, &vault.get_swap_denom())?,
-                    receive_denom_balance: deps
-                        .querier
-                        .query_balance(&env.contract.address, &vault.get_receive_denom())?,
-                },
-            )?;
+                    let limit_order_cache = LimitOrderCache {
+                        order_idx,
+                        offer_amount: limit_order_details.offer_amount,
+                        original_offer_amount: limit_order_details.original_offer_amount,
+                        filled: limit_order_details.filled_amount,
+                        quote_price: limit_order_details.quote_price,
+                        created_at: limit_order_details.created_at,
+                        swap_denom_balance: deps
+                            .querier
+                            .query_balance(&env.contract.address, &vault.get_swap_denom())?,
+                        receive_denom_balance: deps
+                            .querier
+                            .query_balance(&env.contract.address, &vault.get_receive_denom())?,
+                    };
 
-            return Ok(response.add_submessage(create_fin_swap_message(
-                deps.querier,
-                vault.pair.clone(),
-                get_swap_amount(&deps.as_ref(), &env, vault.clone())?,
-                vault.slippage_tolerance,
-                Some(AFTER_FIN_SWAP_REPLY_ID),
-                Some(ReplyOn::Always),
-            )?));
-        }
-        TriggerConfiguration::FinLimitOrder { order_idx, .. } => {
-            if let Some(order_idx) = order_idx {
-                let limit_order_details =
-                    query_order_details(deps.querier, vault.pair.address.clone(), order_idx)?;
+                    LIMIT_ORDER_CACHE.save(deps.storage, &limit_order_cache)?;
 
-                let limit_order_cache = LimitOrderCache {
-                    order_idx,
-                    offer_amount: limit_order_details.offer_amount,
-                    original_offer_amount: limit_order_details.original_offer_amount,
-                    filled: limit_order_details.filled_amount,
-                    quote_price: limit_order_details.quote_price,
-                    created_at: limit_order_details.created_at,
-                    swap_denom_balance: deps
-                        .querier
-                        .query_balance(&env.contract.address, &vault.get_swap_denom())?,
-                    receive_denom_balance: deps
-                        .querier
-                        .query_balance(&env.contract.address, &vault.get_receive_denom())?,
-                };
+                    if limit_order_cache.offer_amount != Uint128::zero() {
+                        return Err(ContractError::CustomError {
+                            val: String::from("fin limit order has not been completely filled"),
+                        });
+                    }
 
-                LIMIT_ORDER_CACHE.save(deps.storage, &limit_order_cache)?;
+                    let fin_withdraw_sub_msg = create_withdraw_limit_order_sub_msg(
+                        vault.pair.address.clone(),
+                        order_idx,
+                        AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_EXECUTE_VAULT_REPLY_ID,
+                    );
 
-                if limit_order_cache.offer_amount != Uint128::zero() {
+                    Ok(Some(fin_withdraw_sub_msg))
+                } else {
                     return Err(ContractError::CustomError {
-                        val: String::from("fin limit order has not been completely filled"),
+                        val: String::from("fin limit order has not been created"),
                     });
                 }
-
-                let fin_withdraw_sub_msg = create_withdraw_limit_order_sub_msg(
-                    vault.pair.address,
-                    order_idx,
-                    AFTER_FIN_LIMIT_ORDER_WITHDRAWN_FOR_EXECUTE_VAULT_REPLY_ID,
-                );
-
-                let cache: Cache = Cache {
-                    vault_id: vault.id,
-                    owner: vault.owner.clone(),
-                };
-
-                CACHE.save(deps.storage, &cache)?;
-
-                return Ok(response.add_submessage(fin_withdraw_sub_msg));
-            } else {
-                return Err(ContractError::CustomError {
-                    val: String::from("fin limit order has not been created"),
-                });
             }
-        }
-    }
+        },
+    )?)
 }

@@ -10,7 +10,8 @@ use crate::tests::helpers::{
 };
 use crate::tests::mocks::{
     fin_contract_low_swap_price, fin_contract_pass_slippage_tolerance,
-    fin_contract_unfilled_limit_order, MockApp, ADMIN, DENOM_UKUJI, DENOM_UTEST, USER,
+    fin_contract_unfilled_limit_order, MockApp, ADMIN, DENOM_UKUJI, DENOM_UTEST, FEE_COLLECTOR,
+    USER,
 };
 
 use base::events::event::{EventBuilder, EventData};
@@ -1340,6 +1341,101 @@ fn for_ready_time_trigger_with_dca_plus_should_adjust_swap_amount() {
     assert_eq!(
         vault_response.vault.swapped_amount.amount,
         swap_amount * Decimal::from_str("1.3").unwrap()
+    );
+}
+
+#[test]
+fn for_final_swap_with_dca_plus_should_return_the_escrow_amount() {
+    let user_address = Addr::unchecked(USER);
+    let user_balance = TEN;
+    let vault_deposit = TEN;
+    let swap_amount = TEN;
+
+    let mut mock = MockApp::new(fin_contract_unfilled_limit_order())
+        .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
+        .with_vault_with_time_trigger(
+            &user_address,
+            None,
+            Coin::new(vault_deposit.into(), DENOM_UKUJI),
+            swap_amount,
+            "time",
+            None,
+            Some(true),
+        );
+
+    mock.app
+        .execute_contract(
+            Addr::unchecked(ADMIN),
+            mock.dca_contract_address.clone(),
+            &ExecuteMsg::UpdateSwapAdjustments {
+                position_type: PositionType::Enter,
+                adjustments: vec![
+                    (30, Decimal::from_str("1.0").unwrap()),
+                    (35, Decimal::from_str("1.0").unwrap()),
+                    (40, Decimal::from_str("1.0").unwrap()),
+                    (45, Decimal::from_str("1.0").unwrap()),
+                    (50, Decimal::from_str("1.0").unwrap()),
+                    (55, Decimal::from_str("1.0").unwrap()),
+                    (60, Decimal::from_str("1.0").unwrap()),
+                    (70, Decimal::from_str("1.0").unwrap()),
+                    (80, Decimal::from_str("1.0").unwrap()),
+                    (90, Decimal::from_str("1.0").unwrap()),
+                ],
+            },
+            &[],
+        )
+        .unwrap();
+
+    mock.elapse_time(10);
+
+    mock.app
+        .execute_contract(
+            Addr::unchecked(ADMIN),
+            mock.dca_contract_address.clone(),
+            &ExecuteMsg::ExecuteTrigger {
+                trigger_id: Uint128::new(1),
+            },
+            &[],
+        )
+        .unwrap();
+
+    let vault = mock
+        .app
+        .wrap()
+        .query_wasm_smart::<VaultResponse>(
+            &mock.dca_contract_address,
+            &&QueryMsg::GetVault {
+                vault_id: mock.vault_ids.get("time").unwrap().to_owned(),
+            },
+        )
+        .unwrap()
+        .vault;
+
+    let dca_plus_config = vault.dca_plus_config.unwrap();
+
+    let fee_amount = vault_deposit * mock.fee_percent;
+    let receive_amount_after_fee = vault_deposit - fee_amount;
+
+    assert_eq!(dca_plus_config.escrowed_balance, Uint128::zero());
+    assert_address_balances(
+        &mock,
+        &[
+            (&user_address, DENOM_UKUJI, Uint128::new(0)),
+            (&user_address, DENOM_UTEST, receive_amount_after_fee),
+            (&Addr::unchecked(FEE_COLLECTOR), DENOM_UTEST, fee_amount),
+            (&mock.dca_contract_address, DENOM_UKUJI, ONE_THOUSAND),
+            (&mock.dca_contract_address, DENOM_UTEST, ONE_THOUSAND),
+            (
+                &mock.fin_contract_address,
+                DENOM_UKUJI,
+                ONE_THOUSAND + vault_deposit,
+            ),
+            (
+                &mock.fin_contract_address,
+                DENOM_UTEST,
+                ONE_THOUSAND - vault_deposit,
+            ),
+        ],
     );
 }
 

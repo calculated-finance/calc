@@ -118,7 +118,7 @@ pub fn setup_vault(
             position_type: None,
             slippage_tolerance: None,
             minimum_receive_amount: None,
-            balance,
+            balance: balance.clone(),
             time_interval: TimeInterval::Daily,
             started_at: None,
             swapped_amount: Coin {
@@ -134,6 +134,7 @@ pub fn setup_vault(
                     escrow_level: Decimal::percent(5),
                     model_id: 30,
                     escrowed_balance: Uint128::zero(),
+                    standard_dca_balance: balance.amount,
                     standard_dca_swapped_amount: Uint128::zero(),
                     standard_dca_received_amount: Uint128::zero(),
                 })

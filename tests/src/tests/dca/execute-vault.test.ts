@@ -526,6 +526,7 @@ describe('when executing a vault', () => {
 
       const vaultId = await createVault(
         this,
+        this.dcaContractAddress,
         {
           target_start_time_utc_seconds: `${targetTime.unix()}`,
           swap_amount: '100000000',
@@ -668,6 +669,7 @@ describe('when executing a vault', () => {
 
       const vaultId = await createVault(
         this,
+        this.dcaContractAddress,
         {
           target_start_time_utc_seconds: `${targetTime.unix()}`,
           swap_amount: `${swapAmount}`,

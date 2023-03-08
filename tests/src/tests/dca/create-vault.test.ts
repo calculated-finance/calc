@@ -95,7 +95,9 @@ describe('when creating a vault', () => {
     let eventPayloads: EventData[];
 
     before(async function (this: Context) {
-      const vault_id = await createVault(this, { target_start_time_utc_seconds: `${targetTime}` });
+      const vault_id = await createVault(this, {
+        target_start_time_utc_seconds: `${targetTime}`,
+      });
 
       vault = (
         await this.cosmWasmClient.queryContractSmart(this.dcaContractAddress, {

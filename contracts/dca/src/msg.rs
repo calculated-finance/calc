@@ -6,7 +6,7 @@ use base::pair::Pair;
 use base::triggers::trigger::TimeInterval;
 use base::vaults::vault::{Destination, VaultStatus};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, Uint128, Uint64};
+use cosmwasm_std::{Addr, Binary, Coin, Decimal, Decimal256, Uint128, Uint64};
 use fin_helpers::position_type::PositionType;
 
 #[cw_serde]
@@ -92,9 +92,14 @@ pub enum ExecuteMsg {
         position_type: PositionType,
         adjustments: Vec<(u8, Decimal)>,
     },
-    ClaimEscrowedFunds {
-        vault_id: Uint128,
+    InternalExecuteMsg {
+        msg: Binary,
     },
+}
+
+#[cw_serde]
+pub enum InternalExecuteMsg {
+    ClaimEscrowedFunds { vault_id: Uint128 },
 }
 
 #[cw_serde]

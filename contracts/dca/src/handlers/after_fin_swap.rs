@@ -109,11 +109,18 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                         env.block.time,
                     )?;
 
-                let unadjusted_swap_amount = coin_sent.amount * swap_unadjustment;
+                let unadjusted_swap_amount = min(
+                    dca_plus_config.standard_dca_balance,
+                    coin_sent.amount * swap_unadjustment,
+                );
                 let unadjusted_received_amount = coin_received.amount * swap_unadjustment;
                 let unadjusted_received_amount_after_fee =
                     unadjusted_received_amount * (Decimal::one() - fee_percentage);
 
+                dca_plus_config.standard_dca_balance = dca_plus_config
+                    .standard_dca_balance
+                    .checked_sub(unadjusted_received_amount)
+                    .expect("balance should be >= swap amount");
                 dca_plus_config.standard_dca_swapped_amount += unadjusted_swap_amount;
                 dca_plus_config.standard_dca_received_amount +=
                     unadjusted_received_amount_after_fee;
