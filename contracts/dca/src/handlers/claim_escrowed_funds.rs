@@ -1,3 +1,5 @@
+use std::cmp::min;
+
 use crate::{
     error::ContractError,
     helpers::{
@@ -37,12 +39,20 @@ pub fn claim_escrowed_funds_handler(
             )?;
 
             let performance_fee = get_dca_plus_performance_fee(&vault, current_price)?;
-            let amount_to_disburse = dca_plus_config
-                .escrowed_balance
-                .checked_sub(performance_fee.amount)
-                .expect("the escrowed amount to return should be at least 0");
+            let amount_to_disburse = dca_plus_config.escrowed_balance - performance_fee.amount;
+
+            let standard_dca_vault_total =
+                dca_plus_config.standard_dca_balance + dca_plus_config.standard_dca_swapped_amount;
+
+            let dca_plus_vault_total = vault.balance.amount + vault.swapped_amount.amount;
+
+            if standard_dca_vault_total > dca_plus_vault_total {
+                dca_plus_config.standard_dca_balance -=
+                    min(dca_plus_config.standard_dca_balance, dca_plus_vault_total);
+            }
 
             dca_plus_config.escrowed_balance = Uint128::zero();
+
             vault.dca_plus_config = Some(dca_plus_config);
             update_vault(deps.storage, &vault)?;
 
