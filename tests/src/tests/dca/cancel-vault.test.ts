@@ -6,7 +6,6 @@ import { execute } from '../../shared/cosmwasm';
 import { EventData } from '../../types/dca/response/get_events';
 import { Vault } from '../../types/dca/response/get_vault';
 import { createVault, getBalances } from '../helpers';
-import { instantiateDCAContract } from '../hooks';
 import { expect } from '../shared.test';
 
 describe('when cancelling a vault', () => {
@@ -270,16 +269,36 @@ describe('when cancelling a vault', () => {
   });
 
   describe('with dca plus and no trigger', async () => {
-    const swapAmount = 100000;
     let vaultBeforeExecution: Vault;
     let vaultAfterExecution: Vault;
     let balancesBeforeExecution: Record<string, number>;
 
     before(async function (this: Context) {
-      const vaultId = await createVault(this, {
-        swap_amount: `${swapAmount}`,
-        use_dca_plus: true,
+      await execute(this.cosmWasmClient, this.adminContractAddress, this.dcaContractAddress, {
+        update_swap_adjustments: {
+          position_type: 'exit',
+          adjustments: [
+            [30, '0.8'],
+            [35, '0.8'],
+            [40, '0.8'],
+            [45, '0.8'],
+            [50, '0.8'],
+            [55, '0.8'],
+            [60, '0.8'],
+            [70, '0.8'],
+            [80, '0.8'],
+            [90, '0.8'],
+          ],
+        },
       });
+
+      const vaultId = await createVault(
+        this,
+        {
+          use_dca_plus: true,
+        },
+        [coin(1000000, 'ukuji')],
+      );
 
       vaultBeforeExecution = (
         await this.cosmWasmClient.queryContractSmart(this.dcaContractAddress, {

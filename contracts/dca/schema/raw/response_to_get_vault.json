@@ -37,6 +37,7 @@
         "escrow_level",
         "escrowed_balance",
         "model_id",
+        "standard_dca_balance",
         "standard_dca_received_amount",
         "standard_dca_swapped_amount"
       ],
@@ -51,6 +52,9 @@
           "type": "integer",
           "format": "uint8",
           "minimum": 0.0
+        },
+        "standard_dca_balance": {
+          "$ref": "#/definitions/Uint128"
         },
         "standard_dca_received_amount": {
           "$ref": "#/definitions/Uint128"

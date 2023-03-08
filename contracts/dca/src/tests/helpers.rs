@@ -197,6 +197,21 @@ pub fn setup_active_vault_with_low_funds(deps: DepsMut, env: Env) -> Vault {
     )
 }
 
+pub fn setup_active_dca_plus_vault_with_low_funds(
+    deps: DepsMut,
+    env: Env,
+    balance: Uint128,
+    swap_amount: Uint128,
+) -> Vault {
+    setup_vault(
+        deps,
+        env,
+        Coin::new(balance.into(), "base"),
+        swap_amount,
+        true,
+    )
+}
+
 pub fn assert_address_balances(mock: &MockApp, address_balances: &[(&Addr, &str, Uint128)]) {
     address_balances
         .iter()

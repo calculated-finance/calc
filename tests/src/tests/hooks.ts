@@ -88,7 +88,7 @@ export const mochaHooks = async (): Promise<Mocha.RootHookObject> => {
   };
 };
 
-export const instantiateDCAContract = async (
+const instantiateDCAContract = async (
   cosmWasmClient: SigningCosmWasmClient,
   adminContractAddress: string,
   feeCollectorAdress: string,
