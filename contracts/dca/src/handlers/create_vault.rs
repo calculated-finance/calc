@@ -11,7 +11,6 @@ use crate::helpers::validation_helpers::{
 };
 use crate::helpers::vault_helpers::get_dca_plus_model_id;
 use crate::state::cache::{Cache, CACHE};
-use crate::state::claim_escrow_tasks::save_claim_escrow_task;
 use crate::state::config::get_config;
 use crate::state::disburse_escrow_tasks::save_disburse_escrow_task;
 use crate::state::events::create_event;
