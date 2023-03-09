@@ -50,10 +50,6 @@ impl Vault {
         self.pair.quote_denom.clone()
     }
 
-    pub fn get_total_deposit_amount(&self) -> Uint128 {
-        self.balance.amount + self.swapped_amount.amount
-    }
-
     pub fn get_target_price(
         &self,
         target_receive_amount: Uint128,

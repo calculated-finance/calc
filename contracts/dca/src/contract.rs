@@ -13,6 +13,7 @@ use crate::handlers::create_vault::create_vault;
 use crate::handlers::delete_pair::delete_pair;
 use crate::handlers::deposit::deposit;
 use crate::handlers::execute_trigger::execute_trigger_handler;
+use crate::handlers::get_claim_escrow_tasks_handler::get_claim_escrow_tasks_handler;
 use crate::handlers::get_custom_swap_fees::get_custom_swap_fees;
 use crate::handlers::get_data_fixes_by_resource_id::get_data_fixes_by_resource_id;
 use crate::handlers::get_dca_plus_performance::get_dca_plus_performance_handler;
@@ -286,5 +287,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetDcaPlusPerformance { vault_id } => {
             to_binary(&get_dca_plus_performance_handler(deps, vault_id)?)
         }
+        QueryMsg::GetClaimEscrowTasks {} => to_binary(&get_claim_escrow_tasks_handler(deps, env)?),
     }
 }

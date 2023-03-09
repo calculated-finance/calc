@@ -11,6 +11,7 @@ use crate::helpers::validation_helpers::{
 };
 use crate::helpers::vault_helpers::get_dca_plus_model_id;
 use crate::state::cache::{Cache, CACHE};
+use crate::state::claim_escrow_tasks::save_claim_escrow_task;
 use crate::state::config::get_config;
 use crate::state::events::create_event;
 use crate::state::pairs::PAIRS;
@@ -20,6 +21,7 @@ use crate::types::dca_plus_config::DcaPlusConfig;
 use crate::types::vault::Vault;
 use crate::types::vault_builder::VaultBuilder;
 use base::events::event::{EventBuilder, EventData};
+use base::helpers::time_helpers::get_total_execution_duration;
 use base::triggers::trigger::{TimeInterval, Trigger, TriggerConfiguration};
 use base::vaults::vault::{Destination, PostExecutionAction, VaultStatus};
 use cosmwasm_std::{coin, Addr, Coin, Decimal, Decimal256};
@@ -95,6 +97,7 @@ pub fn create_vault(
         if !use_dca_plus {
             return None;
         }
+
         Some(DcaPlusConfig {
             escrow_level: config.dca_plus_escrow_level,
             model_id: get_dca_plus_model_id(
@@ -140,6 +143,25 @@ pub fn create_vault(
     };
 
     let vault = save_vault(deps.storage, vault_builder)?;
+
+    if let Some(_) = vault.dca_plus_config {
+        let regular_duration_execution_duration = get_total_execution_duration(
+            env.block.time,
+            (info.funds[0].amount / swap_amount).into(),
+            &time_interval,
+        );
+
+        save_claim_escrow_task(
+            deps.storage,
+            vault.id,
+            env.block.time.plus_seconds(
+                regular_duration_execution_duration
+                    .num_seconds()
+                    .try_into()
+                    .expect("vault execution duration should be >= 0 seconds"),
+            ),
+        )?;
+    }
 
     CACHE.save(
         deps.storage,

@@ -143,6 +143,8 @@ pub enum QueryMsg {
     },
     #[returns(DcaPlusPerformanceResponse)]
     GetDcaPlusPerformance { vault_id: Uint128 },
+    #[returns(ClaimEscrowTasksResponse)]
+    GetClaimEscrowTasks {},
 }
 
 #[cw_serde]
@@ -194,4 +196,9 @@ pub struct CustomFeesResponse {
 #[cw_serde]
 pub struct DataFixesResponse {
     pub fixes: Vec<DataFix>,
+}
+
+#[cw_serde]
+pub struct ClaimEscrowTasksResponse {
+    pub vault_ids: Vec<Uint128>,
 }
