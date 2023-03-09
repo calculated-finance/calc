@@ -92,7 +92,7 @@ pub enum ExecuteMsg {
         position_type: PositionType,
         adjustments: Vec<(u8, Decimal)>,
     },
-    ClaimEscrowedFunds {
+    DisburseEscrow {
         vault_id: Uint128,
     },
 }
@@ -143,8 +143,8 @@ pub enum QueryMsg {
     },
     #[returns(DcaPlusPerformanceResponse)]
     GetDcaPlusPerformance { vault_id: Uint128 },
-    #[returns(ClaimEscrowTasksResponse)]
-    GetClaimEscrowTasks {},
+    #[returns(DisburseEscrowTasksResponse)]
+    GetDisburseEscrowTasks {},
 }
 
 #[cw_serde]
@@ -199,6 +199,6 @@ pub struct DataFixesResponse {
 }
 
 #[cw_serde]
-pub struct ClaimEscrowTasksResponse {
+pub struct DisburseEscrowTasksResponse {
     pub vault_ids: Vec<Uint128>,
 }

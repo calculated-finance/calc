@@ -1,5 +1,5 @@
 use crate::constants::{ONE, ONE_THOUSAND, TEN, TWO_MICRONS};
-use crate::msg::{ClaimEscrowTasksResponse, ExecuteMsg, QueryMsg, VaultResponse};
+use crate::msg::{DisburseEscrowTasksResponse, ExecuteMsg, QueryMsg, VaultResponse};
 use crate::state::config::FeeCollector;
 use crate::tests::helpers::{
     assert_address_balances, assert_events_published, assert_vault_balance,
@@ -2020,7 +2020,7 @@ fn with_use_dca_plus_true_should_create_dca_plus_config() {
 }
 
 #[test]
-fn with_use_dca_plus_true_should_create_claim_escrow_task() {
+fn with_use_dca_plus_true_should_create_disburse_escrow_task() {
     let user_address = Addr::unchecked(USER);
     let user_balance = TEN;
     let vault_deposit = TEN;
@@ -2057,32 +2057,32 @@ fn with_use_dca_plus_true_should_create_claim_escrow_task() {
 
     mock.elapse_time(60 * 60 * 9);
 
-    let get_claim_escrow_tasks_response_before_due = mock
+    let get_disburse_escrow_tasks_response_before_due = mock
         .app
         .wrap()
-        .query_wasm_smart::<ClaimEscrowTasksResponse>(
+        .query_wasm_smart::<DisburseEscrowTasksResponse>(
             &mock.dca_contract_address,
-            &QueryMsg::GetClaimEscrowTasks {},
+            &QueryMsg::GetDisburseEscrowTasks {},
         )
         .unwrap();
 
-    assert!(get_claim_escrow_tasks_response_before_due
+    assert!(get_disburse_escrow_tasks_response_before_due
         .vault_ids
         .is_empty());
 
     mock.elapse_time(60 * 60 * 10);
 
-    let get_claim_escrow_tasks_response_after_due = mock
+    let get_disburse_escrow_tasks_response_after_due = mock
         .app
         .wrap()
-        .query_wasm_smart::<ClaimEscrowTasksResponse>(
+        .query_wasm_smart::<DisburseEscrowTasksResponse>(
             &mock.dca_contract_address,
-            &QueryMsg::GetClaimEscrowTasks {},
+            &QueryMsg::GetDisburseEscrowTasks {},
         )
         .unwrap();
 
     assert_eq!(
-        get_claim_escrow_tasks_response_after_due.vault_ids,
+        get_disburse_escrow_tasks_response_after_due.vault_ids,
         vec![vault_id]
     );
 }

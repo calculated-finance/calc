@@ -11,8 +11,8 @@ use crate::helpers::validation_helpers::{
 };
 use crate::helpers::vault_helpers::get_dca_plus_model_id;
 use crate::state::cache::{Cache, CACHE};
-use crate::state::claim_escrow_tasks::save_claim_escrow_task;
 use crate::state::config::get_config;
+use crate::state::disburse_escrow_tasks::save_disburse_escrow_task;
 use crate::state::events::create_event;
 use crate::state::pairs::PAIRS;
 use crate::state::triggers::save_trigger;
@@ -151,7 +151,7 @@ pub fn create_vault(
             &time_interval,
         );
 
-        save_claim_escrow_task(
+        save_disburse_escrow_task(
             deps.storage,
             vault.id,
             env.block.time.plus_seconds(
