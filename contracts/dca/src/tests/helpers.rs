@@ -134,7 +134,7 @@ pub fn setup_vault(
                     escrow_level: Decimal::percent(5),
                     model_id: 30,
                     escrowed_balance: Uint128::zero(),
-                    standard_dca_balance: balance.amount,
+                    total_deposit: balance.amount,
                     standard_dca_swapped_amount: Uint128::zero(),
                     standard_dca_received_amount: Uint128::zero(),
                 })

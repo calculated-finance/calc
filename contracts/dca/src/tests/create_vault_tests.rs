@@ -2012,7 +2012,7 @@ fn with_adjust_swap_amount_true_should_create_dca_plus_config() {
             escrow_level: Decimal::percent(5),
             model_id: 30,
             escrowed_balance: Uint128::zero(),
-            standard_dca_balance: vault_deposit,
+            total_deposit: vault_deposit,
             standard_dca_swapped_amount: Uint128::zero(),
             standard_dca_received_amount: Uint128::zero(),
         })

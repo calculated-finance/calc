@@ -95,13 +95,12 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
 
             if let Some(mut dca_plus_config) = vault.dca_plus_config.clone() {
                 let standard_dca_swapped_amount =
-                    min(dca_plus_config.standard_dca_balance, vault.swap_amount);
+                    min(dca_plus_config.total_deposit, vault.swap_amount);
 
                 let standard_dca_received_amount = coin_received.amount
                     * Decimal::from_ratio(standard_dca_swapped_amount, coin_sent.amount)
                     * Decimal::from_ratio(total_after_total_fee, coin_received.amount);
 
-                dca_plus_config.standard_dca_balance -= standard_dca_swapped_amount;
                 dca_plus_config.standard_dca_swapped_amount += standard_dca_swapped_amount;
                 dca_plus_config.standard_dca_received_amount += standard_dca_received_amount;
 
