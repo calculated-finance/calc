@@ -12,6 +12,7 @@ pub mod delete_pair;
 pub mod deposit;
 pub mod disburse_escrow;
 pub mod execute_trigger;
+pub mod get_claim_escrow_tasks_handler;
 pub mod get_custom_swap_fees;
 pub mod get_data_fixes_by_resource_id;
 pub mod get_dca_plus_performance;
