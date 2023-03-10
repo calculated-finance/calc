@@ -9,7 +9,7 @@ use crate::helpers::validation_helpers::{
     assert_send_denom_is_in_pair_denoms, assert_swap_amount_is_greater_than_50000,
     assert_target_start_time_is_in_future,
 };
-use crate::helpers::vault_helpers::{get_dca_plus_model_id, get_exected_finish_time};
+use crate::helpers::vault_helpers::get_dca_plus_model_id;
 use crate::state::cache::{Cache, CACHE};
 use crate::state::config::get_config;
 use crate::state::disburse_escrow_tasks::save_disburse_escrow_task;
