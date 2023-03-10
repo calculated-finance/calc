@@ -8,11 +8,11 @@ pub const DISBURSE_ESCROW_TASKS: Map<(u64, u128), u128> =
 pub fn save_disburse_escrow_task(
     store: &mut dyn Storage,
     vault_id: Uint128,
-    timestamp: Timestamp,
+    due_date: Timestamp,
 ) -> StdResult<()> {
     DISBURSE_ESCROW_TASKS.save(
         store,
-        (timestamp.seconds(), vault_id.into()),
+        (due_date.seconds(), vault_id.into()),
         &vault_id.into(),
     )
 }
