@@ -34,7 +34,7 @@ pub fn has_sufficient_funds(deps: &Deps, env: &Env, vault: Vault) -> StdResult<b
     get_swap_amount(deps, env, vault).map(|swap_amount| swap_amount.amount > Uint128::new(50000))
 }
 
-pub fn get_expected_execution_complete_date(env: &Env, vault: &Vault) -> StdResult<Timestamp> {
+pub fn get_expected_execution_completed_date(env: &Env, vault: &Vault) -> StdResult<Timestamp> {
     let execution_duration = get_total_execution_duration(
         env.block.time,
         vault
