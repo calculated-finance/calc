@@ -40,10 +40,10 @@ fn when_no_fee_is_owed_returns_entire_escrow_to_owner() {
     vault.dca_plus_config = Some(DcaPlusConfig {
         escrow_level: Decimal::percent(5),
         model_id: 50,
-        total_deposit: Uint128::new(10000),
+        total_deposit: TEN,
         standard_dca_swapped_amount: vault.swap_amount,
-        standard_dca_received_amount: vault.swap_amount / Uint128::new(10),
-        escrowed_balance: vault.swap_amount / Uint128::new(10) * Decimal::percent(5),
+        standard_dca_received_amount: vault.swap_amount,
+        escrowed_balance: vault.swap_amount * Decimal::percent(5),
     });
 
     update_vault(deps.as_mut().storage, &vault).unwrap();
