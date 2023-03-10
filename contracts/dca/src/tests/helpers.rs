@@ -20,7 +20,14 @@ use base::{
     triggers::trigger::{TimeInterval, Trigger, TriggerConfiguration},
     vaults::vault::{Destination, PostExecutionAction, VaultStatus},
 };
-use cosmwasm_std::{Addr, Coin, Decimal, DepsMut, Env, MessageInfo, Uint128};
+use cosmwasm_std::{
+    from_binary,
+    testing::{MockApi, MockQuerier},
+    to_binary, Addr, Coin, ContractResult, Decimal, DepsMut, Env, MemoryStorage, MessageInfo,
+    OwnedDeps, SystemResult, Uint128, WasmQuery,
+};
+use fin_helpers::msg::{FinBookResponse, FinPoolResponseWithoutDenom};
+use kujira::fin::QueryMsg as FinQueryMsg;
 
 pub fn instantiate_contract(deps: DepsMut, env: Env, info: MessageInfo) {
     let instantiate_message = InstantiateMsg {
@@ -270,4 +277,29 @@ pub fn assert_vault_balance(
         "Vault balance mismatch for vault_id: {}, owner: {}",
         vault_id, address
     );
+}
+
+pub fn set_fin_price(
+    deps: &mut OwnedDeps<MemoryStorage, MockApi, MockQuerier>,
+    price: &'static Decimal,
+) {
+    deps.querier.update_wasm(|query| match query.clone() {
+        WasmQuery::Smart { msg, .. } => match from_binary(&msg).unwrap() {
+            FinQueryMsg::Book { .. } => SystemResult::Ok(ContractResult::Ok(
+                to_binary(&FinBookResponse {
+                    base: vec![FinPoolResponseWithoutDenom {
+                        quote_price: price.clone() + Decimal::percent(10),
+                        total_offer_amount: Uint128::new(100000000),
+                    }],
+                    quote: vec![FinPoolResponseWithoutDenom {
+                        quote_price: price.clone() - Decimal::percent(10),
+                        total_offer_amount: Uint128::new(100000000),
+                    }],
+                })
+                .unwrap(),
+            )),
+            _ => panic!(),
+        },
+        _ => panic!(),
+    });
 }
