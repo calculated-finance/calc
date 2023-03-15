@@ -107,7 +107,7 @@ pub fn execute_trigger(
     let standard_dca_still_active = vault.dca_plus_config.clone().map_or(
         Ok(false),
         |mut dca_plus_config| -> StdResult<bool> {
-            let swap_amount = min(dca_plus_config.total_deposit, vault.swap_amount);
+            let swap_amount = min(dca_plus_config.standard_dca_balance(), vault.swap_amount);
 
             let price = query_price(
                 deps.querier,
