@@ -53,5 +53,5 @@ pub fn disburse_escrow_handler(
             true,
         )?)
         .add_attribute("performance_fee", format!("{:?}", performance_fee))
-        .add_attribute("disbursed", format!("{:?}", amount_to_disburse)))
+        .add_attribute("escrow_disbursed", format!("{:?}", amount_to_disburse)))
 }
