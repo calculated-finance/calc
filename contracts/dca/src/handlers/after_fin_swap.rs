@@ -3,14 +3,11 @@ use crate::helpers::disbursement_helpers::get_disbursement_messages;
 use crate::helpers::fee_helpers::{get_delegation_fee_rate, get_fee_messages, get_swap_fee_rate};
 use crate::helpers::vault_helpers::get_swap_amount;
 use crate::state::cache::{CACHE, SWAP_CACHE};
-use crate::state::disburse_escrow_tasks::save_disburse_escrow_task;
 use crate::state::events::create_event;
-use crate::state::triggers::delete_trigger;
 use crate::state::vaults::{get_vault, update_vault};
 use base::events::event::{EventBuilder, EventData, ExecutionSkippedReason};
 use base::helpers::coin_helpers::add_to_coin;
 use base::helpers::math_helpers::checked_mul;
-use base::vaults::vault::VaultStatus;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{Attribute, Coin, DepsMut, Env, Reply, Response};
 use cosmwasm_std::{Decimal, SubMsg, SubMsgResult};
@@ -69,12 +66,6 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
             )?);
 
             vault.balance.amount -= get_swap_amount(&deps.as_ref(), &env, vault.clone())?.amount;
-
-            if !vault.has_sufficient_funds() {
-                vault.status = VaultStatus::Inactive;
-                delete_trigger(deps.storage, vault.id)?;
-            }
-
             vault.swapped_amount = add_to_coin(vault.swapped_amount, coin_sent.amount)?;
             vault.received_amount = add_to_coin(vault.received_amount, total_after_total_fee)?;
 
@@ -94,25 +85,6 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
                 total_after_total_fee,
             )?);
 
-            // if vault.is_active() {
-            //     save_trigger(
-            //         deps.storage,
-            //         Trigger {
-            //             vault_id: vault.id,
-            //             configuration: TriggerConfiguration::Time {
-            //                 target_time: get_next_target_time(
-            //                     env.block.time,
-            //                     match vault.trigger {
-            //                         Some(TriggerConfiguration::Time { target_time }) => target_time,
-            //                         _ => env.block.time,
-            //                     },
-            //                     vault.time_interval.clone(),
-            //                 ),
-            //             },
-            //         },
-            //     )?;
-            // }
-
             create_event(
                 deps.storage,
                 EventBuilder::new(
@@ -129,46 +101,21 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
             attributes.push(Attribute::new("status", "success"));
         }
         SubMsgResult::Err(_) => {
-            if !vault.has_sufficient_funds() {
-                create_event(
-                    deps.storage,
-                    EventBuilder::new(
-                        vault.id,
-                        env.block.to_owned(),
-                        EventData::DcaVaultExecutionSkipped {
-                            reason: ExecutionSkippedReason::UnknownFailure,
+            create_event(
+                deps.storage,
+                EventBuilder::new(
+                    vault.id,
+                    env.block.to_owned(),
+                    EventData::DcaVaultExecutionSkipped {
+                        reason: match vault.has_sufficient_funds() {
+                            true => ExecutionSkippedReason::SlippageToleranceExceeded,
+                            false => ExecutionSkippedReason::UnknownFailure,
                         },
-                    ),
-                )?;
-
-                vault.status = VaultStatus::Inactive;
-
-                update_vault(deps.storage, &vault)?;
-                delete_trigger(deps.storage, vault.id)?;
-            } else {
-                create_event(
-                    deps.storage,
-                    EventBuilder::new(
-                        vault.id,
-                        env.block.to_owned(),
-                        EventData::DcaVaultExecutionSkipped {
-                            reason: ExecutionSkippedReason::SlippageToleranceExceeded,
-                        },
-                    ),
-                )?;
-            }
+                    },
+                ),
+            )?;
 
             attributes.push(Attribute::new("status", "skipped"));
-        }
-    }
-
-    if vault.is_inactive() {
-        if let Some(_) = vault.dca_plus_config {
-            save_disburse_escrow_task(
-                deps.storage,
-                vault.id,
-                vault.get_expected_execution_completed_date(env.block.time),
-            )?;
         }
     }
 

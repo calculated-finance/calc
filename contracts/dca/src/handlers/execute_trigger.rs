@@ -41,6 +41,8 @@ pub fn execute_trigger(
 ) -> Result<Response, ContractError> {
     let mut vault = get_vault(deps.storage, vault_id.into())?;
 
+    delete_trigger(deps.storage, vault.id)?;
+
     if vault.is_cancelled() {
         return Err(ContractError::CustomError {
             val: format!(
@@ -58,50 +60,6 @@ pub fn execute_trigger(
             ),
         });
     }
-
-    delete_trigger(deps.storage, vault.id)?;
-
-    save_trigger(
-        deps.storage,
-        Trigger {
-            vault_id: vault.id,
-            configuration: TriggerConfiguration::Time {
-                target_time: get_next_target_time(
-                    env.block.time,
-                    match vault.trigger {
-                        Some(TriggerConfiguration::Time { target_time }) => target_time,
-                        _ => env.block.time,
-                    },
-                    vault.time_interval.clone(),
-                ),
-            },
-        },
-    )?;
-
-    if vault.is_scheduled() {
-        vault.status = VaultStatus::Active;
-        vault.started_at = Some(env.block.time);
-    }
-
-    let position_type = vault.get_position_type();
-
-    let fin_price = match position_type {
-        PositionType::Enter => query_base_price(deps.querier, vault.pair.address.clone()),
-        PositionType::Exit => query_quote_price(deps.querier, vault.pair.address.clone()),
-    };
-
-    create_event(
-        deps.storage,
-        EventBuilder::new(
-            vault.id,
-            env.block.to_owned(),
-            EventData::DcaVaultExecutionTriggered {
-                base_denom: vault.pair.base_denom.clone(),
-                quote_denom: vault.pair.quote_denom.clone(),
-                asset_price: fin_price.clone(),
-            },
-        ),
-    )?;
 
     match vault
         .trigger
@@ -136,6 +94,56 @@ pub fn execute_trigger(
         }
     }
 
+    if !vault.has_sufficient_funds() {
+        vault.status = VaultStatus::Inactive;
+    }
+
+    if vault.is_scheduled() {
+        vault.status = VaultStatus::Active;
+        vault.started_at = Some(env.block.time);
+    }
+
+    update_vault(deps.storage, &vault)?;
+
+    if vault.is_active() {
+        save_trigger(
+            deps.storage,
+            Trigger {
+                vault_id: vault.id,
+                configuration: TriggerConfiguration::Time {
+                    target_time: get_next_target_time(
+                        env.block.time,
+                        match vault.trigger {
+                            Some(TriggerConfiguration::Time { target_time }) => target_time,
+                            _ => env.block.time,
+                        },
+                        vault.time_interval.clone(),
+                    ),
+                },
+            },
+        )?;
+    }
+
+    let position_type = vault.get_position_type();
+
+    let fin_price = match position_type {
+        PositionType::Enter => query_base_price(deps.querier, vault.pair.address.clone()),
+        PositionType::Exit => query_quote_price(deps.querier, vault.pair.address.clone()),
+    };
+
+    create_event(
+        deps.storage,
+        EventBuilder::new(
+            vault.id,
+            env.block.to_owned(),
+            EventData::DcaVaultExecutionTriggered {
+                base_denom: vault.pair.base_denom.clone(),
+                quote_denom: vault.pair.quote_denom.clone(),
+                asset_price: fin_price.clone(),
+            },
+        ),
+    )?;
+
     if vault.price_threshold_exceeded(fin_price) {
         if vault.is_active() {
             create_event(
@@ -164,13 +172,34 @@ pub fn execute_trigger(
         )?;
 
         let fee_rate = get_swap_fee_rate(&deps, &vault)? + get_delegation_fee_rate(&deps, &vault)?;
-
         let receive_amount = swap_amount * (Decimal::one() / price) * (Decimal::one() - fee_rate);
 
         dca_plus_config.standard_dca_swapped_amount += swap_amount;
         dca_plus_config.standard_dca_received_amount += receive_amount;
 
+        if dca_plus_config.total_deposit - dca_plus_config.standard_dca_swapped_amount
+            > Uint128::new(50000)
+        {
+            save_trigger(
+                deps.storage,
+                Trigger {
+                    vault_id: vault.id,
+                    configuration: TriggerConfiguration::Time {
+                        target_time: get_next_target_time(
+                            env.block.time,
+                            match vault.trigger {
+                                Some(TriggerConfiguration::Time { target_time }) => target_time,
+                                _ => env.block.time,
+                            },
+                            vault.time_interval.clone(),
+                        ),
+                    },
+                },
+            )?;
+        }
+
         vault.dca_plus_config = Some(dca_plus_config);
+        update_vault(deps.storage, &vault)?;
     };
 
     if vault.is_active() {
@@ -201,9 +230,8 @@ pub fn execute_trigger(
             vault.slippage_tolerance,
             Some(AFTER_FIN_SWAP_REPLY_ID),
             Some(ReplyOn::Always),
-        )?)
-    }
+        )?);
+    };
 
-    update_vault(deps.storage, &vault)?;
     Ok(response)
 }

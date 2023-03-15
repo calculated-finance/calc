@@ -9,28 +9,25 @@ use crate::{
         cache::{SwapCache, SWAP_CACHE},
         config::{create_custom_fee, get_config, FeeCollector},
         swap_adjustments::update_swap_adjustments,
-        triggers::{delete_trigger, get_trigger, save_trigger},
         vaults::get_vault,
     },
     tests::{
         helpers::{
             instantiate_contract, instantiate_contract_with_multiple_fee_collectors,
             setup_active_dca_plus_vault_with_funds, setup_active_vault_with_funds,
-            setup_active_vault_with_low_funds, setup_active_vault_with_slippage_funds, setup_vault,
+            setup_active_vault_with_low_funds, setup_active_vault_with_slippage_funds,
         },
-        mocks::{ADMIN, DENOM_UKUJI},
+        mocks::ADMIN,
     },
 };
 use base::{
     events::event::{EventBuilder, EventData, ExecutionSkippedReason},
     helpers::{community_pool::create_fund_community_pool_msg, math_helpers::checked_mul},
-    triggers::trigger::{Trigger, TriggerConfiguration},
     vaults::vault::{PostExecutionAction, VaultStatus},
 };
 use cosmwasm_std::{
     testing::{mock_dependencies, mock_env, mock_info},
-    BankMsg, Coin, Decimal, Decimal256, Reply, SubMsg, SubMsgResponse, SubMsgResult, Timestamp,
-    Uint128,
+    BankMsg, Coin, Decimal, Reply, SubMsg, SubMsgResponse, SubMsgResult, Uint128,
 };
 use fin_helpers::{codes::ERROR_SWAP_SLIPPAGE_EXCEEDED, position_type::PositionType};
 use std::{cmp::min, str::FromStr};
@@ -433,56 +430,6 @@ fn with_succcesful_swap_adjusts_received_amount_stat() {
 }
 
 #[test]
-fn with_successful_swap_resulting_in_low_funds_sets_vault_to_inactive() {
-    let mut deps = mock_dependencies();
-    let env = mock_env();
-    instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
-
-    let vault = setup_vault(
-        deps.as_mut(),
-        env.clone(),
-        Coin::new(100000, DENOM_UKUJI),
-        Uint128::new(60000),
-        VaultStatus::Active,
-        false,
-    );
-
-    let receive_amount = Uint128::new(234312312);
-
-    SWAP_CACHE
-        .save(
-            deps.as_mut().storage,
-            &SwapCache {
-                swap_denom_balance: vault.balance.clone(),
-                receive_denom_balance: Coin::new(0, vault.get_receive_denom()),
-            },
-        )
-        .unwrap();
-
-    deps.querier.update_balance(
-        "cosmos2contract",
-        vec![Coin::new(receive_amount.into(), vault.get_receive_denom())],
-    );
-
-    after_fin_swap(
-        deps.as_mut(),
-        env.clone(),
-        Reply {
-            id: AFTER_FIN_SWAP_REPLY_ID,
-            result: SubMsgResult::Ok(SubMsgResponse {
-                events: vec![],
-                data: None,
-            }),
-        },
-    )
-    .unwrap();
-
-    let vault = get_vault(&deps.storage, vault.id).unwrap();
-
-    assert_eq!(vault.status, VaultStatus::Inactive);
-}
-
-#[test]
 fn with_succcesful_swap_with_dca_plus_escrows_funds() {
     let mut deps = mock_dependencies();
     let env = mock_env();
@@ -591,26 +538,6 @@ fn with_failed_swap_and_insufficient_funds_does_not_reduce_vault_balance() {
 }
 
 #[test]
-fn with_failed_swap_and_insufficient_funds_sets_vault_to_inactive() {
-    let mut deps = mock_dependencies();
-    let env = mock_env();
-
-    setup_active_vault_with_low_funds(deps.as_mut(), env.clone());
-    let vault_id = Uint128::one();
-
-    let reply = Reply {
-        id: AFTER_FIN_SWAP_REPLY_ID,
-        result: SubMsgResult::Err("Generic failure".to_string()),
-    };
-
-    after_fin_swap(deps.as_mut(), env.clone(), reply).unwrap();
-
-    let vault = get_vault(&mut deps.storage, vault_id).unwrap();
-
-    assert_eq!(vault.status, VaultStatus::Inactive);
-}
-
-#[test]
 fn with_failed_swap_and_insufficient_funds_publishes_skipped_event_with_unknown_failure() {
     let mut deps = mock_dependencies();
     let env = mock_env();
@@ -629,6 +556,8 @@ fn with_failed_swap_and_insufficient_funds_publishes_skipped_event_with_unknown_
     let events = get_events_by_resource_id(deps.as_ref(), vault_id, None, None)
         .unwrap()
         .events;
+
+    println!("{:?}", events);
 
     assert!(events.contains(
         &EventBuilder::new(

@@ -4,6 +4,7 @@ use super::mocks::{
     fin_contract_high_swap_price, fin_contract_partially_filled_order,
 };
 use crate::constants::{ONE, ONE_DECIMAL, ONE_HUNDRED, ONE_THOUSAND, TEN, TWO_MICRONS};
+use crate::contract::AFTER_FIN_SWAP_REPLY_ID;
 use crate::handlers::execute_trigger::execute_trigger_handler;
 use crate::helpers::fee_helpers::{get_delegation_fee_rate, get_swap_fee_rate};
 use crate::msg::{ExecuteMsg, QueryMsg, TriggerIdsResponse, VaultResponse};
@@ -16,16 +17,20 @@ use crate::tests::mocks::{
     fin_contract_low_swap_price, fin_contract_pass_slippage_tolerance,
     fin_contract_unfilled_limit_order, MockApp, ADMIN, DENOM_UKUJI, DENOM_UTEST, USER,
 };
-
 use base::events::event::{EventBuilder, EventData};
 use base::helpers::math_helpers::checked_mul;
+use base::helpers::time_helpers::get_next_target_time;
 use base::price_type::PriceType;
+use base::triggers::trigger::TriggerConfiguration;
 use base::vaults::vault::{Destination, PostExecutionAction, VaultStatus};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, Uint128};
+use cosmwasm_std::{
+    to_binary, Addr, Coin, CosmosMsg, Decimal, Decimal256, SubMsg, Uint128, WasmMsg,
+};
 use cw_multi_test::Executor;
 use fin_helpers::position_type::PositionType;
 use fin_helpers::queries::query_price;
+use kujira::fin::ExecuteMsg as FinExecuteMsg;
 use std::str::FromStr;
 
 #[test]
@@ -1904,8 +1909,8 @@ fn until_vault_is_empty_should_update_vault_balance() {
 fn until_vault_is_empty_should_update_vault_status() {
     let user_address = Addr::unchecked(USER);
     let user_funds = ONE_HUNDRED;
-    let vault_deposit = ONE * Uint128::new(3) / Uint128::new(2);
-    let swap_amount = ONE;
+    let vault_deposit = Uint128::new(100000);
+    let swap_amount = Uint128::new(60000);
     let mut mock = MockApp::new(fin_contract_filled_limit_order())
         .with_funds_for(&user_address, user_funds, DENOM_UKUJI)
         .with_vault_with_filled_fin_limit_price_trigger(
@@ -1916,23 +1921,12 @@ fn until_vault_is_empty_should_update_vault_status() {
             "fin",
         );
 
-    let vault_response: VaultResponse = mock
-        .app
-        .wrap()
-        .query_wasm_smart(
-            &mock.dca_contract_address,
-            &&QueryMsg::GetVault {
-                vault_id: mock.vault_ids.get("fin").unwrap().to_owned(),
-            },
-        )
-        .unwrap();
-
     mock.app
         .execute_contract(
             Addr::unchecked(ADMIN),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::ExecuteTrigger {
-                trigger_id: vault_response.vault.id,
+                trigger_id: Uint128::one(),
             },
             &[],
         )
@@ -1940,38 +1934,30 @@ fn until_vault_is_empty_should_update_vault_status() {
 
     mock.elapse_time(3700);
 
-    let time_triggers: TriggerIdsResponse = mock
-        .app
-        .wrap()
-        .query_wasm_smart(
-            &mock.dca_contract_address,
-            &QueryMsg::GetTimeTriggerIds { limit: None },
-        )
-        .unwrap();
-
     mock.app
         .execute_contract(
             Addr::unchecked(ADMIN),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::ExecuteTrigger {
-                trigger_id: time_triggers.trigger_ids[0],
+                trigger_id: Uint128::one(),
             },
             &[],
         )
         .unwrap();
 
-    let vault_response: VaultResponse = mock
+    let vault = mock
         .app
         .wrap()
-        .query_wasm_smart(
+        .query_wasm_smart::<VaultResponse>(
             &mock.dca_contract_address,
             &&QueryMsg::GetVault {
                 vault_id: mock.vault_ids.get("fin").unwrap().to_owned(),
             },
         )
-        .unwrap();
+        .unwrap()
+        .vault;
 
-    assert_eq!(vault_response.vault.status, VaultStatus::Inactive);
+    assert_eq!(vault.status, VaultStatus::Inactive);
 }
 
 #[test]
@@ -2234,95 +2220,6 @@ fn when_contract_is_paused_should_fail() {
 }
 
 #[test]
-fn for_vault_with_insufficient_balance_should_set_vault_status_to_inactive() {
-    let user_address = Addr::unchecked(USER);
-    let user_balance = ONE;
-    let vault_deposit = Uint128::from(50001u128);
-    let swap_amount = Uint128::from(50001u128);
-
-    let mut mock = MockApp::new(fin_contract_high_swap_price())
-        .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
-        .with_vault_with_time_trigger(
-            &user_address,
-            None,
-            Coin::new(vault_deposit.into(), DENOM_UKUJI),
-            swap_amount,
-            "time",
-            None,
-            None,
-        );
-
-    let vault_id = mock.vault_ids.get("time").unwrap().to_owned();
-
-    mock.elapse_time(10);
-
-    mock.app
-        .execute_contract(
-            Addr::unchecked(ADMIN),
-            mock.dca_contract_address.clone(),
-            &ExecuteMsg::ExecuteTrigger {
-                trigger_id: Uint128::new(1),
-            },
-            &[],
-        )
-        .unwrap();
-
-    let vault_response: VaultResponse = mock
-        .app
-        .wrap()
-        .query_wasm_smart(
-            &mock.dca_contract_address,
-            &&QueryMsg::GetVault { vault_id },
-        )
-        .unwrap();
-
-    assert_eq!(vault_response.vault.status, VaultStatus::Inactive);
-}
-
-#[test]
-fn for_vault_with_balance_less_than_minimum_swap_amount_should_fail() {
-    let user_address = Addr::unchecked(USER);
-    let user_balance = ONE;
-    let vault_deposit = Uint128::new(100000);
-    let swap_amount = Uint128::new(60000);
-
-    let mut mock = MockApp::new(fin_contract_pass_slippage_tolerance())
-        .with_funds_for(&user_address, user_balance, DENOM_UKUJI)
-        .with_active_vault(
-            &user_address,
-            None,
-            Coin::new(vault_deposit.into(), DENOM_UKUJI),
-            swap_amount,
-            "time",
-            None,
-        );
-
-    let vault_id = mock.vault_ids.get("time").unwrap().to_owned();
-
-    mock.elapse_time(3601);
-
-    let response = mock
-        .app
-        .execute_contract(
-            Addr::unchecked(ADMIN),
-            mock.dca_contract_address.clone(),
-            &ExecuteMsg::ExecuteTrigger {
-                trigger_id: vault_id,
-            },
-            &[],
-        )
-        .unwrap_err();
-
-    assert_eq!(
-        response.root_cause().to_string(),
-        format!(
-            "Error: vault with id {} has no trigger attached, and is not available for execution",
-            vault_id
-        )
-    )
-}
-
-#[test]
 fn for_fin_buy_vault_with_exceeded_price_ceiling_should_skip_execution() {
     let user_address = Addr::unchecked(USER);
     let user_balance = ONE;
@@ -2457,13 +2354,42 @@ fn for_fin_sell_vault_with_non_exceeded_price_floor_should_execute() {
 }
 
 #[test]
+fn for_active_vault_creates_new_trigger() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(ADMIN, &[]);
+
+    instantiate_contract(deps.as_mut(), env.clone(), info);
+    set_fin_price(&mut deps, &ONE_DECIMAL);
+
+    let vault = setup_vault(
+        deps.as_mut(),
+        env.clone(),
+        Coin::new(TEN.into(), DENOM_UKUJI),
+        ONE,
+        VaultStatus::Active,
+        false,
+    );
+
+    execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
+
+    let updated_vault = get_vault(deps.as_ref().storage, vault.id).unwrap();
+
+    assert_eq!(
+        updated_vault.trigger,
+        Some(TriggerConfiguration::Time {
+            target_time: get_next_target_time(env.block.time, env.block.time, vault.time_interval)
+        })
+    );
+}
+
+#[test]
 fn for_active_vault_with_dca_plus_updates_standard_performance_data() {
     let mut deps = mock_dependencies();
     let env = mock_env();
     let info = mock_info(ADMIN, &[]);
 
     instantiate_contract(deps.as_mut(), env.clone(), info);
-
     set_fin_price(&mut deps, &ONE_DECIMAL);
 
     let vault = setup_vault(
@@ -2504,13 +2430,219 @@ fn for_active_vault_with_dca_plus_updates_standard_performance_data() {
 }
 
 #[test]
+fn for_active_vault_sends_fin_swap_message() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(ADMIN, &[]);
+
+    instantiate_contract(deps.as_mut(), env.clone(), info);
+    set_fin_price(&mut deps, &ONE_DECIMAL);
+
+    let vault = setup_vault(
+        deps.as_mut(),
+        env.clone(),
+        Coin::new(TEN.into(), DENOM_UKUJI),
+        ONE,
+        VaultStatus::Active,
+        false,
+    );
+
+    let response = execute_trigger_handler(deps.as_mut(), env, vault.id).unwrap();
+
+    assert!(response.messages.contains(&SubMsg::reply_always(
+        CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: vault.pair.address.to_string(),
+            msg: to_binary(&FinExecuteMsg::Swap {
+                belief_price: None,
+                max_spread: None,
+                to: None,
+                offer_asset: None,
+            })
+            .unwrap(),
+            funds: vec![Coin::new(vault.swap_amount.into(), vault.get_swap_denom())],
+        }),
+        AFTER_FIN_SWAP_REPLY_ID
+    )))
+}
+
+#[test]
+fn for_active_vault_with_insufficient_funds_sets_status_to_inactive() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(ADMIN, &[]);
+
+    instantiate_contract(deps.as_mut(), env.clone(), info);
+    set_fin_price(&mut deps, &ONE_DECIMAL);
+
+    let vault = setup_vault(
+        deps.as_mut(),
+        env.clone(),
+        Coin::new(49999, DENOM_UKUJI),
+        ONE,
+        VaultStatus::Active,
+        false,
+    );
+
+    execute_trigger_handler(deps.as_mut(), env, vault.id).unwrap();
+
+    let updated_vault = get_vault(deps.as_ref().storage, vault.id).unwrap();
+
+    assert_eq!(updated_vault.status, VaultStatus::Inactive);
+}
+
+#[test]
+fn for_scheduled_vault_updates_status_to_active() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(ADMIN, &[]);
+
+    instantiate_contract(deps.as_mut(), env.clone(), info);
+    set_fin_price(&mut deps, &ONE_DECIMAL);
+
+    let vault = setup_vault(
+        deps.as_mut(),
+        env.clone(),
+        Coin::new(TEN.into(), DENOM_UKUJI),
+        ONE,
+        VaultStatus::Scheduled,
+        false,
+    );
+
+    execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
+
+    let updated_vault = get_vault(deps.as_ref().storage, vault.id).unwrap();
+
+    assert_eq!(updated_vault.status, VaultStatus::Active);
+}
+
+#[test]
+fn for_scheduled_vault_creates_new_trigger() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(ADMIN, &[]);
+
+    instantiate_contract(deps.as_mut(), env.clone(), info);
+    set_fin_price(&mut deps, &ONE_DECIMAL);
+
+    let vault = setup_vault(
+        deps.as_mut(),
+        env.clone(),
+        Coin::new(TEN.into(), DENOM_UKUJI),
+        ONE,
+        VaultStatus::Scheduled,
+        false,
+    );
+
+    execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
+
+    let updated_vault = get_vault(deps.as_ref().storage, vault.id).unwrap();
+
+    assert_eq!(
+        updated_vault.trigger,
+        Some(TriggerConfiguration::Time {
+            target_time: get_next_target_time(env.block.time, env.block.time, vault.time_interval)
+        })
+    );
+}
+
+#[test]
+fn for_scheduled_vault_sends_fin_swap_message() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(ADMIN, &[]);
+
+    instantiate_contract(deps.as_mut(), env.clone(), info);
+    set_fin_price(&mut deps, &ONE_DECIMAL);
+
+    let vault = setup_vault(
+        deps.as_mut(),
+        env.clone(),
+        Coin::new(TEN.into(), DENOM_UKUJI),
+        ONE,
+        VaultStatus::Scheduled,
+        false,
+    );
+
+    let response = execute_trigger_handler(deps.as_mut(), env, vault.id).unwrap();
+
+    assert!(response.messages.contains(&SubMsg::reply_always(
+        CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: vault.pair.address.to_string(),
+            msg: to_binary(&FinExecuteMsg::Swap {
+                belief_price: None,
+                max_spread: None,
+                to: None,
+                offer_asset: None,
+            })
+            .unwrap(),
+            funds: vec![Coin::new(vault.swap_amount.into(), vault.get_swap_denom())],
+        }),
+        AFTER_FIN_SWAP_REPLY_ID
+    )))
+}
+
+#[test]
+fn for_inactive_vault_does_not_create_a_new_trigger() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(ADMIN, &[]);
+
+    instantiate_contract(deps.as_mut(), env.clone(), info);
+    set_fin_price(&mut deps, &ONE_DECIMAL);
+
+    let vault = setup_vault(
+        deps.as_mut(),
+        env.clone(),
+        Coin::new(TEN.into(), DENOM_UKUJI),
+        ONE,
+        VaultStatus::Inactive,
+        false,
+    );
+
+    execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
+
+    let updated_vault = get_vault(deps.as_ref().storage, vault.id).unwrap();
+
+    assert_eq!(updated_vault.trigger, None);
+}
+
+#[test]
+fn for_inactive_vault_with_dca_plus_creates_new_trigger() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(ADMIN, &[]);
+
+    instantiate_contract(deps.as_mut(), env.clone(), info);
+    set_fin_price(&mut deps, &ONE_DECIMAL);
+
+    let vault = setup_vault(
+        deps.as_mut(),
+        env.clone(),
+        Coin::new(TEN.into(), DENOM_UKUJI),
+        ONE,
+        VaultStatus::Inactive,
+        true,
+    );
+
+    execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
+
+    let updated_vault = get_vault(deps.as_ref().storage, vault.id).unwrap();
+
+    assert_eq!(
+        updated_vault.trigger,
+        Some(TriggerConfiguration::Time {
+            target_time: get_next_target_time(env.block.time, env.block.time, vault.time_interval)
+        })
+    );
+}
+
+#[test]
 fn for_inactive_vault_with_dca_plus_updates_standard_performance_data() {
     let mut deps = mock_dependencies();
     let env = mock_env();
     let info = mock_info(ADMIN, &[]);
 
     instantiate_contract(deps.as_mut(), env.clone(), info);
-
     set_fin_price(&mut deps, &ONE_DECIMAL);
 
     let vault = setup_vault(
@@ -2551,48 +2683,34 @@ fn for_inactive_vault_with_dca_plus_updates_standard_performance_data() {
 }
 
 #[test]
-fn for_inactive_vault_with_dca_plus_creates_new_trigger() {
+fn for_cancelled_vault_deletes_trigger() {
     let mut deps = mock_dependencies();
     let env = mock_env();
     let info = mock_info(ADMIN, &[]);
 
     instantiate_contract(deps.as_mut(), env.clone(), info);
-
     set_fin_price(&mut deps, &ONE_DECIMAL);
 
-    let vault = setup_vault(
+    setup_vault(
         deps.as_mut(),
         env.clone(),
         Coin::new(TEN.into(), DENOM_UKUJI),
         ONE,
-        VaultStatus::Inactive,
+        VaultStatus::Cancelled,
         true,
     );
 
-    execute_trigger_handler(deps.as_mut(), env, vault.id).unwrap();
+    let vault = get_vault(deps.as_ref().storage, Uint128::one()).unwrap();
 
-    let updated_dca_plus_config = get_vault(deps.as_ref().storage, vault.id)
-        .unwrap()
-        .dca_plus_config
-        .unwrap();
+    execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap_err();
 
-    let price = query_price(
-        deps.as_ref().querier,
-        vault.pair.clone(),
-        &Coin::new(vault.swap_amount.into(), vault.get_swap_denom()),
-        PriceType::Actual,
-    )
-    .unwrap();
-
-    let fee_rate = get_swap_fee_rate(&deps.as_mut(), &vault).unwrap()
-        + get_delegation_fee_rate(&deps.as_mut(), &vault).unwrap();
+    let updated_vault = get_vault(deps.as_ref().storage, vault.id).unwrap();
 
     assert_eq!(
-        updated_dca_plus_config.standard_dca_swapped_amount,
-        vault.swap_amount
+        vault.trigger,
+        Some(TriggerConfiguration::Time {
+            target_time: env.block.time
+        })
     );
-    assert_eq!(
-        updated_dca_plus_config.standard_dca_received_amount,
-        vault.swap_amount * (Decimal::one() / price) * (Decimal::one() - fee_rate)
-    );
+    assert_eq!(updated_vault.trigger, None);
 }

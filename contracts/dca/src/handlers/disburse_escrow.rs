@@ -20,10 +20,6 @@ pub fn disburse_escrow_handler(
 
     let mut vault = get_vault(deps.storage, vault_id)?;
 
-    if vault.is_active() || vault.is_scheduled() {
-        return Ok(Response::new());
-    }
-
     if vault.dca_plus_config.is_none() {
         return Err(ContractError::CustomError {
             val: "Vault is not a DCA+ vault".to_string(),
@@ -40,6 +36,7 @@ pub fn disburse_escrow_handler(
 
     dca_plus_config.escrowed_balance = Uint128::zero();
     vault.dca_plus_config = Some(dca_plus_config);
+
     update_vault(deps.storage, &vault)?;
 
     Ok(Response::new()
@@ -54,5 +51,7 @@ pub fn disburse_escrow_handler(
             vec![performance_fee.amount],
             vault.get_receive_denom(),
             true,
-        )?))
+        )?)
+        .add_attribute("performance_fee", format!("{:?}", performance_fee))
+        .add_attribute("disbursed", format!("{:?}", amount_to_disburse)))
 }
