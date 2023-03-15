@@ -5,6 +5,7 @@ use crate::helpers::validation_helpers::{
     assert_contract_is_not_paused, assert_target_time_is_in_past,
 };
 use crate::helpers::vault_helpers::get_swap_amount;
+use crate::msg::ExecuteMsg;
 use crate::state::cache::{Cache, SwapCache, CACHE, SWAP_CACHE};
 use crate::state::events::create_event;
 use crate::state::triggers::{delete_trigger, save_trigger};
@@ -14,7 +15,7 @@ use base::helpers::time_helpers::get_next_target_time;
 use base::price_type::PriceType;
 use base::triggers::trigger::{Trigger, TriggerConfiguration};
 use base::vaults::vault::VaultStatus;
-use cosmwasm_std::{Coin, Decimal, ReplyOn, StdResult};
+use cosmwasm_std::{to_binary, Coin, CosmosMsg, Decimal, ReplyOn, StdResult, WasmMsg};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{DepsMut, Env, Response, Uint128};
 use fin_helpers::limit_orders::create_withdraw_limit_order_msg;
@@ -130,7 +131,7 @@ pub fn execute_trigger(
 
     update_vault(deps.storage, &vault)?;
 
-    if vault.is_active() || standard_dca_still_active {
+    if vault.is_active() || (vault.is_dca_plus() && standard_dca_still_active) {
         save_trigger(
             deps.storage,
             Trigger {
@@ -150,6 +151,14 @@ pub fn execute_trigger(
     }
 
     if !vault.is_active() {
+        if vault.is_dca_plus() && !standard_dca_still_active {
+            response = response.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: env.contract.address.to_string(),
+                msg: to_binary(&ExecuteMsg::DisburseEscrow { vault_id: vault.id })?,
+                funds: vec![],
+            }))
+        }
+
         return Ok(response.to_owned());
     }
 

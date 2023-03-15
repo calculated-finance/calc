@@ -2683,6 +2683,35 @@ fn for_inactive_vault_with_dca_plus_updates_standard_performance_data() {
 }
 
 #[test]
+fn for_inactive_dca_plus_vault_with_finished_standard_dca_disburses_escrow() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(ADMIN, &[]);
+
+    instantiate_contract(deps.as_mut(), env.clone(), info);
+    set_fin_price(&mut deps, &ONE_DECIMAL);
+
+    let vault = setup_vault(
+        deps.as_mut(),
+        env.clone(),
+        Coin::new(Uint128::new(40000).into(), DENOM_UKUJI),
+        ONE,
+        VaultStatus::Inactive,
+        true,
+    );
+
+    let response = execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
+
+    assert!(response
+        .messages
+        .contains(&SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_binary(&ExecuteMsg::DisburseEscrow { vault_id: vault.id }).unwrap(),
+            funds: vec![],
+        }))))
+}
+
+#[test]
 fn for_cancelled_vault_deletes_trigger() {
     let mut deps = mock_dependencies();
     let env = mock_env();
