@@ -14,7 +14,7 @@ use base::helpers::time_helpers::get_next_target_time;
 use base::price_type::PriceType;
 use base::triggers::trigger::{Trigger, TriggerConfiguration};
 use base::vaults::vault::VaultStatus;
-use cosmwasm_std::{Coin, Decimal, ReplyOn};
+use cosmwasm_std::{Coin, Decimal, ReplyOn, StdResult};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{DepsMut, Env, Response, Uint128};
 use fin_helpers::limit_orders::create_withdraw_limit_order_msg;
@@ -94,18 +94,43 @@ pub fn execute_trigger(
         }
     }
 
-    if !vault.has_sufficient_funds() {
-        vault.status = VaultStatus::Inactive;
-    }
-
     if vault.is_scheduled() {
         vault.status = VaultStatus::Active;
         vault.started_at = Some(env.block.time);
     }
 
+    if !vault.has_sufficient_funds() {
+        vault.status = VaultStatus::Inactive;
+    }
+
+    let standard_dca_still_active = vault.dca_plus_config.clone().map_or(
+        Ok(false),
+        |mut dca_plus_config| -> StdResult<bool> {
+            let swap_amount = min(dca_plus_config.total_deposit, vault.swap_amount);
+
+            let price = query_price(
+                deps.querier,
+                vault.pair.clone(),
+                &Coin::new(swap_amount.into(), vault.get_swap_denom()),
+                PriceType::Actual,
+            )?;
+
+            let fee_rate =
+                get_swap_fee_rate(&deps, &vault)? + get_delegation_fee_rate(&deps, &vault)?;
+            let receive_amount =
+                swap_amount * (Decimal::one() / price) * (Decimal::one() - fee_rate);
+
+            dca_plus_config.standard_dca_swapped_amount += swap_amount;
+            dca_plus_config.standard_dca_received_amount += receive_amount;
+            vault.dca_plus_config = Some(dca_plus_config);
+
+            Ok(dca_plus_config.has_sufficient_funds())
+        },
+    )?;
+
     update_vault(deps.storage, &vault)?;
 
-    if vault.is_active() {
+    if vault.is_active() || standard_dca_still_active {
         save_trigger(
             deps.storage,
             Trigger {
@@ -122,6 +147,10 @@ pub fn execute_trigger(
                 },
             },
         )?;
+    }
+
+    if !vault.is_active() {
+        return Ok(response.to_owned());
     }
 
     let position_type = vault.get_position_type();
@@ -145,93 +174,46 @@ pub fn execute_trigger(
     )?;
 
     if vault.price_threshold_exceeded(fin_price) {
-        if vault.is_active() {
-            create_event(
-                deps.storage,
-                EventBuilder::new(
-                    vault.id,
-                    env.block.to_owned(),
-                    EventData::DcaVaultExecutionSkipped {
-                        reason: ExecutionSkippedReason::PriceThresholdExceeded { price: fin_price },
-                    },
-                ),
-            )?;
-        }
+        create_event(
+            deps.storage,
+            EventBuilder::new(
+                vault.id,
+                env.block.to_owned(),
+                EventData::DcaVaultExecutionSkipped {
+                    reason: ExecutionSkippedReason::PriceThresholdExceeded { price: fin_price },
+                },
+            ),
+        )?;
 
         return Ok(response.to_owned());
     };
 
-    if let Some(mut dca_plus_config) = vault.dca_plus_config.clone() {
-        let swap_amount = min(dca_plus_config.total_deposit, vault.swap_amount);
+    CACHE.save(
+        deps.storage,
+        &Cache {
+            vault_id: vault.id,
+            owner: vault.owner.clone(),
+        },
+    )?;
 
-        let price = query_price(
-            deps.querier,
-            vault.pair.clone(),
-            &Coin::new(swap_amount.into(), vault.get_swap_denom()),
-            PriceType::Actual,
-        )?;
+    SWAP_CACHE.save(
+        deps.storage,
+        &SwapCache {
+            swap_denom_balance: deps
+                .querier
+                .query_balance(&env.contract.address, &vault.get_swap_denom())?,
+            receive_denom_balance: deps
+                .querier
+                .query_balance(&env.contract.address, &vault.get_receive_denom())?,
+        },
+    )?;
 
-        let fee_rate = get_swap_fee_rate(&deps, &vault)? + get_delegation_fee_rate(&deps, &vault)?;
-        let receive_amount = swap_amount * (Decimal::one() / price) * (Decimal::one() - fee_rate);
-
-        dca_plus_config.standard_dca_swapped_amount += swap_amount;
-        dca_plus_config.standard_dca_received_amount += receive_amount;
-
-        if dca_plus_config.total_deposit - dca_plus_config.standard_dca_swapped_amount
-            > Uint128::new(50000)
-        {
-            save_trigger(
-                deps.storage,
-                Trigger {
-                    vault_id: vault.id,
-                    configuration: TriggerConfiguration::Time {
-                        target_time: get_next_target_time(
-                            env.block.time,
-                            match vault.trigger {
-                                Some(TriggerConfiguration::Time { target_time }) => target_time,
-                                _ => env.block.time,
-                            },
-                            vault.time_interval.clone(),
-                        ),
-                    },
-                },
-            )?;
-        }
-
-        vault.dca_plus_config = Some(dca_plus_config);
-        update_vault(deps.storage, &vault)?;
-    };
-
-    if vault.is_active() {
-        CACHE.save(
-            deps.storage,
-            &Cache {
-                vault_id: vault.id,
-                owner: vault.owner.clone(),
-            },
-        )?;
-
-        SWAP_CACHE.save(
-            deps.storage,
-            &SwapCache {
-                swap_denom_balance: deps
-                    .querier
-                    .query_balance(&env.contract.address, &vault.get_swap_denom())?,
-                receive_denom_balance: deps
-                    .querier
-                    .query_balance(&env.contract.address, &vault.get_receive_denom())?,
-            },
-        )?;
-
-        response = response.add_submessage(create_fin_swap_message(
-            deps.querier,
-            vault.pair.clone(),
-            get_swap_amount(&deps.as_ref(), &env, vault.clone())?,
-            vault.slippage_tolerance,
-            Some(AFTER_FIN_SWAP_REPLY_ID),
-            Some(ReplyOn::Always),
-        )?);
-    };
-
-    Ok(response)
+    Ok(response.add_submessage(create_fin_swap_message(
+        deps.querier,
+        vault.pair.clone(),
+        get_swap_amount(&deps.as_ref(), &env, vault.clone())?,
+        vault.slippage_tolerance,
+        Some(AFTER_FIN_SWAP_REPLY_ID),
+        Some(ReplyOn::Always),
+    )?))
 }
