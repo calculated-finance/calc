@@ -49,7 +49,7 @@ export type Uint64 = string;
  * The greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)
  */
 export type Decimal = string;
-export type PostExecutionAction = "send" | "z_delegate";
+export type PostExecutionAction = 'send' | 'z_delegate';
 /**
  * A human readable address.
  *
@@ -61,13 +61,13 @@ export type PostExecutionAction = "send" | "z_delegate";
  */
 export type Addr = string;
 /**
- * A fixed-point decimal value with 18 fractional digits, i.e. Decimal256(1_000_000_000_000_000_000) == 1.0
+ * A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0
  *
  * The greatest possible value that can be represented is 115792089237316195423570985008687907853269984665640564039457.584007913129639935 (which is (2^256 - 1) / 10^18)
  */
-export type Decimal256 = string;
-export type VaultStatus = "scheduled" | "active" | "inactive" | "cancelled";
-export type TimeInterval = "half_hourly" | "hourly" | "half_daily" | "daily" | "weekly" | "fortnightly" | "monthly";
+export type Decimal = string;
+export type VaultStatus = 'scheduled' | 'active' | 'inactive' | 'cancelled';
+export type TimeInterval = 'half_hourly' | 'hourly' | 'half_daily' | 'daily' | 'weekly' | 'fortnightly' | 'monthly';
 export type TriggerConfiguration =
   | {
       time: {
@@ -77,7 +77,7 @@ export type TriggerConfiguration =
   | {
       fin_limit_order: {
         order_idx?: Uint128 | null;
-        target_price: Decimal256;
+        target_price: Decimal;
       };
     };
 
@@ -95,7 +95,7 @@ export interface Vault {
   owner: Addr;
   pair: Pair;
   received_amount: Coin;
-  slippage_tolerance?: Decimal256 | null;
+  slippage_tolerance?: Decimal | null;
   started_at?: Timestamp | null;
   status: VaultStatus;
   swap_amount: Uint128;

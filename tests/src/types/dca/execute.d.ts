@@ -26,7 +26,7 @@ export type ExecuteMsg =
         owner?: Addr | null;
         pair_address: Addr;
         position_type?: PositionType | null;
-        slippage_tolerance?: Decimal256 | null;
+        slippage_tolerance?: Decimal | null;
         swap_amount: Uint128;
         target_receive_amount?: Uint128 | null;
         target_start_time_utc_seconds?: Uint64 | null;
@@ -100,7 +100,7 @@ export type ExecuteMsg =
  * This type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.
  */
 export type Addr = string;
-export type PostExecutionAction = "send" | "z_delegate";
+export type PostExecutionAction = 'send' | 'z_delegate';
 /**
  * A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0
  *
@@ -121,13 +121,13 @@ export type Decimal = string;
  * let c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```
  */
 export type Uint128 = string;
-export type PositionType = "enter" | "exit";
+export type PositionType = 'enter' | 'exit';
 /**
- * A fixed-point decimal value with 18 fractional digits, i.e. Decimal256(1_000_000_000_000_000_000) == 1.0
+ * A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0
  *
  * The greatest possible value that can be represented is 115792089237316195423570985008687907853269984665640564039457.584007913129639935 (which is (2^256 - 1) / 10^18)
  */
-export type Decimal256 = string;
+export type Decimal = string;
 /**
  * A thin wrapper around u64 that is using strings for JSON encoding/decoding, such that the full u64 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.
  *
@@ -140,7 +140,7 @@ export type Decimal256 = string;
  * let b = Uint64::from(70u32); assert_eq!(b.u64(), 70); ```
  */
 export type Uint64 = string;
-export type TimeInterval = "half_hourly" | "hourly" | "half_daily" | "daily" | "weekly" | "fortnightly" | "monthly";
+export type TimeInterval = 'half_hourly' | 'hourly' | 'half_daily' | 'daily' | 'weekly' | 'fortnightly' | 'monthly';
 
 export interface Destination {
   action: PostExecutionAction;

@@ -3,10 +3,10 @@ use crate::{
     position_type::PositionType,
 };
 use base::{pair::Pair, price_type::PriceType};
-use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, QuerierWrapper, StdError, StdResult, Uint128};
+use cosmwasm_std::{Addr, Coin, Decimal, QuerierWrapper, StdError, StdResult, Uint128};
 use kujira::fin::QueryMsg as FinQueryMsg;
 
-pub fn query_base_price(querier: QuerierWrapper, pair_address: Addr) -> Decimal256 {
+pub fn query_base_price(querier: QuerierWrapper, pair_address: Addr) -> Decimal {
     let book_query_msg = FinQueryMsg::Book {
         limit: Some(1),
         offset: None,
@@ -19,7 +19,7 @@ pub fn query_base_price(querier: QuerierWrapper, pair_address: Addr) -> Decimal2
     book_response.base[0].quote_price.into()
 }
 
-pub fn query_quote_price(querier: QuerierWrapper, pair_address: Addr) -> Decimal256 {
+pub fn query_quote_price(querier: QuerierWrapper, pair_address: Addr) -> Decimal {
     let book_query_msg = FinQueryMsg::Book {
         limit: Some(1),
         offset: None,

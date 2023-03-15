@@ -15,7 +15,7 @@ use base::helpers::message_helpers::get_flat_map_for_event_type;
 use base::pair::Pair;
 use base::triggers::trigger::{TimeInterval, TriggerConfiguration};
 use base::vaults::vault::{Destination, PostExecutionAction, VaultStatus};
-use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, Uint128, Uint64};
+use cosmwasm_std::{Addr, Coin, Decimal, Uint128, Uint64};
 use cw_multi_test::Executor;
 use std::str::FromStr;
 
@@ -206,7 +206,7 @@ fn with_price_trigger_for_fin_buy_should_create_correct_trigger() {
             target_price,
             order_idx,
         } => {
-            assert_eq!(target_price, Decimal256::from_str("0.10").unwrap());
+            assert_eq!(target_price, Decimal::from_str("0.10").unwrap());
             assert!(order_idx.is_some());
         }
         _ => panic!("expected a fin limit order trigger"),
@@ -264,7 +264,7 @@ fn with_price_trigger_for_fin_sell_should_create_correct_trigger() {
             target_price,
             order_idx,
         } => {
-            assert_eq!(target_price, Decimal256::from_str("10.0").unwrap());
+            assert_eq!(target_price, Decimal::from_str("10.0").unwrap());
             assert!(order_idx.is_some());
         }
         _ => panic!("expected a fin limit order trigger"),
@@ -797,7 +797,7 @@ fn with_immediate_time_trigger_should_publish_events() {
                 EventData::DcaVaultExecutionTriggered {
                     base_denom: DENOM_UTEST.to_string(),
                     quote_denom: DENOM_UKUJI.to_string(),
-                    asset_price: Decimal256::from_str("1.0").unwrap(),
+                    asset_price: Decimal::from_str("1.0").unwrap(),
                 },
             )
             .build(3),

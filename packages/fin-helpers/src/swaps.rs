@@ -1,18 +1,18 @@
 use crate::{
+    msg::FinExecuteMsg,
     position_type::PositionType,
     queries::{query_base_price, query_quote_price},
 };
 use base::pair::Pair;
 use cosmwasm_std::{
-    to_binary, Coin, CosmosMsg, Decimal256, QuerierWrapper, ReplyOn, StdResult, SubMsg, WasmMsg,
+    to_binary, Coin, CosmosMsg, Decimal, QuerierWrapper, ReplyOn, StdResult, SubMsg, WasmMsg,
 };
-use kujira::fin::ExecuteMsg;
 
 pub fn create_fin_swap_message(
     querier: QuerierWrapper,
     pair: Pair,
     swap_amount: Coin,
-    slippage_tolerance: Option<Decimal256>,
+    slippage_tolerance: Option<Decimal>,
     reply_id: Option<u64>,
     reply_on: Option<ReplyOn>,
 ) -> StdResult<SubMsg> {
@@ -29,7 +29,7 @@ pub fn create_fin_swap_message(
 
         match position_type {
             PositionType::Enter => fin_price,
-            PositionType::Exit => Decimal256::one()
+            PositionType::Exit => Decimal::one()
                 .checked_div(fin_price)
                 .expect("should return a valid inverted price for fin sell"),
         }
@@ -37,11 +37,9 @@ pub fn create_fin_swap_message(
 
     let swap_message = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: pair.address.to_string(),
-        msg: to_binary(&ExecuteMsg::Swap {
+        msg: to_binary(&FinExecuteMsg::Swap {
             belief_price,
             max_spread: slippage_tolerance,
-            to: None,
-            offer_asset: None,
         })?,
         funds: vec![swap_amount],
     });
