@@ -2,8 +2,8 @@ use crate::{
     error::ContractError,
     helpers::validation_helpers::assert_sender_is_admin,
     helpers::{
-        disbursement_helpers::{get_disbursement_messages, get_fee_messages},
-        vault_helpers::get_dca_plus_performance_fee,
+        disbursement_helpers::get_disbursement_messages,
+        fee_helpers::{get_dca_plus_performance_fee, get_fee_messages},
     },
     state::vaults::{get_vault, update_vault},
 };

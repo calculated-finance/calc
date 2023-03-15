@@ -1,12 +1,16 @@
+use super::helpers::{instantiate_contract, setup_vault};
 use super::mocks::{
     fin_contract_fail_slippage_tolerance, fin_contract_filled_limit_order,
     fin_contract_high_swap_price, fin_contract_partially_filled_order,
 };
-use crate::constants::{ONE, ONE_HUNDRED, ONE_THOUSAND, TEN, TWO_MICRONS};
+use crate::constants::{ONE, ONE_DECIMAL, ONE_HUNDRED, ONE_THOUSAND, TEN, TWO_MICRONS};
+use crate::handlers::execute_trigger::execute_trigger_handler;
+use crate::helpers::fee_helpers::{get_delegation_fee_rate, get_swap_fee_rate};
 use crate::msg::{ExecuteMsg, QueryMsg, TriggerIdsResponse, VaultResponse};
 use crate::state::config::FeeCollector;
+use crate::state::vaults::get_vault;
 use crate::tests::helpers::{
-    assert_address_balances, assert_events_published, assert_vault_balance,
+    assert_address_balances, assert_events_published, assert_vault_balance, set_fin_price,
 };
 use crate::tests::mocks::{
     fin_contract_low_swap_price, fin_contract_pass_slippage_tolerance,
@@ -15,10 +19,13 @@ use crate::tests::mocks::{
 
 use base::events::event::{EventBuilder, EventData};
 use base::helpers::math_helpers::checked_mul;
+use base::price_type::PriceType;
 use base::vaults::vault::{Destination, PostExecutionAction, VaultStatus};
+use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, Uint128};
 use cw_multi_test::Executor;
 use fin_helpers::position_type::PositionType;
+use fin_helpers::queries::query_price;
 use std::str::FromStr;
 
 #[test]
@@ -1227,15 +1234,10 @@ fn for_ready_time_trigger_with_dca_plus_should_withhold_escrow() {
         )
         .unwrap();
 
-    let receive_amount_after_fee =
-        swap_amount - checked_mul(swap_amount, mock.fee_percent).ok().unwrap();
-
     let escrow_level = vault_response.vault.dca_plus_config.unwrap().escrow_level;
 
-    let receive_amount_after_escrow = receive_amount_after_fee
-        - checked_mul(receive_amount_after_fee, escrow_level)
-            .ok()
-            .unwrap();
+    let receive_amount_after_escrow =
+        swap_amount - checked_mul(swap_amount, escrow_level).ok().unwrap();
 
     assert_address_balances(
         &mock,
@@ -1250,7 +1252,7 @@ fn for_ready_time_trigger_with_dca_plus_should_withhold_escrow() {
             (
                 &mock.dca_contract_address,
                 DENOM_UTEST,
-                ONE_THOUSAND + (receive_amount_after_fee - receive_amount_after_escrow),
+                ONE_THOUSAND + (swap_amount - receive_amount_after_escrow),
             ),
             (
                 &mock.fin_contract_address,
@@ -1265,8 +1267,8 @@ fn for_ready_time_trigger_with_dca_plus_should_withhold_escrow() {
         ],
     );
     assert_eq!(
-        escrow_level * receive_amount_after_fee,
-        receive_amount_after_fee - receive_amount_after_escrow
+        escrow_level * swap_amount,
+        swap_amount - receive_amount_after_escrow
     );
     assert!(escrow_level > Decimal::zero());
 }
@@ -2451,5 +2453,146 @@ fn for_fin_sell_vault_with_non_exceeded_price_floor_should_execute() {
     assert_eq!(
         vault_response.vault.balance.amount,
         vault_deposit - swap_amount
+    );
+}
+
+#[test]
+fn for_active_vault_with_dca_plus_updates_standard_performance_data() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(ADMIN, &[]);
+
+    instantiate_contract(deps.as_mut(), env.clone(), info);
+
+    set_fin_price(&mut deps, &ONE_DECIMAL);
+
+    let vault = setup_vault(
+        deps.as_mut(),
+        env.clone(),
+        Coin::new(TEN.into(), DENOM_UKUJI),
+        ONE,
+        VaultStatus::Active,
+        true,
+    );
+
+    execute_trigger_handler(deps.as_mut(), env, vault.id).unwrap();
+
+    let updated_dca_plus_config = get_vault(deps.as_ref().storage, vault.id)
+        .unwrap()
+        .dca_plus_config
+        .unwrap();
+
+    let price = query_price(
+        deps.as_ref().querier,
+        vault.pair.clone(),
+        &Coin::new(vault.swap_amount.into(), vault.get_swap_denom()),
+        PriceType::Actual,
+    )
+    .unwrap();
+
+    let fee_rate = get_swap_fee_rate(&deps.as_mut(), &vault).unwrap()
+        + get_delegation_fee_rate(&deps.as_mut(), &vault).unwrap();
+
+    assert_eq!(
+        updated_dca_plus_config.standard_dca_swapped_amount,
+        vault.swap_amount
+    );
+    assert_eq!(
+        updated_dca_plus_config.standard_dca_received_amount,
+        vault.swap_amount * (Decimal::one() / price) * (Decimal::one() - fee_rate)
+    );
+}
+
+#[test]
+fn for_inactive_vault_with_dca_plus_updates_standard_performance_data() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(ADMIN, &[]);
+
+    instantiate_contract(deps.as_mut(), env.clone(), info);
+
+    set_fin_price(&mut deps, &ONE_DECIMAL);
+
+    let vault = setup_vault(
+        deps.as_mut(),
+        env.clone(),
+        Coin::new(TEN.into(), DENOM_UKUJI),
+        ONE,
+        VaultStatus::Inactive,
+        true,
+    );
+
+    execute_trigger_handler(deps.as_mut(), env, vault.id).unwrap();
+
+    let updated_dca_plus_config = get_vault(deps.as_ref().storage, vault.id)
+        .unwrap()
+        .dca_plus_config
+        .unwrap();
+
+    let price = query_price(
+        deps.as_ref().querier,
+        vault.pair.clone(),
+        &Coin::new(vault.swap_amount.into(), vault.get_swap_denom()),
+        PriceType::Actual,
+    )
+    .unwrap();
+
+    let fee_rate = get_swap_fee_rate(&deps.as_mut(), &vault).unwrap()
+        + get_delegation_fee_rate(&deps.as_mut(), &vault).unwrap();
+
+    assert_eq!(
+        updated_dca_plus_config.standard_dca_swapped_amount,
+        vault.swap_amount
+    );
+    assert_eq!(
+        updated_dca_plus_config.standard_dca_received_amount,
+        vault.swap_amount * (Decimal::one() / price) * (Decimal::one() - fee_rate)
+    );
+}
+
+#[test]
+fn for_inactive_vault_with_dca_plus_creates_new_trigger() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(ADMIN, &[]);
+
+    instantiate_contract(deps.as_mut(), env.clone(), info);
+
+    set_fin_price(&mut deps, &ONE_DECIMAL);
+
+    let vault = setup_vault(
+        deps.as_mut(),
+        env.clone(),
+        Coin::new(TEN.into(), DENOM_UKUJI),
+        ONE,
+        VaultStatus::Inactive,
+        true,
+    );
+
+    execute_trigger_handler(deps.as_mut(), env, vault.id).unwrap();
+
+    let updated_dca_plus_config = get_vault(deps.as_ref().storage, vault.id)
+        .unwrap()
+        .dca_plus_config
+        .unwrap();
+
+    let price = query_price(
+        deps.as_ref().querier,
+        vault.pair.clone(),
+        &Coin::new(vault.swap_amount.into(), vault.get_swap_denom()),
+        PriceType::Actual,
+    )
+    .unwrap();
+
+    let fee_rate = get_swap_fee_rate(&deps.as_mut(), &vault).unwrap()
+        + get_delegation_fee_rate(&deps.as_mut(), &vault).unwrap();
+
+    assert_eq!(
+        updated_dca_plus_config.standard_dca_swapped_amount,
+        vault.swap_amount
+    );
+    assert_eq!(
+        updated_dca_plus_config.standard_dca_received_amount,
+        vault.swap_amount * (Decimal::one() / price) * (Decimal::one() - fee_rate)
     );
 }
