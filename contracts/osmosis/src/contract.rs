@@ -4,6 +4,7 @@ use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
 
 use crate::error::ContractError;
 use crate::handlers::get_pool::get_pool;
+use crate::handlers::get_price::{get_price};
 use crate::handlers::swap::swap;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
@@ -30,9 +31,17 @@ pub fn execute(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetPool { pool_id } => to_binary(&get_pool(deps, pool_id)?),
+        QueryMsg::GetPrice {
+            pool_id,
+            denom_in,
+            amount_in,
+            denom_out,
+        } => to_binary(&get_price(
+            deps, env, pool_id, denom_in, amount_in, denom_out,
+        )?),
     }
 }
 

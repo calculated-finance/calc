@@ -1,5 +1,8 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use osmosis_std::types::osmosis::gamm::v1beta1::QueryPoolResponse;
+use cosmwasm_std::Uint128;
+use osmosis_std::types::osmosis::gamm::v1beta1::{
+    QueryPoolResponse, QuerySwapExactAmountInResponse,
+};
 
 #[cw_serde]
 pub struct InstantiateMsg {}
@@ -14,4 +17,11 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     #[returns(QueryPoolResponse)]
     GetPool { pool_id: u64 },
+    #[returns(QuerySwapExactAmountInResponse)]
+    GetPrice {
+        pool_id: u64,
+        denom_in: String,
+        amount_in: Uint128,
+        denom_out: String,
+    },
 }
