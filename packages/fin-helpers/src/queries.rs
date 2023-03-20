@@ -151,7 +151,7 @@ pub fn query_price(
 }
 
 pub fn calculate_slippage(actual_price: Decimal, belief_price: Decimal) -> Decimal {
-    actual_price - belief_price / belief_price
+    (actual_price - belief_price) / belief_price
 }
 
 pub fn query_order_details(

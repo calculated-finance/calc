@@ -3,4 +3,4 @@
 2ac330fa87f446d30adf5742625a2af941652dfa1fcec7076b5180c7849f80cc  target/wasm32-unknown-unknown/release/fund_factory.wasm
 813d56538d8d2f183836883479e39a6b30587afdf671704e400e097f77e2dc2f  target/wasm32-unknown-unknown/release/fund_router.wasm
 8becc66fb7bf1b9076739591c9dae7f7908434eeb7ebc45585d32097c904258d  target/wasm32-unknown-unknown/release/swap.wasm
-0f9fd6f9b982b8b444309be60e5b57c2f77a5b22be7b877567bcc01e573c2d43  target/wasm32-unknown-unknown/release/dca.wasm
+fb99ae209768cb12f5ae7e868c8da0458ed60c67fffe25218dd998edf2239969  target/wasm32-unknown-unknown/release/dca.wasm
