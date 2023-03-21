@@ -147,7 +147,15 @@ pub fn query_price(
 }
 
 pub fn calculate_slippage(actual_price: Decimal, belief_price: Decimal) -> Decimal {
-    (actual_price - belief_price) / belief_price
+    let difference = actual_price
+        .checked_sub(belief_price)
+        .unwrap_or(Decimal::zero());
+
+    if difference.is_zero() {
+        return Decimal::zero();
+    }
+
+    difference / belief_price
 }
 
 pub fn query_order_details(

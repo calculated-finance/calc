@@ -102,28 +102,6 @@ impl Vault {
         Ok(rounded_price.checked_div(adjustment).unwrap())
     }
 
-    // pub fn price_threshold_exceeded(&self, price: Decimal) -> bool {
-    //     self.minimum_receive_amount
-    //         .map_or(false, |minimum_receive_amount| {
-    //             let target_swap_amount_as_decimal =
-    //                 Decimal::from_ratio(self.swap_amount, Uint128::one());
-
-    //             let receive_amount_at_price = match self.get_position_type() {
-    //                 PositionType::Enter => target_swap_amount_as_decimal
-    //                     .checked_div(price)
-    //                     .expect("current fin price should be > 0.0"),
-    //                 PositionType::Exit => target_swap_amount_as_decimal
-    //                     .checked_mul(price)
-    //                     .expect("expected receive amount should be valid"),
-    //             };
-
-    //             let minimum_receive_amount_as_decimal =
-    //                 Decimal::from_ratio(minimum_receive_amount, Uint128::one());
-
-    //             receive_amount_at_price < minimum_receive_amount_as_decimal
-    //         })
-    // }
-
     pub fn has_low_funds(&self) -> bool {
         self.balance.amount < self.swap_amount
     }
