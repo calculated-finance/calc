@@ -53,7 +53,7 @@ pub fn disburse_escrow_handler(
         EventBuilder::new(
             vault.id,
             env.block.clone(),
-            EventData::DcaPlusVaultEscrowDisbursed {
+            EventData::DcaVaultEscrowDisbursed {
                 amount_disbursed: amount_to_disburse.clone(),
                 performance_fee: performance_fee.clone(),
             },

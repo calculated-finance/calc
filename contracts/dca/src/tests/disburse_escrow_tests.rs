@@ -168,7 +168,7 @@ fn publishes_escrow_disbursed_event() {
         resource_id: vault.id,
         timestamp: env.block.time,
         block_height: env.block.height,
-        data: EventData::DcaPlusVaultEscrowDisbursed {
+        data: EventData::DcaVaultEscrowDisbursed {
             amount_disbursed: Coin::new(
                 (subtract(&escrowed_balance, &performance_fee).unwrap())
                     .amount
