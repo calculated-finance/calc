@@ -5,6 +5,7 @@ use crate::helpers::vault_helpers::get_swap_amount;
 use crate::msg::ExecuteMsg;
 use crate::state::cache::{CACHE, SWAP_CACHE};
 use crate::state::events::create_event;
+use crate::state::triggers::delete_trigger;
 use crate::state::vaults::{get_vault, update_vault};
 use crate::types::dca_plus_config::DcaPlusConfig;
 use base::events::event::{EventBuilder, EventData, ExecutionSkippedReason};
@@ -151,10 +152,11 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
             msg: to_binary(&ExecuteMsg::DisburseEscrow { vault_id: vault.id })?,
             funds: vec![],
         })));
+
+        delete_trigger(deps.storage, vault.id)?;
     }
 
     Ok(Response::new()
-        .add_attribute("method", "fin_swap_completed")
         .add_attribute("owner", vault.owner.to_string())
         .add_attribute("vault_id", vault.id)
         .add_attributes(attributes)

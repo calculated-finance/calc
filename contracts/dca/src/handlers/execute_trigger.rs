@@ -104,6 +104,21 @@ pub fn execute_trigger(
 
     update_vault(deps.storage, &vault)?;
 
+    let quote_price = query_quote_price(deps.querier, &vault.pair, &vault.get_swap_denom())?;
+
+    create_event(
+        deps.storage,
+        EventBuilder::new(
+            vault.id,
+            env.block.to_owned(),
+            EventData::DcaVaultExecutionTriggered {
+                base_denom: vault.pair.base_denom.clone(),
+                quote_denom: vault.pair.quote_denom.clone(),
+                asset_price: quote_price.clone(),
+            },
+        ),
+    )?;
+
     let standard_dca_still_active = vault.dca_plus_config.clone().map_or(
         Ok(false),
         |mut dca_plus_config| -> StdResult<bool> {
@@ -237,21 +252,6 @@ pub fn execute_trigger(
             funds: vec![],
         })));
     }
-
-    let quote_price = query_quote_price(deps.querier, &vault.pair, &vault.get_swap_denom())?;
-
-    create_event(
-        deps.storage,
-        EventBuilder::new(
-            vault.id,
-            env.block.to_owned(),
-            EventData::DcaVaultExecutionTriggered {
-                base_denom: vault.pair.base_denom.clone(),
-                quote_denom: vault.pair.quote_denom.clone(),
-                asset_price: quote_price.clone(),
-            },
-        ),
-    )?;
 
     if vault.price_threshold_exceeded(quote_price) {
         create_event(
