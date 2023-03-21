@@ -605,7 +605,7 @@ fn with_succcesful_swap_publishes_dca_execution_completed_event() {
 }
 
 #[test]
-fn with_succcesful_swap_with_dca_plus_publishes_dca_plus_execution_completed_event() {
+fn with_succcesful_swap_with_dca_plus_publishes_execution_completed_event() {
     let mut deps = mock_dependencies();
     let env = mock_env();
     instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &vec![]));
@@ -671,7 +671,7 @@ fn with_succcesful_swap_with_dca_plus_publishes_dca_plus_execution_completed_eve
         resource_id: vault.id,
         timestamp: env.block.time,
         block_height: env.block.height,
-        data: EventData::DcaPlusVaultExecutionCompleted {
+        data: EventData::DcaVaultExecutionCompleted {
             sent: updated_vault.swapped_amount,
             received: updated_vault.received_amount,
             fee: Coin::new(0, vault.get_receive_denom())

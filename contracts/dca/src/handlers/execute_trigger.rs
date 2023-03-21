@@ -213,7 +213,7 @@ pub fn execute_trigger(
                 EventBuilder::new(
                     vault.id,
                     env.block.clone(),
-                    EventData::DcaVaultExecutionCompleted {
+                    EventData::DcaVaultExecutionSimulated {
                         sent: Coin::new(swap_amount.into(), vault.get_swap_denom()),
                         received: Coin::new(receive_amount.into(), vault.get_receive_denom()),
                         fee: Coin::new(
