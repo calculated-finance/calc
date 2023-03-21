@@ -6,11 +6,7 @@ use base::{pair::Pair, price_type::PriceType};
 use cosmwasm_std::{Addr, Coin, Decimal, QuerierWrapper, StdError, StdResult, Uint128};
 use kujira::fin::QueryMsg as FinQueryMsg;
 
-pub fn query_quote_price(
-    querier: QuerierWrapper,
-    pair: &Pair,
-    swap_denom: &str,
-) -> StdResult<Decimal> {
+fn query_quote_price(querier: QuerierWrapper, pair: &Pair, swap_denom: &str) -> StdResult<Decimal> {
     let position_type = match swap_denom == pair.quote_denom {
         true => PositionType::Enter,
         false => PositionType::Exit,
