@@ -4,6 +4,7 @@ use crate::types::vault::Vault;
 use base::pair::Pair;
 use base::vaults::vault::{Destination, PostExecutionAction, VaultStatus};
 use cosmwasm_std::{Addr, Coin, Decimal, Deps, Env, Storage, Timestamp, Uint128};
+use osmosis_helpers::pool::Pool;
 
 pub fn assert_exactly_one_asset(funds: Vec<Coin>) -> Result<(), ContractError> {
     if funds.is_empty() || funds.len() > 1 {
@@ -85,14 +86,14 @@ pub fn assert_swap_amount_is_greater_than_50000(swap_amount: Uint128) -> Result<
 }
 
 pub fn assert_send_denom_is_in_pair_denoms(
-    pair: Pair,
+    pool: Pool,
     send_denom: String,
 ) -> Result<(), ContractError> {
-    if send_denom != pair.base_denom && send_denom != pair.quote_denom {
+    if send_denom != pool.base_denom && send_denom != pool.quote_denom {
         return Err(ContractError::CustomError {
             val: format!(
-                "send denom {} does not match pair base denom {} or quote denom {}",
-                send_denom, pair.base_denom, pair.quote_denom
+                "send denom {} does not match pool base denom {} or quote denom {}",
+                send_denom, pool.base_denom, pool.quote_denom
             ),
         });
     }
@@ -302,7 +303,7 @@ pub fn assert_validator_is_valid(
 }
 
 pub fn assert_denom_is_bond_denom(denom: String) -> Result<(), ContractError> {
-    if denom.clone() != "ukuji".to_string() {
+    if denom.clone() != "uosmo".to_string() {
         return Err(ContractError::CustomError {
             val: format!("{} is not the bond denomination", denom),
         });

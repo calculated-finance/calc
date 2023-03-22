@@ -4,6 +4,7 @@ pub mod after_z_delegation;
 pub mod cancel_vault;
 pub mod create_custom_swap_fee;
 pub mod create_pair;
+pub mod create_pool;
 pub mod create_vault;
 pub mod delete_pair;
 pub mod deposit;

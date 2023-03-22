@@ -40,6 +40,11 @@ pub enum ExecuteMsg {
         base_denom: String,
         quote_denom: String,
     },
+    CreatePool {
+        pool_id: u64,
+        base_denom: String,
+        quote_denom: String,
+    },
     DeletePair {
         address: Addr,
     },
@@ -47,7 +52,7 @@ pub enum ExecuteMsg {
         owner: Option<Addr>,
         label: Option<String>,
         destinations: Option<Vec<Destination>>,
-        pair_address: Addr,
+        pool_id: u64,
         position_type: Option<PositionType>,
         slippage_tolerance: Option<Decimal256>,
         minimum_receive_amount: Option<Uint128>,

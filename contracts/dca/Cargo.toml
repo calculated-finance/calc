@@ -30,6 +30,7 @@ cw2 = "0.15.0"
 cw20 = "0.13.4"
 enum-as-inner = "0.5.1"
 fin-helpers = { path = "../../packages/fin-helpers" }
+osmosis-helpers = { path = "../../packages/osmosis-helpers" }
 kujira = "0.7.16"
 schemars = "0.8.10"
 serde = { version = "1.0.144", default-features = false, features = ["derive"] }

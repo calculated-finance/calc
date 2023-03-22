@@ -6,6 +6,7 @@ use base::{
 };
 use cosmwasm_std::{Addr, Coin, Decimal256, Timestamp, Uint128};
 use fin_helpers::position_type::PositionType;
+use osmosis_helpers::pool::Pool;
 
 pub struct VaultBuilder {
     pub created_at: Timestamp,
@@ -14,7 +15,7 @@ pub struct VaultBuilder {
     pub destinations: Vec<Destination>,
     pub status: VaultStatus,
     pub balance: Coin,
-    pub pair: Pair,
+    pub pool: Pool,
     pub swap_amount: Uint128,
     pub position_type: Option<PositionType>,
     pub slippage_tolerance: Option<Decimal256>,
@@ -34,7 +35,7 @@ impl VaultBuilder {
         destinations: Vec<Destination>,
         status: VaultStatus,
         balance: Coin,
-        pair: Pair,
+        pool: Pool,
         swap_amount: Uint128,
         position_type: Option<PositionType>,
         slippage_tolerance: Option<Decimal256>,
@@ -52,7 +53,7 @@ impl VaultBuilder {
             destinations,
             status,
             balance,
-            pair,
+            pool,
             swap_amount,
             position_type,
             slippage_tolerance,
@@ -74,7 +75,7 @@ impl VaultBuilder {
             destinations: self.destinations,
             status: self.status,
             balance: self.balance.clone(),
-            pair: self.pair.clone(),
+            pool: self.pool.clone(),
             swap_amount: self.swap_amount,
             slippage_tolerance: self.slippage_tolerance,
             minimum_receive_amount: self.minimum_receive_amount,

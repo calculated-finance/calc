@@ -30,15 +30,15 @@ pub fn save_trigger(store: &mut dyn Storage, trigger: Trigger) -> StdResult<Uint
                 }
             }
         }
-        TriggerConfiguration::FinLimitOrder { order_idx, .. } => {
-            if order_idx.is_some() {
-                TRIGGER_ID_BY_FIN_LIMIT_ORDER_IDX.save(
-                    store,
-                    order_idx.unwrap().u128(),
-                    &trigger.vault_id.into(),
-                )?;
-            }
-        }
+        // TriggerConfiguration::FinLimitOrder { order_idx, .. } => {
+        //     if order_idx.is_some() {
+        //         TRIGGER_ID_BY_FIN_LIMIT_ORDER_IDX.save(
+        //             store,
+        //             order_idx.unwrap().u128(),
+        //             &trigger.vault_id.into(),
+        //         )?;
+        //     }
+        // }
     }
     Ok(trigger.vault_id)
 }
@@ -65,11 +65,11 @@ pub fn delete_trigger(store: &mut dyn Storage, vault_id: Uint128) -> StdResult<U
                 }
             }
         }
-        TriggerConfiguration::FinLimitOrder { order_idx, .. } => {
-            if order_idx.is_some() {
-                TRIGGER_ID_BY_FIN_LIMIT_ORDER_IDX.remove(store, order_idx.unwrap().u128());
-            }
-        }
+        // TriggerConfiguration::FinLimitOrder { order_idx, .. } => {
+        //     if order_idx.is_some() {
+        //         TRIGGER_ID_BY_FIN_LIMIT_ORDER_IDX.remove(store, order_idx.unwrap().u128());
+        //     }
+        // }
     }
     Ok(trigger.vault_id)
 }

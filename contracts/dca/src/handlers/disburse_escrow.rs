@@ -18,43 +18,44 @@ pub fn disburse_escrow_handler(
     info: MessageInfo,
     vault_id: Uint128,
 ) -> Result<Response, ContractError> {
-    assert_sender_is_contract_or_admin(deps.storage, &info.sender, &env)?;
+    unimplemented!()
+    // assert_sender_is_contract_or_admin(deps.storage, &info.sender, &env)?;
 
-    let mut vault = get_vault(deps.storage, vault_id)?;
+    // let mut vault = get_vault(deps.storage, vault_id)?;
 
-    if vault.dca_plus_config.is_none() {
-        return Err(ContractError::CustomError {
-            val: "Vault is not a DCA+ vault".to_string(),
-        });
-    }
+    // if vault.dca_plus_config.is_none() {
+    //     return Err(ContractError::CustomError {
+    //         val: "Vault is not a DCA+ vault".to_string(),
+    //     });
+    // }
 
-    let dca_plus_config = vault.dca_plus_config.clone().unwrap();
+    // let dca_plus_config = vault.dca_plus_config.clone().unwrap();
 
-    let current_price = query_belief_price(deps.querier, &vault.pair, &vault.get_swap_denom())?;
+    // let current_price = query_belief_price(deps.querier, &vault.pool, &vault.get_swap_denom())?;
 
-    let performance_fee = get_dca_plus_performance_fee(&vault, current_price)?;
-    let amount_to_disburse = dca_plus_config.escrowed_balance.amount - performance_fee.amount;
+    // let performance_fee = get_dca_plus_performance_fee(&vault, current_price)?;
+    // let amount_to_disburse = dca_plus_config.escrowed_balance.amount - performance_fee.amount;
 
-    vault.dca_plus_config = Some(DcaPlusConfig {
-        escrowed_balance: empty_of(dca_plus_config.escrowed_balance),
-        ..dca_plus_config
-    });
+    // vault.dca_plus_config = Some(DcaPlusConfig {
+    //     escrowed_balance: empty_of(dca_plus_config.escrowed_balance),
+    //     ..dca_plus_config
+    // });
 
-    update_vault(deps.storage, &vault)?;
+    // update_vault(deps.storage, &vault)?;
 
-    Ok(Response::new()
-        .add_submessages(get_disbursement_messages(
-            deps.as_ref(),
-            &vault,
-            amount_to_disburse,
-        )?)
-        .add_submessages(get_fee_messages(
-            deps.as_ref(),
-            env,
-            vec![performance_fee.amount],
-            vault.get_receive_denom(),
-            true,
-        )?)
-        .add_attribute("performance_fee", format!("{:?}", performance_fee))
-        .add_attribute("escrow_disbursed", format!("{:?}", amount_to_disburse)))
+    // Ok(Response::new()
+    //     .add_submessages(get_disbursement_messages(
+    //         deps.as_ref(),
+    //         &vault,
+    //         amount_to_disburse,
+    //     )?)
+    //     .add_submessages(get_fee_messages(
+    //         deps.as_ref(),
+    //         env,
+    //         vec![performance_fee.amount],
+    //         vault.get_receive_denom(),
+    //         true,
+    //     )?)
+    //     .add_attribute("performance_fee", format!("{:?}", performance_fee))
+    //     .add_attribute("escrow_disbursed", format!("{:?}", amount_to_disburse)))
 }

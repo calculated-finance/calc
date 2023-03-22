@@ -2410,7 +2410,7 @@ fn for_active_vault_with_dca_plus_updates_standard_performance_data() {
 
     let price = query_price(
         deps.as_ref().querier,
-        vault.pair.clone(),
+        vault.pool.clone(),
         &Coin::new(vault.swap_amount.into(), vault.get_swap_denom()),
         PriceType::Actual,
     )
@@ -2497,7 +2497,7 @@ fn for_active_vault_sends_fin_swap_message() {
 
     assert!(response.messages.contains(&SubMsg::reply_always(
         CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: vault.pair.address.to_string(),
+            contract_addr: vault.pool.address.to_string(),
             msg: to_binary(&FinExecuteMsg::Swap {
                 belief_price: None,
                 max_spread: None,
@@ -2656,7 +2656,7 @@ fn for_scheduled_vault_sends_fin_swap_message() {
 
     assert!(response.messages.contains(&SubMsg::reply_always(
         CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: vault.pair.address.to_string(),
+            contract_addr: vault.pool.address.to_string(),
             msg: to_binary(&FinExecuteMsg::Swap {
                 belief_price: None,
                 max_spread: None,
@@ -2752,7 +2752,7 @@ fn for_inactive_vault_with_dca_plus_updates_standard_performance_data() {
 
     let price = query_price(
         deps.as_ref().querier,
-        vault.pair.clone(),
+        vault.pool.clone(),
         &Coin::new(vault.swap_amount.into(), vault.get_swap_denom()),
         PriceType::Actual,
     )

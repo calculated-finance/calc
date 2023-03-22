@@ -18,11 +18,7 @@ pub enum TimeInterval {
 pub enum TriggerConfiguration {
     Time {
         target_time: Timestamp,
-    },
-    FinLimitOrder {
-        target_price: Decimal256,
-        order_idx: Option<Uint128>,
-    },
+    }
 }
 
 #[cw_serde]

@@ -115,7 +115,7 @@ fn with_one_vault_should_return_proper_vault_data() {
             time_interval: TimeInterval::Hourly,
             slippage_tolerance: None,
             swap_amount,
-            pair: Pair {
+            pool: Pair {
                 address: mock.fin_contract_address.clone(),
                 base_denom: DENOM_UTEST.to_string(),
                 quote_denom: DENOM_UKUJI.to_string(),

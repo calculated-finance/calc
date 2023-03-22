@@ -10,7 +10,7 @@ use crate::{
         config::FeeCollector,
         pairs::PAIRS,
         triggers::save_trigger,
-        vaults::save_vault,
+        vaults::save_vault, pools::POOLS,
     },
     types::{dca_plus_config::DcaPlusConfig, vault::Vault, vault_builder::VaultBuilder},
 };
@@ -28,6 +28,7 @@ use cosmwasm_std::{
 };
 use fin_helpers::msg::{FinBookResponse, FinPoolResponseWithoutDenom};
 use kujira::fin::QueryMsg as FinQueryMsg;
+use osmosis_helpers::pool::Pool;
 
 pub fn instantiate_contract(deps: DepsMut, env: Env, info: MessageInfo) {
     let instantiate_message = InstantiateMsg {
@@ -103,14 +104,14 @@ pub fn setup_vault(
     status: VaultStatus,
     is_dca_plus: bool,
 ) -> Vault {
-    let pair = Pair {
-        address: Addr::unchecked("pair"),
+    let pool = Pool {
+        pool_id: u64::default(),
         base_denom: DENOM_UKUJI.to_string(),
         quote_denom: DENOM_UTEST.to_string(),
     };
 
-    PAIRS
-        .save(deps.storage, pair.address.clone(), &pair)
+    POOLS
+        .save(deps.storage, pool.pool_id.clone(), &pool)
         .unwrap();
 
     let owner = Addr::unchecked("owner");
@@ -127,7 +128,7 @@ pub fn setup_vault(
             }],
             created_at: env.block.time.clone(),
             status,
-            pair,
+            pool: pool,
             swap_amount,
             position_type: None,
             slippage_tolerance: None,

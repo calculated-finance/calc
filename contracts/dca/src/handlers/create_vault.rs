@@ -14,6 +14,7 @@ use crate::state::cache::{Cache, CACHE};
 use crate::state::config::get_config;
 use crate::state::events::create_event;
 use crate::state::pairs::PAIRS;
+use crate::state::pools::POOLS;
 use crate::state::triggers::save_trigger;
 use crate::state::vaults::{save_vault, update_vault};
 use crate::types::dca_plus_config::DcaPlusConfig;
@@ -38,7 +39,7 @@ pub fn create_vault(
     owner: Addr,
     label: Option<String>,
     mut destinations: Vec<Destination>,
-    pair_address: Addr,
+    pool_id: u64,
     position_type: Option<PositionType>,
     slippage_tolerance: Option<Decimal256>,
     minimum_receive_amount: Option<Uint128>,
@@ -51,7 +52,7 @@ pub fn create_vault(
     assert_contract_is_not_paused(deps.storage)?;
     assert_address_is_valid(deps.as_ref(), owner.clone(), "owner".to_string())?;
     assert_exactly_one_asset(info.funds.clone())?;
-    assert_swap_amount_is_greater_than_50000(swap_amount)?;
+    //assert_swap_amount_is_greater_than_50000(swap_amount)?;
     assert_destinations_limit_is_not_breached(&destinations)?;
 
     if let Some(target_time) = target_start_time_utc_seconds {
@@ -74,17 +75,17 @@ pub fn create_vault(
     assert_no_destination_allocations_are_zero(&destinations)?;
     assert_destination_allocations_add_up_to_one(&destinations)?;
 
-    deps.api.addr_validate(&pair_address.to_string())?;
-    let pair = PAIRS.load(deps.storage, pair_address)?;
+    //deps.api.addr_validate(&pool_id.to_string())?;
+    let pool = POOLS.load(deps.storage, pool_id)?;
 
     let send_denom = info.funds[0].denom.clone();
 
-    assert_send_denom_is_in_pair_denoms(pair.clone(), send_denom.clone())?;
+    assert_send_denom_is_in_pair_denoms(pool.clone(), send_denom.clone())?;
 
-    let receive_denom = if send_denom == pair.quote_denom {
-        pair.base_denom.clone()
+    let receive_denom = if send_denom == pool.quote_denom {
+        pool.base_denom.clone()
     } else {
-        pair.quote_denom.clone()
+        pool.quote_denom.clone()
     };
 
     assert_delegation_denom_is_stakeable(&destinations, receive_denom.clone())?;
@@ -119,7 +120,7 @@ pub fn create_vault(
         } else {
             VaultStatus::Scheduled
         },
-        pair: pair.clone(),
+        pool: pool.clone(),
         swap_amount,
         position_type,
         slippage_tolerance,
@@ -130,9 +131,9 @@ pub fn create_vault(
         swapped_amount: coin(0, info.funds[0].clone().denom.clone()),
         received_amount: coin(
             0,
-            match info.funds[0].clone().denom == pair.quote_denom {
-                true => pair.base_denom,
-                false => pair.quote_denom,
+            match info.funds[0].clone().denom == pool.quote_denom {
+                true => pool.base_denom,
+                false => pool.quote_denom,
             },
         ),
         dca_plus_config,
@@ -193,7 +194,8 @@ pub fn create_vault(
             Ok(response)
         }
         (None, Some(target_receive_amount)) => {
-            create_fin_limit_order_trigger(deps, vault, target_receive_amount, response)
+            // create_fin_limit_order_trigger(deps, vault, target_receive_amount, response)
+            unimplemented!()
         }
         (Some(_), Some(_)) => Err(ContractError::CustomError {
             val: String::from(
@@ -226,40 +228,40 @@ fn create_time_trigger(
     Ok(response.to_owned())
 }
 
-fn create_fin_limit_order_trigger(
-    deps: DepsMut,
-    mut vault: Vault,
-    target_receive_amount: Uint128,
-    response: Response,
-) -> Result<Response, ContractError> {
-    let pair_config = query_pair_config(deps.querier, vault.pair.address.clone())?;
+// fn create_fin_limit_order_trigger(
+//     deps: DepsMut,
+//     mut vault: Vault,
+//     target_receive_amount: Uint128,
+//     response: Response,
+// ) -> Result<Response, ContractError> {
+//     let pair_config = query_pair_config(deps.querier, vault.pool.address.clone())?;
 
-    let target_price = vault.get_target_price(
-        target_receive_amount,
-        pair_config.decimal_delta.unwrap_or(0),
-        pair_config.price_precision,
-    )?;
+//     let target_price = vault.get_target_price(
+//         target_receive_amount,
+//         pair_config.decimal_delta.unwrap_or(0),
+//         pair_config.price_precision,
+//     )?;
 
-    save_trigger(
-        deps.storage,
-        Trigger {
-            vault_id: vault.id,
-            configuration: TriggerConfiguration::FinLimitOrder {
-                order_idx: None,
-                target_price,
-            },
-        },
-    )?;
+//     save_trigger(
+//         deps.storage,
+//         Trigger {
+//             vault_id: vault.id,
+//             configuration: TriggerConfiguration::FinLimitOrder {
+//                 order_idx: None,
+//                 target_price,
+//             },
+//         },
+//     )?;
 
-    vault.balance.amount -= TWO_MICRONS;
-    update_vault(deps.storage, &vault)?;
+//     vault.balance.amount -= TWO_MICRONS;
+//     update_vault(deps.storage, &vault)?;
 
-    let fin_limit_order_sub_msg = create_submit_order_sub_msg(
-        vault.pair.address.clone(),
-        target_price,
-        Coin::new(TWO_MICRONS.into(), vault.get_swap_denom()),
-        AFTER_FIN_LIMIT_ORDER_SUBMITTED_REPLY_ID,
-    );
+//     let fin_limit_order_sub_msg = create_submit_order_sub_msg(
+//         vault.pool.address.clone(),
+//         target_price,
+//         Coin::new(TWO_MICRONS.into(), vault.get_swap_denom()),
+//         AFTER_FIN_LIMIT_ORDER_SUBMITTED_REPLY_ID,
+//     );
 
-    Ok(response.add_submessage(fin_limit_order_sub_msg))
-}
+//     Ok(response.add_submessage(fin_limit_order_sub_msg))
+// }

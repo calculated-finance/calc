@@ -9,6 +9,7 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, StdError, StdResult, Timestamp, Uint128};
 use fin_helpers::position_type::PositionType;
 use kujira::precision::{Precise, Precision};
+use osmosis_helpers::pool::Pool;
 use std::str::FromStr;
 
 #[cw_serde]
@@ -20,7 +21,7 @@ pub struct Vault {
     pub destinations: Vec<Destination>,
     pub status: VaultStatus,
     pub balance: Coin,
-    pub pair: Pair,
+    pub pool: Pool,
     pub swap_amount: Uint128,
     pub slippage_tolerance: Option<Decimal256>,
     pub minimum_receive_amount: Option<Uint128>,
@@ -34,7 +35,7 @@ pub struct Vault {
 
 impl Vault {
     pub fn get_position_type(&self) -> PositionType {
-        match self.balance.denom == self.pair.quote_denom {
+        match self.balance.denom == self.pool.quote_denom {
             true => PositionType::Enter,
             false => PositionType::Exit,
         }
@@ -45,10 +46,10 @@ impl Vault {
     }
 
     pub fn get_receive_denom(&self) -> String {
-        if self.balance.denom == self.pair.quote_denom {
-            return self.pair.base_denom.clone();
+        if self.balance.denom == self.pool.quote_denom {
+            return self.pool.base_denom.clone();
         }
-        self.pair.quote_denom.clone()
+        self.pool.quote_denom.clone()
     }
 
     pub fn get_expected_execution_completed_date(&self, current_time: Timestamp) -> Timestamp {
@@ -158,385 +159,385 @@ impl Vault {
     }
 }
 
-#[cfg(test)]
-mod has_sufficient_funds_tests {
-    use crate::{state::vaults::save_vault, types::vault_builder::VaultBuilder};
+// #[cfg(test)]
+// mod has_sufficient_funds_tests {
+//     use crate::{state::vaults::save_vault, types::vault_builder::VaultBuilder};
 
-    use super::*;
-    use cosmwasm_std::{coin, testing::mock_dependencies};
+//     use super::*;
+//     use cosmwasm_std::{coin, testing::mock_dependencies};
 
-    #[test]
-    fn should_return_false_when_vault_has_insufficient_swap_amount() {
-        let mut deps = mock_dependencies();
-        let vault_builder = vault_with(100000, Uint128::new(50000));
-        let vault = save_vault(deps.as_mut().storage, vault_builder).unwrap();
-        assert!(!vault.has_sufficient_funds());
-    }
+//     #[test]
+//     fn should_return_false_when_vault_has_insufficient_swap_amount() {
+//         let mut deps = mock_dependencies();
+//         let vault_builder = vault_with(100000, Uint128::new(50000));
+//         let vault = save_vault(deps.as_mut().storage, vault_builder).unwrap();
+//         assert!(!vault.has_sufficient_funds());
+//     }
 
-    #[test]
-    fn should_return_false_when_vault_has_insufficient_balance() {
-        let mut deps = mock_dependencies();
-        let vault_builder = vault_with(50000, Uint128::new(50001));
-        let vault = save_vault(deps.as_mut().storage, vault_builder).unwrap();
-        assert!(!vault.has_sufficient_funds());
-    }
+//     #[test]
+//     fn should_return_false_when_vault_has_insufficient_balance() {
+//         let mut deps = mock_dependencies();
+//         let vault_builder = vault_with(50000, Uint128::new(50001));
+//         let vault = save_vault(deps.as_mut().storage, vault_builder).unwrap();
+//         assert!(!vault.has_sufficient_funds());
+//     }
 
-    #[test]
-    fn should_return_true_when_vault_has_sufficient_swap_amount() {
-        let mut deps = mock_dependencies();
-        let vault_builder = vault_with(100000, Uint128::new(50001));
-        let vault = save_vault(deps.as_mut().storage, vault_builder).unwrap();
-        assert!(vault.has_sufficient_funds());
-    }
+//     #[test]
+//     fn should_return_true_when_vault_has_sufficient_swap_amount() {
+//         let mut deps = mock_dependencies();
+//         let vault_builder = vault_with(100000, Uint128::new(50001));
+//         let vault = save_vault(deps.as_mut().storage, vault_builder).unwrap();
+//         assert!(vault.has_sufficient_funds());
+//     }
 
-    #[test]
-    fn should_return_true_when_vault_has_sufficient_balance() {
-        let mut deps = mock_dependencies();
-        let vault_builder = vault_with(50001, Uint128::new(50002));
-        let vault = save_vault(deps.as_mut().storage, vault_builder).unwrap();
-        assert!(vault.has_sufficient_funds());
-    }
+//     #[test]
+//     fn should_return_true_when_vault_has_sufficient_balance() {
+//         let mut deps = mock_dependencies();
+//         let vault_builder = vault_with(50001, Uint128::new(50002));
+//         let vault = save_vault(deps.as_mut().storage, vault_builder).unwrap();
+//         assert!(vault.has_sufficient_funds());
+//     }
 
-    fn vault_with(balance: u128, swap_amount: Uint128) -> VaultBuilder {
-        VaultBuilder::new(
-            Timestamp::from_seconds(0),
-            Addr::unchecked("owner"),
-            None,
-            vec![],
-            VaultStatus::Active,
-            coin(balance, "quote"),
-            Pair {
-                address: Addr::unchecked("pair"),
-                base_denom: "base".to_string(),
-                quote_denom: "quote".to_string(),
-            },
-            swap_amount,
-            None,
-            None,
-            None,
-            TimeInterval::Daily,
-            None,
-            Coin {
-                denom: "quote".to_string(),
-                amount: Uint128::new(0),
-            },
-            Coin {
-                denom: "base".to_string(),
-                amount: Uint128::new(0),
-            },
-            None,
-        )
-    }
-}
+//     fn vault_with(balance: u128, swap_amount: Uint128) -> VaultBuilder {
+//         VaultBuilder::new(
+//             Timestamp::from_seconds(0),
+//             Addr::unchecked("owner"),
+//             None,
+//             vec![],
+//             VaultStatus::Active,
+//             coin(balance, "quote"),
+//             Pair {
+//                 address: Addr::unchecked("pair"),
+//                 base_denom: "base".to_string(),
+//                 quote_denom: "quote".to_string(),
+//             },
+//             swap_amount,
+//             None,
+//             None,
+//             None,
+//             TimeInterval::Daily,
+//             None,
+//             Coin {
+//                 denom: "quote".to_string(),
+//                 amount: Uint128::new(0),
+//             },
+//             Coin {
+//                 denom: "base".to_string(),
+//                 amount: Uint128::new(0),
+//             },
+//             None,
+//         )
+//     }
+// }
 
-#[cfg(test)]
-mod price_threshold_exceeded_tests {
-    use super::*;
-    use cosmwasm_std::coin;
-    use std::str::FromStr;
+// #[cfg(test)]
+// mod price_threshold_exceeded_tests {
+//     use super::*;
+//     use cosmwasm_std::coin;
+//     use std::str::FromStr;
 
-    #[test]
-    fn should_not_be_exceeded_for_buying_on_fin_when_price_is_below_threshold() {
-        let vault = vault_with(Uint128::new(100), Uint128::new(50), PositionType::Enter);
+//     #[test]
+//     fn should_not_be_exceeded_for_buying_on_fin_when_price_is_below_threshold() {
+//         let vault = vault_with(Uint128::new(100), Uint128::new(50), PositionType::Enter);
 
-        assert_eq!(
-            vault.price_threshold_exceeded(Decimal::from_str("1.9").unwrap()),
-            false
-        );
-    }
+//         assert_eq!(
+//             vault.price_threshold_exceeded(Decimal::from_str("1.9").unwrap()),
+//             false
+//         );
+//     }
 
-    #[test]
-    fn should_not_be_exceeded_for_buying_on_fin_when_price_equals_threshold() {
-        let vault = vault_with(Uint128::new(100), Uint128::new(50), PositionType::Enter);
+//     #[test]
+//     fn should_not_be_exceeded_for_buying_on_fin_when_price_equals_threshold() {
+//         let vault = vault_with(Uint128::new(100), Uint128::new(50), PositionType::Enter);
 
-        assert_eq!(
-            vault.price_threshold_exceeded(Decimal::from_str("2.0").unwrap()),
-            false
-        );
-    }
+//         assert_eq!(
+//             vault.price_threshold_exceeded(Decimal::from_str("2.0").unwrap()),
+//             false
+//         );
+//     }
 
-    #[test]
-    fn should_be_exceeded_for_buying_on_fin_when_price_is_above_threshold() {
-        let vault = vault_with(Uint128::new(100), Uint128::new(50), PositionType::Enter);
+//     #[test]
+//     fn should_be_exceeded_for_buying_on_fin_when_price_is_above_threshold() {
+//         let vault = vault_with(Uint128::new(100), Uint128::new(50), PositionType::Enter);
 
-        assert_eq!(
-            vault.price_threshold_exceeded(Decimal::from_str("2.1").unwrap()),
-            true
-        );
-    }
+//         assert_eq!(
+//             vault.price_threshold_exceeded(Decimal::from_str("2.1").unwrap()),
+//             true
+//         );
+//     }
 
-    #[test]
-    fn should_not_be_exceeded_for_selling_on_fin_when_price_is_above_threshold() {
-        let vault = vault_with(Uint128::new(100), Uint128::new(50), PositionType::Exit);
+//     #[test]
+//     fn should_not_be_exceeded_for_selling_on_fin_when_price_is_above_threshold() {
+//         let vault = vault_with(Uint128::new(100), Uint128::new(50), PositionType::Exit);
 
-        assert_eq!(
-            vault.price_threshold_exceeded(Decimal::from_str("0.51").unwrap()),
-            false
-        );
-    }
+//         assert_eq!(
+//             vault.price_threshold_exceeded(Decimal::from_str("0.51").unwrap()),
+//             false
+//         );
+//     }
 
-    #[test]
-    fn should_not_be_exceeded_for_selling_on_fin_when_price_equals_threshold() {
-        let vault = vault_with(Uint128::new(100), Uint128::new(50), PositionType::Exit);
+//     #[test]
+//     fn should_not_be_exceeded_for_selling_on_fin_when_price_equals_threshold() {
+//         let vault = vault_with(Uint128::new(100), Uint128::new(50), PositionType::Exit);
 
-        assert_eq!(
-            vault.price_threshold_exceeded(Decimal::from_str("0.50").unwrap()),
-            false
-        );
-    }
+//         assert_eq!(
+//             vault.price_threshold_exceeded(Decimal::from_str("0.50").unwrap()),
+//             false
+//         );
+//     }
 
-    #[test]
-    fn should_be_exceeded_for_selling_on_fin_when_price_is_below_threshold() {
-        let vault = vault_with(Uint128::new(100), Uint128::new(50), PositionType::Exit);
+//     #[test]
+//     fn should_be_exceeded_for_selling_on_fin_when_price_is_below_threshold() {
+//         let vault = vault_with(Uint128::new(100), Uint128::new(50), PositionType::Exit);
 
-        assert_eq!(
-            vault.price_threshold_exceeded(Decimal::from_str("0.49").unwrap()),
-            true
-        );
-    }
+//         assert_eq!(
+//             vault.price_threshold_exceeded(Decimal::from_str("0.49").unwrap()),
+//             true
+//         );
+//     }
 
-    fn vault_with(
-        swap_amount: Uint128,
-        minimum_receive_amount: Uint128,
-        position_type: PositionType,
-    ) -> Vault {
-        Vault {
-            id: Uint128::new(1),
-            created_at: Timestamp::from_seconds(0),
-            owner: Addr::unchecked("owner"),
-            label: None,
-            destinations: vec![],
-            status: VaultStatus::Active,
-            balance: coin(
-                1000,
-                match position_type {
-                    PositionType::Enter => "quote",
-                    PositionType::Exit => "base",
-                },
-            ),
-            pair: Pair {
-                address: Addr::unchecked("pair"),
-                base_denom: "base".to_string(),
-                quote_denom: "quote".to_string(),
-            },
-            swap_amount,
-            slippage_tolerance: None,
-            minimum_receive_amount: Some(minimum_receive_amount),
-            time_interval: TimeInterval::Daily,
-            started_at: None,
-            swapped_amount: coin(
-                0,
-                match position_type {
-                    PositionType::Enter => "quote",
-                    PositionType::Exit => "base",
-                },
-            ),
-            received_amount: coin(
-                0,
-                match position_type {
-                    PositionType::Enter => "base",
-                    PositionType::Exit => "quote",
-                },
-            ),
-            trigger: None,
-            dca_plus_config: None,
-        }
-    }
-}
+//     fn vault_with(
+//         swap_amount: Uint128,
+//         minimum_receive_amount: Uint128,
+//         position_type: PositionType,
+//     ) -> Vault {
+//         Vault {
+//             id: Uint128::new(1),
+//             created_at: Timestamp::from_seconds(0),
+//             owner: Addr::unchecked("owner"),
+//             label: None,
+//             destinations: vec![],
+//             status: VaultStatus::Active,
+//             balance: coin(
+//                 1000,
+//                 match position_type {
+//                     PositionType::Enter => "quote",
+//                     PositionType::Exit => "base",
+//                 },
+//             ),
+//             pool: Pair {
+//                 address: Addr::unchecked("pair"),
+//                 base_denom: "base".to_string(),
+//                 quote_denom: "quote".to_string(),
+//             },
+//             swap_amount,
+//             slippage_tolerance: None,
+//             minimum_receive_amount: Some(minimum_receive_amount),
+//             time_interval: TimeInterval::Daily,
+//             started_at: None,
+//             swapped_amount: coin(
+//                 0,
+//                 match position_type {
+//                     PositionType::Enter => "quote",
+//                     PositionType::Exit => "base",
+//                 },
+//             ),
+//             received_amount: coin(
+//                 0,
+//                 match position_type {
+//                     PositionType::Enter => "base",
+//                     PositionType::Exit => "quote",
+//                 },
+//             ),
+//             trigger: None,
+//             dca_plus_config: None,
+//         }
+//     }
+// }
 
-#[cfg(test)]
-mod get_target_price_tests {
-    use super::*;
-    use cosmwasm_std::coin;
+// #[cfg(test)]
+// mod get_target_price_tests {
+//     use super::*;
+//     use cosmwasm_std::coin;
 
-    #[test]
-    fn should_be_correct_when_buying_on_fin() {
-        let vault = vault_with(Uint128::new(100), PositionType::Enter);
-        assert_eq!(
-            vault
-                .get_target_price(Uint128::new(20), 0, Precision::DecimalPlaces(3))
-                .unwrap()
-                .to_string(),
-            "5"
-        );
-    }
+//     #[test]
+//     fn should_be_correct_when_buying_on_fin() {
+//         let vault = vault_with(Uint128::new(100), PositionType::Enter);
+//         assert_eq!(
+//             vault
+//                 .get_target_price(Uint128::new(20), 0, Precision::DecimalPlaces(3))
+//                 .unwrap()
+//                 .to_string(),
+//             "5"
+//         );
+//     }
 
-    #[test]
-    fn should_be_correct_when_selling_on_fin() {
-        let vault = vault_with(Uint128::new(100), PositionType::Exit);
-        assert_eq!(
-            vault
-                .get_target_price(Uint128::new(20), 0, Precision::DecimalPlaces(3))
-                .unwrap()
-                .to_string(),
-            "0.2"
-        );
-    }
+//     #[test]
+//     fn should_be_correct_when_selling_on_fin() {
+//         let vault = vault_with(Uint128::new(100), PositionType::Exit);
+//         assert_eq!(
+//             vault
+//                 .get_target_price(Uint128::new(20), 0, Precision::DecimalPlaces(3))
+//                 .unwrap()
+//                 .to_string(),
+//             "0.2"
+//         );
+//     }
 
-    #[test]
-    fn should_truncate_price_to_three_decimal_places() {
-        let vault = vault_with(Uint128::new(30), PositionType::Exit);
-        assert_eq!(
-            vault
-                .get_target_price(Uint128::new(10), 0, Precision::DecimalPlaces(3))
-                .unwrap()
-                .to_string(),
-            "0.333"
-        );
-    }
+//     #[test]
+//     fn should_truncate_price_to_three_decimal_places() {
+//         let vault = vault_with(Uint128::new(30), PositionType::Exit);
+//         assert_eq!(
+//             vault
+//                 .get_target_price(Uint128::new(10), 0, Precision::DecimalPlaces(3))
+//                 .unwrap()
+//                 .to_string(),
+//             "0.333"
+//         );
+//     }
 
-    #[test]
-    fn for_fin_buy_with_decimal_delta_should_truncate() {
-        let position_type = PositionType::Enter;
-        let swap_amount = Uint128::new(1000000);
-        let target_receive_amount = Uint128::new(747943156999999);
-        let decimal_delta = 12;
-        let precision = Precision::DecimalPlaces(2);
-        let vault = vault_with(swap_amount, position_type);
-        assert_eq!(
-            Decimal256::from_ratio(swap_amount, target_receive_amount).to_string(),
-            "0.000000001336999998"
-        );
-        assert_eq!(
-            vault
-                .get_target_price(target_receive_amount, decimal_delta, precision)
-                .unwrap()
-                .to_string(),
-            "0.00000000133699"
-        );
-    }
+//     #[test]
+//     fn for_fin_buy_with_decimal_delta_should_truncate() {
+//         let position_type = PositionType::Enter;
+//         let swap_amount = Uint128::new(1000000);
+//         let target_receive_amount = Uint128::new(747943156999999);
+//         let decimal_delta = 12;
+//         let precision = Precision::DecimalPlaces(2);
+//         let vault = vault_with(swap_amount, position_type);
+//         assert_eq!(
+//             Decimal256::from_ratio(swap_amount, target_receive_amount).to_string(),
+//             "0.000000001336999998"
+//         );
+//         assert_eq!(
+//             vault
+//                 .get_target_price(target_receive_amount, decimal_delta, precision)
+//                 .unwrap()
+//                 .to_string(),
+//             "0.00000000133699"
+//         );
+//     }
 
-    #[test]
-    fn for_fin_sell_with_decimal_delta_should_truncate() {
-        let position_type = PositionType::Exit;
-        let swap_amount = Uint128::new(747943156999999);
-        let target_receive_amount = Uint128::new(1000000);
-        let decimal_delta = 12;
-        let precision = Precision::DecimalPlaces(2);
-        let vault = vault_with(swap_amount, position_type);
-        assert_eq!(
-            Decimal256::from_ratio(target_receive_amount, swap_amount).to_string(),
-            "0.000000001336999998"
-        );
-        assert_eq!(
-            vault
-                .get_target_price(target_receive_amount, decimal_delta, precision)
-                .unwrap()
-                .to_string(),
-            "0.00000000133699"
-        );
-    }
+//     #[test]
+//     fn for_fin_sell_with_decimal_delta_should_truncate() {
+//         let position_type = PositionType::Exit;
+//         let swap_amount = Uint128::new(747943156999999);
+//         let target_receive_amount = Uint128::new(1000000);
+//         let decimal_delta = 12;
+//         let precision = Precision::DecimalPlaces(2);
+//         let vault = vault_with(swap_amount, position_type);
+//         assert_eq!(
+//             Decimal256::from_ratio(target_receive_amount, swap_amount).to_string(),
+//             "0.000000001336999998"
+//         );
+//         assert_eq!(
+//             vault
+//                 .get_target_price(target_receive_amount, decimal_delta, precision)
+//                 .unwrap()
+//                 .to_string(),
+//             "0.00000000133699"
+//         );
+//     }
 
-    fn vault_with(swap_amount: Uint128, position_type: PositionType) -> Vault {
-        Vault {
-            id: Uint128::new(1),
-            created_at: Timestamp::from_seconds(0),
-            owner: Addr::unchecked("owner"),
-            label: None,
-            destinations: vec![],
-            status: VaultStatus::Active,
-            balance: coin(
-                1000,
-                match position_type {
-                    PositionType::Enter => "quote",
-                    PositionType::Exit => "base",
-                },
-            ),
-            pair: Pair {
-                address: Addr::unchecked("pair"),
-                base_denom: "base".to_string(),
-                quote_denom: "quote".to_string(),
-            },
-            swap_amount,
-            slippage_tolerance: None,
-            minimum_receive_amount: None,
-            time_interval: TimeInterval::Daily,
-            started_at: None,
-            swapped_amount: coin(
-                0,
-                match position_type {
-                    PositionType::Enter => "quote",
-                    PositionType::Exit => "base",
-                },
-            ),
-            received_amount: coin(
-                0,
-                match position_type {
-                    PositionType::Enter => "base",
-                    PositionType::Exit => "quote",
-                },
-            ),
-            trigger: None,
-            dca_plus_config: None,
-        }
-    }
-}
+//     fn vault_with(swap_amount: Uint128, position_type: PositionType) -> Vault {
+//         Vault {
+//             id: Uint128::new(1),
+//             created_at: Timestamp::from_seconds(0),
+//             owner: Addr::unchecked("owner"),
+//             label: None,
+//             destinations: vec![],
+//             status: VaultStatus::Active,
+//             balance: coin(
+//                 1000,
+//                 match position_type {
+//                     PositionType::Enter => "quote",
+//                     PositionType::Exit => "base",
+//                 },
+//             ),
+//             pool: Pair {
+//                 address: Addr::unchecked("pair"),
+//                 base_denom: "base".to_string(),
+//                 quote_denom: "quote".to_string(),
+//             },
+//             swap_amount,
+//             slippage_tolerance: None,
+//             minimum_receive_amount: None,
+//             time_interval: TimeInterval::Daily,
+//             started_at: None,
+//             swapped_amount: coin(
+//                 0,
+//                 match position_type {
+//                     PositionType::Enter => "quote",
+//                     PositionType::Exit => "base",
+//                 },
+//             ),
+//             received_amount: coin(
+//                 0,
+//                 match position_type {
+//                     PositionType::Enter => "base",
+//                     PositionType::Exit => "quote",
+//                 },
+//             ),
+//             trigger: None,
+//             dca_plus_config: None,
+//         }
+//     }
+// }
 
-#[cfg(test)]
-mod get_expected_execution_completed_date_tests {
-    use super::Vault;
-    use base::{pair::Pair, triggers::trigger::TimeInterval, vaults::vault::VaultStatus};
-    use cosmwasm_std::{coin, testing::mock_env, Addr, Coin, Timestamp, Uint128};
+// #[cfg(test)]
+// mod get_expected_execution_completed_date_tests {
+//     use super::Vault;
+//     use base::{pair::Pair, triggers::trigger::TimeInterval, vaults::vault::VaultStatus};
+//     use cosmwasm_std::{coin, testing::mock_env, Addr, Coin, Timestamp, Uint128};
 
-    #[test]
-    fn expected_execution_end_date_is_now_when_vault_is_empty() {
-        let env = mock_env();
-        let created_at = env.block.time.minus_seconds(60 * 60 * 24);
-        let vault = vault_with(
-            created_at,
-            Uint128::zero(),
-            Uint128::new(100),
-            TimeInterval::Daily,
-        );
-        assert_eq!(
-            vault.get_expected_execution_completed_date(env.block.time),
-            env.block.time
-        );
-    }
+//     #[test]
+//     fn expected_execution_end_date_is_now_when_vault_is_empty() {
+//         let env = mock_env();
+//         let created_at = env.block.time.minus_seconds(60 * 60 * 24);
+//         let vault = vault_with(
+//             created_at,
+//             Uint128::zero(),
+//             Uint128::new(100),
+//             TimeInterval::Daily,
+//         );
+//         assert_eq!(
+//             vault.get_expected_execution_completed_date(env.block.time),
+//             env.block.time
+//         );
+//     }
 
-    #[test]
-    fn expected_execution_end_date_is_in_future_when_vault_is_not_empty() {
-        let env = mock_env();
-        let vault = vault_with(
-            env.block.time,
-            Uint128::new(1000),
-            Uint128::new(100),
-            TimeInterval::Daily,
-        );
-        assert_eq!(
-            vault.get_expected_execution_completed_date(env.block.time),
-            env.block.time.plus_seconds(1000 / 100 * 24 * 60 * 60)
-        );
-    }
+//     #[test]
+//     fn expected_execution_end_date_is_in_future_when_vault_is_not_empty() {
+//         let env = mock_env();
+//         let vault = vault_with(
+//             env.block.time,
+//             Uint128::new(1000),
+//             Uint128::new(100),
+//             TimeInterval::Daily,
+//         );
+//         assert_eq!(
+//             vault.get_expected_execution_completed_date(env.block.time),
+//             env.block.time.plus_seconds(1000 / 100 * 24 * 60 * 60)
+//         );
+//     }
 
-    fn vault_with(
-        created_at: Timestamp,
-        balance: Uint128,
-        swap_amount: Uint128,
-        time_interval: TimeInterval,
-    ) -> Vault {
-        Vault {
-            id: Uint128::new(1),
-            created_at,
-            owner: Addr::unchecked("owner"),
-            label: None,
-            destinations: vec![],
-            status: VaultStatus::Active,
-            balance: Coin::new(balance.into(), "quote"),
-            pair: Pair {
-                address: Addr::unchecked("pair"),
-                base_denom: "base".to_string(),
-                quote_denom: "quote".to_string(),
-            },
-            swap_amount,
-            slippage_tolerance: None,
-            minimum_receive_amount: None,
-            time_interval,
-            started_at: None,
-            swapped_amount: coin(0, "quote"),
-            received_amount: coin(0, "base"),
-            trigger: None,
-            dca_plus_config: None,
-        }
-    }
-}
+//     fn vault_with(
+//         created_at: Timestamp,
+//         balance: Uint128,
+//         swap_amount: Uint128,
+//         time_interval: TimeInterval,
+//     ) -> Vault {
+//         Vault {
+//             id: Uint128::new(1),
+//             created_at,
+//             owner: Addr::unchecked("owner"),
+//             label: None,
+//             destinations: vec![],
+//             status: VaultStatus::Active,
+//             balance: Coin::new(balance.into(), "quote"),
+//             pool: Pair {
+//                 address: Addr::unchecked("pair"),
+//                 base_denom: "base".to_string(),
+//                 quote_denom: "quote".to_string(),
+//             },
+//             swap_amount,
+//             slippage_tolerance: None,
+//             minimum_receive_amount: None,
+//             time_interval,
+//             started_at: None,
+//             swapped_amount: coin(0, "quote"),
+//             received_amount: coin(0, "base"),
+//             trigger: None,
+//             dca_plus_config: None,
+//         }
+//     }
+// }

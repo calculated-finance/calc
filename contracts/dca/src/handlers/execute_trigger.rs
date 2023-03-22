@@ -20,8 +20,10 @@ use cosmwasm_std::{to_binary, Coin, CosmosMsg, Decimal, ReplyOn, StdResult, Wasm
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{DepsMut, Env, Response, Uint128};
 use fin_helpers::limit_orders::create_withdraw_limit_order_msg;
-use fin_helpers::queries::{query_order_details, query_price, query_quote_price};
+use fin_helpers::queries::{query_order_details, query_price};
 use fin_helpers::swaps::create_fin_swap_message;
+use osmosis_helpers::queries::query_quote_price;
+use osmosis_helpers::swap::create_osmosis_swap_message;
 use std::cmp::min;
 
 pub fn execute_trigger_handler(
@@ -69,30 +71,29 @@ pub fn execute_trigger(
     {
         TriggerConfiguration::Time { target_time } => {
             assert_target_time_is_in_past(env.block.time, target_time)?;
-        }
-        TriggerConfiguration::FinLimitOrder { order_idx, .. } => {
-            if let Some(order_idx) = order_idx {
-                let limit_order =
-                    query_order_details(deps.querier, vault.pair.address.clone(), order_idx)?;
+        } // TriggerConfiguration::FinLimitOrder { order_idx, .. } => {
+          //     if let Some(order_idx) = order_idx {
+          //         let limit_order =
+          //             query_order_details(deps.querier, vault.pool.address.clone(), order_idx)?;
 
-                if limit_order.offer_amount != Uint128::zero() {
-                    return Err(ContractError::CustomError {
-                        val: String::from("fin limit order has not been completely filled"),
-                    });
-                }
+          //         if limit_order.offer_amount != Uint128::zero() {
+          //             return Err(ContractError::CustomError {
+          //                 val: String::from("fin limit order has not been completely filled"),
+          //             });
+          //         }
 
-                if limit_order.filled_amount > Uint128::zero() {
-                    response = response.add_message(create_withdraw_limit_order_msg(
-                        vault.pair.address.clone(),
-                        order_idx,
-                    ));
-                }
-            } else {
-                return Err(ContractError::CustomError {
-                    val: String::from("fin limit order has not been created"),
-                });
-            }
-        }
+          //         if limit_order.filled_amount > Uint128::zero() {
+          //             response = response.add_message(create_withdraw_limit_order_msg(
+          //                 vault.pool.address.clone(),
+          //                 order_idx,
+          //             ));
+          //         }
+          //     } else {
+          //         return Err(ContractError::CustomError {
+          //             val: String::from("fin limit order has not been created"),
+          //         });
+          //     }
+          // }
     }
 
     if vault.is_scheduled() {
@@ -112,12 +113,8 @@ pub fn execute_trigger(
                 vault.swap_amount,
             );
 
-            let price = query_price(
-                deps.querier,
-                vault.pair.clone(),
-                &Coin::new(swap_amount.into(), vault.get_swap_denom()),
-                PriceType::Actual,
-            )?;
+            let price =
+                query_quote_price(deps.querier, &vault.pool.clone(), &vault.get_swap_denom())?;
 
             let fee_rate =
                 get_swap_fee_rate(&deps, &vault)? + get_delegation_fee_rate(&deps, &vault)?;
@@ -183,7 +180,7 @@ pub fn execute_trigger(
         return Ok(response.to_owned());
     }
 
-    let fin_price = query_quote_price(deps.querier, &vault.pair, &vault.get_swap_denom())?;
+    let fin_price = query_quote_price(deps.querier, &vault.pool, &vault.get_swap_denom())?;
 
     create_event(
         deps.storage,
@@ -191,8 +188,8 @@ pub fn execute_trigger(
             vault.id,
             env.block.to_owned(),
             EventData::DcaVaultExecutionTriggered {
-                base_denom: vault.pair.base_denom.clone(),
-                quote_denom: vault.pair.quote_denom.clone(),
+                base_denom: vault.pool.base_denom.clone(),
+                quote_denom: vault.pool.quote_denom.clone(),
                 asset_price: fin_price.clone(),
             },
         ),
@@ -233,9 +230,10 @@ pub fn execute_trigger(
         },
     )?;
 
-    Ok(response.add_submessage(create_fin_swap_message(
+    Ok(response.add_submessage(create_osmosis_swap_message(
         deps.querier,
-        vault.pair.clone(),
+        env.contract.address.clone().into(),
+        vault.pool.clone(),
         get_swap_amount(&deps.as_ref(), &env, vault.clone())?,
         vault.slippage_tolerance,
         Some(AFTER_FIN_SWAP_REPLY_ID),

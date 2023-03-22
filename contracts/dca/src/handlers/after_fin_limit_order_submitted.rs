@@ -26,18 +26,18 @@ pub fn after_fin_limit_order_submitted(
                 .expect(format!("fin limit order trigger for vault {:?}", cache.vault_id).as_str());
 
             match trigger.configuration {
-                TriggerConfiguration::FinLimitOrder { target_price, .. } => {
-                    save_trigger(
-                        deps.storage,
-                        Trigger {
-                            vault_id: cache.vault_id,
-                            configuration: TriggerConfiguration::FinLimitOrder {
-                                order_idx: Some(order_idx),
-                                target_price,
-                            },
-                        },
-                    )?;
-                }
+                // TriggerConfiguration::FinLimitOrder { target_price, .. } => {
+                //     save_trigger(
+                //         deps.storage,
+                //         Trigger {
+                //             vault_id: cache.vault_id,
+                //             configuration: TriggerConfiguration::FinLimitOrder {
+                //                 order_idx: Some(order_idx),
+                //                 target_price,
+                //             },
+                //         },
+                //     )?;
+                // }
                 _ => panic!("should be a fin limit order trigger"),
             }
 

@@ -93,6 +93,7 @@ mod tests {
     };
     use base::{pair::Pair, triggers::trigger::TimeInterval, vaults::vault::VaultStatus};
     use cosmwasm_std::{Addr, Coin, Decimal, Timestamp, Uint128};
+    use osmosis_helpers::pool::Pool;
     use std::str::FromStr;
 
     fn get_vault(
@@ -140,8 +141,8 @@ mod tests {
             label: None,
             destinations: vec![],
             status: VaultStatus::Active,
-            pair: Pair {
-                address: Addr::unchecked("pair"),
+            pool: Pool {
+                pool_id: u64::default(),
                 base_denom: "receive_denom".to_string(),
                 quote_denom: "swap_denom".to_string(),
             },
