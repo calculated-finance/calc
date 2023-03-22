@@ -5,11 +5,14 @@ use cosmwasm_std::{
 };
 
 use crate::error::ContractError;
+use crate::handlers::claim_rewards_mars::claim_rewards_mars;
+use crate::handlers::deposit_mars::deposit_mars;
 use crate::handlers::get_pool::get_pool;
 use crate::handlers::get_price::get_price;
 use crate::handlers::lock_tokens::lock_tokens;
 use crate::handlers::provide_liquidity::provide_liquidity;
 use crate::handlers::swap::swap;
+use crate::handlers::withdraw_mars::withdraw_mars;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -33,6 +36,16 @@ pub fn execute(
         ExecuteMsg::Swap { pool_id, denom_out } => swap(deps, env, info, pool_id, denom_out),
         ExecuteMsg::ProvideLiquidityAndLockTokens { pool_id } => {
             provide_liquidity(deps, env, info, pool_id)
+        }
+        ExecuteMsg::DepositMars { red_bank_address } => {
+            deposit_mars(deps, env, info, red_bank_address)
+        }
+        ExecuteMsg::WithdrawMars {
+            red_bank_address,
+            denom,
+        } => withdraw_mars(deps, env, info, denom, red_bank_address),
+        ExecuteMsg::ClaimRewardsMars { incentives_address } => {
+            claim_rewards_mars(deps, env, info, incentives_address)
         }
     }
 }

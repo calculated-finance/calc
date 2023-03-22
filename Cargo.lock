@@ -714,6 +714,7 @@ dependencies = [
  "cw-multi-test 0.16.2",
  "cw-storage-plus 1.0.1",
  "cw2 1.0.1",
+ "mars-helpers",
  "osmosis-std",
  "schemars",
  "serde",

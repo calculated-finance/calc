@@ -9,8 +9,23 @@ pub struct InstantiateMsg {}
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    Swap { pool_id: u64, denom_out: String },
-    ProvideLiquidityAndLockTokens { pool_id: u64 },
+    Swap {
+        pool_id: u64,
+        denom_out: String,
+    },
+    ProvideLiquidityAndLockTokens {
+        pool_id: u64,
+    },
+    DepositMars {
+        red_bank_address: String,
+    },
+    WithdrawMars {
+        red_bank_address: String,
+        denom: String,
+    },
+    ClaimRewardsMars {
+        incentives_address: String,
+    },
 }
 
 #[cw_serde]
