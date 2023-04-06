@@ -108,9 +108,13 @@ pub fn execute_trigger_handler(
     )?;
 
     let swap_amount = get_swap_amount(&deps.as_ref(), &env, &vault)?;
-    let actual_price = query_price(&deps.querier, &vault.pair, &swap_amount, PriceType::Actual)?;
 
-    vault = simulate_standard_dca_execution(deps.storage, &env, vault, belief_price, actual_price)?;
+    if vault.is_dca_plus() {
+        let actual_price =
+            query_price(&deps.querier, &vault.pair, &swap_amount, PriceType::Actual)?;
+        vault =
+            simulate_standard_dca_execution(deps.storage, &env, vault, belief_price, actual_price)?;
+    }
 
     let should_execute_again = vault.is_active()
         || vault
