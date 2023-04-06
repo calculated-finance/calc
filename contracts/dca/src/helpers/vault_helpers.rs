@@ -7,12 +7,13 @@ use crate::{
 use base::{
     events::event::{EventBuilder, EventData, ExecutionSkippedReason},
     helpers::{coin_helpers::add_to_coin, time_helpers::get_total_execution_duration},
+    price_type::PriceType,
     triggers::trigger::TimeInterval,
 };
 use cosmwasm_std::{
-    Coin, Decimal, Deps, Env, StdResult, Storage, Timestamp, Uint128,
+    Coin, Decimal, Deps, Env, QuerierWrapper, StdResult, Storage, Timestamp, Uint128,
 };
-use fin_helpers::queries::{calculate_slippage};
+use fin_helpers::queries::{calculate_slippage, query_price};
 use std::{cmp::min, str::FromStr};
 
 pub fn get_swap_amount(deps: &Deps, env: &Env, vault: &Vault) -> StdResult<Coin> {
@@ -110,11 +111,11 @@ pub fn price_threshold_exceeded(
 }
 
 pub fn simulate_standard_dca_execution(
+    querier: &QuerierWrapper,
     storage: &mut dyn Storage,
     env: &Env,
     vault: Vault,
     belief_price: Decimal,
-    actual_price: Decimal,
 ) -> StdResult<Vault> {
     vault
         .dca_plus_config
@@ -128,6 +129,13 @@ pub fn simulate_standard_dca_execution(
             if swap_amount.is_zero() {
                 return Ok(vault);
             }
+
+            let actual_price = query_price(
+                &querier,
+                &vault.pair,
+                &Coin::new(swap_amount.into(), vault.get_swap_denom()),
+                PriceType::Actual,
+            )?;
 
             if price_threshold_exceeded(swap_amount, vault.minimum_receive_amount, belief_price)? {
                 create_event(
@@ -829,11 +837,11 @@ mod get_dca_plus_performance_factor_tests {
 mod simulate_standard_dca_execution_tests {
     use super::simulate_standard_dca_execution;
     use crate::{
-        constants::{FIN_TAKER_FEE, ONE, TEN},
+        constants::{FIN_TAKER_FEE, ONE, ONE_DECIMAL, TEN, TEN_MICRONS},
         handlers::get_events_by_resource_id::get_events_by_resource_id,
         helpers::fee_helpers::{get_delegation_fee_rate, get_swap_fee_rate},
         tests::{
-            helpers::instantiate_contract,
+            helpers::{instantiate_contract, set_fin_price},
             mocks::{ADMIN, DENOM_UKUJI},
         },
         types::{dca_plus_config::DcaPlusConfig, vault::Vault},
@@ -852,14 +860,16 @@ mod simulate_standard_dca_execution_tests {
 
         instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &[]));
 
+        set_fin_price(&mut deps, &ONE_DECIMAL, &ONE, &TEN_MICRONS);
+
         let vault = Vault::default();
 
         let updated_vault = simulate_standard_dca_execution(
-            deps.as_mut().storage,
+            &deps.as_ref().querier,
+            mock_dependencies().as_mut().storage,
             &env,
             vault.clone(),
             Decimal::one(),
-            Decimal::one() * Decimal::percent(105),
         )
         .unwrap();
 
@@ -878,6 +888,8 @@ mod simulate_standard_dca_execution_tests {
 
         instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &[]));
 
+        set_fin_price(&mut deps, &ONE_DECIMAL, &ONE, &TEN_MICRONS);
+
         let vault = Vault {
             dca_plus_config: Some(DcaPlusConfig {
                 total_deposit: Coin::new(TEN.into(), DENOM_UKUJI),
@@ -888,11 +900,11 @@ mod simulate_standard_dca_execution_tests {
         };
 
         let updated_vault = simulate_standard_dca_execution(
-            deps.as_mut().storage,
+            &deps.as_ref().querier,
+            mock_dependencies().as_mut().storage,
             &env,
             vault.clone(),
             Decimal::one(),
-            Decimal::one() * Decimal::percent(105),
         )
         .unwrap();
 
@@ -907,9 +919,12 @@ mod simulate_standard_dca_execution_tests {
     #[test]
     fn publishes_simulated_execution_skipped_event_when_price_threshold_exceeded() {
         let mut deps = mock_dependencies();
+        let mut storage_deps = mock_dependencies();
         let env = mock_env();
 
-        instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &[]));
+        instantiate_contract(storage_deps.as_mut(), env.clone(), mock_info(ADMIN, &[]));
+
+        set_fin_price(&mut deps, &ONE_DECIMAL, &ONE, &TEN_MICRONS);
 
         let vault = Vault {
             swap_amount: ONE,
@@ -921,15 +936,15 @@ mod simulate_standard_dca_execution_tests {
         let belief_price = Decimal::one();
 
         simulate_standard_dca_execution(
-            deps.as_mut().storage,
+            &deps.as_ref().querier,
+            storage_deps.as_mut().storage,
             &env,
             vault.clone(),
             belief_price,
-            Decimal::one() * Decimal::percent(105),
         )
         .unwrap();
 
-        let events = get_events_by_resource_id(deps.as_ref(), vault.id, None, None)
+        let events = get_events_by_resource_id(storage_deps.as_ref(), vault.id, None, None)
             .unwrap()
             .events;
 
@@ -949,27 +964,30 @@ mod simulate_standard_dca_execution_tests {
     #[test]
     fn publishes_simulated_execution_skipped_event_when_slippage_exceeded() {
         let mut deps = mock_dependencies();
+        let mut storage_deps = mock_dependencies();
         let env = mock_env();
 
-        instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &[]));
+        instantiate_contract(storage_deps.as_mut(), env.clone(), mock_info(ADMIN, &[]));
+
+        set_fin_price(&mut deps, &ONE_DECIMAL, &ONE, &TEN_MICRONS);
 
         let vault = Vault {
-            swap_amount: ONE,
+            swap_amount: TEN,
             slippage_tolerance: Some(Decimal::percent(2)),
             dca_plus_config: Some(DcaPlusConfig::default()),
             ..Vault::default()
         };
 
         simulate_standard_dca_execution(
-            deps.as_mut().storage,
+            &deps.as_ref().querier,
+            storage_deps.as_mut().storage,
             &env,
             vault.clone(),
             Decimal::one(),
-            Decimal::one() * Decimal::percent(105),
         )
         .unwrap();
 
-        let events = get_events_by_resource_id(deps.as_ref(), vault.id, None, None)
+        let events = get_events_by_resource_id(storage_deps.as_ref(), vault.id, None, None)
             .unwrap()
             .events;
 
@@ -987,9 +1005,12 @@ mod simulate_standard_dca_execution_tests {
     #[test]
     fn publishes_simulated_execution_completed_event() {
         let mut deps = mock_dependencies();
+        let mut storage_deps = mock_dependencies();
         let env = mock_env();
 
-        instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &[]));
+        instantiate_contract(storage_deps.as_mut(), env.clone(), mock_info(ADMIN, &[]));
+
+        set_fin_price(&mut deps, &ONE_DECIMAL, &ONE, &TEN_MICRONS);
 
         let vault = Vault {
             swap_amount: ONE,
@@ -998,26 +1019,25 @@ mod simulate_standard_dca_execution_tests {
         };
 
         let belief_price = Decimal::one();
-        let actual_price = Decimal::one() * Decimal::percent(105);
 
         simulate_standard_dca_execution(
-            deps.as_mut().storage,
+            &deps.as_ref().querier,
+            storage_deps.as_mut().storage,
             &env,
             vault.clone(),
             belief_price,
-            actual_price,
         )
         .unwrap();
 
-        let events = get_events_by_resource_id(deps.as_ref(), vault.id, None, None)
+        let events = get_events_by_resource_id(storage_deps.as_ref(), vault.id, None, None)
             .unwrap()
             .events;
 
-        let fee_rate = get_swap_fee_rate(deps.as_ref().storage, &vault).unwrap()
-            + get_delegation_fee_rate(deps.as_ref().storage, &vault).unwrap()
+        let fee_rate = get_swap_fee_rate(storage_deps.as_ref().storage, &vault).unwrap()
+            + get_delegation_fee_rate(storage_deps.as_ref().storage, &vault).unwrap()
             + Decimal::from_str(FIN_TAKER_FEE).unwrap();
 
-        let received_amount = vault.swap_amount * (Decimal::one() / actual_price);
+        let received_amount = vault.swap_amount * Decimal::one();
         let fee_amount = received_amount * fee_rate;
 
         assert!(events.contains(&Event {
@@ -1036,15 +1056,18 @@ mod simulate_standard_dca_execution_tests {
     #[test]
     fn updates_the_standard_dca_statistics() {
         let mut deps = mock_dependencies();
+        let mut storage_deps = mock_dependencies();
         let env = mock_env();
 
-        instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &[]));
+        instantiate_contract(storage_deps.as_mut(), env.clone(), mock_info(ADMIN, &[]));
+
+        set_fin_price(&mut deps, &ONE_DECIMAL, &ONE, &TEN_MICRONS);
 
         let belief_price = Decimal::one();
-        let actual_price = Decimal::one() * Decimal::percent(105);
 
         let vault = simulate_standard_dca_execution(
-            deps.as_mut().storage,
+            &deps.as_ref().querier,
+            storage_deps.as_mut().storage,
             &env,
             Vault {
                 swap_amount: ONE,
@@ -1052,15 +1075,14 @@ mod simulate_standard_dca_execution_tests {
                 ..Vault::default()
             },
             belief_price,
-            actual_price,
         )
         .unwrap();
 
-        let fee_rate = get_swap_fee_rate(deps.as_ref().storage, &vault).unwrap()
-            + get_delegation_fee_rate(deps.as_ref().storage, &vault).unwrap()
+        let fee_rate = get_swap_fee_rate(storage_deps.as_ref().storage, &vault).unwrap()
+            + get_delegation_fee_rate(storage_deps.as_ref().storage, &vault).unwrap()
             + Decimal::from_str(FIN_TAKER_FEE).unwrap();
 
-        let received_amount_before_fee = vault.swap_amount * (Decimal::one() / actual_price);
+        let received_amount_before_fee = vault.swap_amount * Decimal::one();
         let fee_amount = received_amount_before_fee * fee_rate;
         let received_amount_after_fee = received_amount_before_fee - fee_amount;
 

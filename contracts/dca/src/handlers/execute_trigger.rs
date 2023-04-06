@@ -13,14 +13,13 @@ use crate::state::triggers::{delete_trigger, save_trigger};
 use crate::state::vaults::{get_vault, update_vault};
 use base::events::event::{EventBuilder, EventData, ExecutionSkippedReason};
 use base::helpers::time_helpers::get_next_target_time;
-use base::price_type::PriceType;
 use base::triggers::trigger::{Trigger, TriggerConfiguration};
 use base::vaults::vault::VaultStatus;
 use cosmwasm_std::{to_binary, CosmosMsg, ReplyOn, WasmMsg};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{DepsMut, Env, Response, Uint128};
 use fin_helpers::limit_orders::create_withdraw_limit_order_msg;
-use fin_helpers::queries::{query_belief_price, query_order_details, query_price};
+use fin_helpers::queries::{query_belief_price, query_order_details};
 use fin_helpers::swaps::create_fin_swap_message;
 
 pub fn execute_trigger_handler(
@@ -107,13 +106,14 @@ pub fn execute_trigger_handler(
         ),
     )?;
 
-    let swap_amount = get_swap_amount(&deps.as_ref(), &env, &vault)?;
-
     if vault.is_dca_plus() {
-        let actual_price =
-            query_price(&deps.querier, &vault.pair, &swap_amount, PriceType::Actual)?;
-        vault =
-            simulate_standard_dca_execution(deps.storage, &env, vault, belief_price, actual_price)?;
+        vault = simulate_standard_dca_execution(
+            &deps.querier,
+            deps.storage,
+            &env,
+            vault,
+            belief_price,
+        )?;
     }
 
     let should_execute_again = vault.is_active()
@@ -156,6 +156,8 @@ pub fn execute_trigger_handler(
     if vault.is_inactive() {
         return Ok(response);
     }
+
+    let swap_amount = get_swap_amount(&deps.as_ref(), &env, &vault)?;
 
     if price_threshold_exceeded(
         swap_amount.amount,
