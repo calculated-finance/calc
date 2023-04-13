@@ -4,24 +4,24 @@ use super::mocks::{
     fin_contract_high_swap_price, fin_contract_partially_filled_order,
 };
 use crate::constants::{
-    FIN_TAKER_FEE, ONE, ONE_DECIMAL, ONE_HUNDRED, ONE_MICRON, ONE_THOUSAND, TEN, TEN_MICRONS,
-    TWO_MICRONS,
+    FIN_TAKER_FEE, ONE, ONE_DECIMAL, ONE_HUNDRED, ONE_THOUSAND, TEN, TEN_MICRONS, TWO_MICRONS,
 };
 use crate::contract::AFTER_FIN_SWAP_REPLY_ID;
 use crate::handlers::execute_trigger::execute_trigger_handler;
 use crate::handlers::get_events_by_resource_id::get_events_by_resource_id;
-use crate::helpers::fee_helpers::{get_delegation_fee_rate, get_swap_fee_rate};
 use crate::msg::{ExecuteMsg, QueryMsg, TriggerIdsResponse, VaultResponse};
 use crate::state::config::{get_config, FeeCollector};
 use crate::state::vaults::{get_vault, update_vault};
 use crate::tests::helpers::{
     assert_address_balances, assert_events_published, assert_vault_balance, set_fin_price,
+    setup_new_vault,
 };
 use crate::tests::mocks::{
     fin_contract_low_swap_price, fin_contract_pass_slippage_tolerance,
     fin_contract_unfilled_limit_order, MockApp, ADMIN, DENOM_UKUJI, DENOM_UTEST, USER,
 };
 use crate::types::dca_plus_config::DcaPlusConfig;
+use crate::types::vault::Vault;
 use base::events::event::{Event, EventBuilder, EventData, ExecutionSkippedReason};
 use base::helpers::math_helpers::checked_mul;
 use base::helpers::time_helpers::get_next_target_time;
@@ -2412,15 +2412,17 @@ fn for_active_vault_with_dca_plus_updates_standard_performance_data() {
         .unwrap();
 
     let price = query_price(
-        deps.as_ref().querier,
-        vault.pair.clone(),
+        &deps.as_ref().querier,
+        &vault.pair,
         &Coin::new(vault.swap_amount.into(), vault.get_swap_denom()),
         PriceType::Actual,
     )
     .unwrap();
 
-    let fee_rate = get_swap_fee_rate(&deps.as_mut(), &vault).unwrap()
-        + get_delegation_fee_rate(&deps.as_mut(), &vault).unwrap()
+    let config = get_config(deps.as_ref().storage).unwrap();
+
+    let fee_rate = config.swap_fee_percent
+        + config.delegation_fee_percent
         + Decimal::from_str(FIN_TAKER_FEE).unwrap();
 
     assert_eq!(
@@ -2464,10 +2466,15 @@ fn for_active_vault_with_dca_plus_publishes_execution_simulated_event() {
 
     let config = get_config(deps.as_ref().storage).unwrap();
 
-    let fee = (config.swap_fee_percent
+    let fee_rate = config.swap_fee_percent
         + config.delegation_fee_percent
-        + Decimal::from_str(FIN_TAKER_FEE).unwrap())
-        * dca_plus_config.standard_dca_received_amount.amount;
+        + Decimal::from_str(FIN_TAKER_FEE).unwrap();
+
+    let received_before_fee = dca_plus_config.standard_dca_received_amount.amount
+        * (Decimal::one() / (Decimal::one() - fee_rate))
+        + Uint128::one();
+
+    let fee = received_before_fee - dca_plus_config.standard_dca_received_amount.amount;
 
     assert!(events.contains(&Event {
         id: 2,
@@ -2476,7 +2483,7 @@ fn for_active_vault_with_dca_plus_publishes_execution_simulated_event() {
         resource_id: vault.id,
         data: EventData::SimulatedDcaVaultExecutionCompleted {
             sent: dca_plus_config.standard_dca_swapped_amount,
-            received: dca_plus_config.standard_dca_received_amount,
+            received: Coin::new(received_before_fee.into(), vault.get_receive_denom()),
             fee: Coin::new(fee.into(), vault.get_receive_denom())
         },
     }));
@@ -2568,15 +2575,17 @@ fn for_active_vault_with_slippage_exceeded_publishes_standard_dca_execution_skip
     let info = mock_info(ADMIN, &[]);
 
     instantiate_contract(deps.as_mut(), env.clone(), info);
-    set_fin_price(&mut deps, &ONE_DECIMAL, &ONE_MICRON, &ONE_MICRON);
+    set_fin_price(&mut deps, &ONE_DECIMAL, &ONE, &TEN_MICRONS);
 
-    let vault = setup_vault(
+    let vault = setup_new_vault(
         deps.as_mut(),
         env.clone(),
-        TEN,
-        ONE,
-        VaultStatus::Active,
-        true,
+        Vault {
+            swap_amount: TEN,
+            slippage_tolerance: Some(Decimal::percent(2)),
+            dca_plus_config: Some(DcaPlusConfig::default()),
+            ..Vault::default()
+        },
     );
 
     execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
@@ -2592,6 +2601,44 @@ fn for_active_vault_with_slippage_exceeded_publishes_standard_dca_execution_skip
         resource_id: vault.id,
         data: EventData::SimulatedDcaVaultExecutionSkipped {
             reason: ExecutionSkippedReason::SlippageToleranceExceeded,
+        },
+    }));
+}
+
+#[test]
+fn for_active_vault_with_price_threshold_exceeded_publishes_simulated_dca_execution_skipped_event()
+{
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(ADMIN, &[]);
+
+    instantiate_contract(deps.as_mut(), env.clone(), info);
+
+    set_fin_price(&mut deps, &ONE_DECIMAL, &ONE, &TEN_MICRONS);
+
+    let vault = setup_new_vault(
+        deps.as_mut(),
+        env.clone(),
+        Vault {
+            minimum_receive_amount: Some(ONE + ONE),
+            dca_plus_config: Some(DcaPlusConfig::default()),
+            ..Vault::default()
+        },
+    );
+
+    execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
+
+    let events = get_events_by_resource_id(deps.as_ref(), vault.id, None, None)
+        .unwrap()
+        .events;
+
+    assert!(events.contains(&Event {
+        id: 2,
+        timestamp: env.block.time,
+        block_height: env.block.height,
+        resource_id: vault.id,
+        data: EventData::SimulatedDcaVaultExecutionSkipped {
+            reason: ExecutionSkippedReason::PriceThresholdExceeded { price: ONE_DECIMAL },
         },
     }));
 }
@@ -2768,6 +2815,73 @@ fn for_inactive_vault_with_dca_plus_and_finished_standard_dca_does_not_create_ne
 }
 
 #[test]
+fn for_inactive_vault_with_dca_plus_and_finished_standard_dca_does_not_create_swap_message() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(ADMIN, &[]);
+
+    instantiate_contract(deps.as_mut(), env.clone(), info);
+
+    set_fin_price(&mut deps, &ONE_DECIMAL, &TEN, &TEN_MICRONS);
+
+    let vault = setup_new_vault(
+        deps.as_mut(),
+        env.clone(),
+        Vault {
+            status: VaultStatus::Inactive,
+            dca_plus_config: Some(DcaPlusConfig {
+                total_deposit: Coin::new(TEN.into(), DENOM_UKUJI),
+                standard_dca_swapped_amount: Coin::new(TEN.into(), DENOM_UKUJI),
+                standard_dca_received_amount: Coin::new(TEN.into(), DENOM_UKUJI),
+                ..DcaPlusConfig::default()
+            }),
+            ..Vault::default()
+        },
+    );
+
+    let response = execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
+
+    assert_eq!(response.messages.len(), 1);
+    assert!(response
+        .messages
+        .contains(&SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_binary(&ExecuteMsg::DisburseEscrow { vault_id: vault.id }).unwrap(),
+            funds: vec![],
+        }))));
+}
+
+#[test]
+fn for_inactive_vault_with_dca_plus_and_unfinished_standard_dca_does_not_disburse_funds() {
+    let mut deps = mock_dependencies();
+    let env = mock_env();
+    let info = mock_info(ADMIN, &[]);
+
+    instantiate_contract(deps.as_mut(), env.clone(), info);
+
+    set_fin_price(&mut deps, &ONE_DECIMAL, &TEN, &TEN_MICRONS);
+
+    let vault = setup_new_vault(
+        deps.as_mut(),
+        env.clone(),
+        Vault {
+            status: VaultStatus::Inactive,
+            dca_plus_config: Some(DcaPlusConfig {
+                total_deposit: Coin::new(TEN.into(), DENOM_UKUJI),
+                standard_dca_swapped_amount: Coin::new(ONE.into(), DENOM_UKUJI),
+                standard_dca_received_amount: Coin::new(TEN.into(), DENOM_UKUJI),
+                ..DcaPlusConfig::default()
+            }),
+            ..Vault::default()
+        },
+    );
+
+    let response = execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
+
+    assert!(response.messages.is_empty());
+}
+
+#[test]
 fn for_inactive_vault_with_dca_plus_updates_standard_performance_data() {
     let mut deps = mock_dependencies();
     let env = mock_env();
@@ -2793,15 +2907,17 @@ fn for_inactive_vault_with_dca_plus_updates_standard_performance_data() {
         .unwrap();
 
     let price = query_price(
-        deps.as_ref().querier,
-        vault.pair.clone(),
+        &deps.as_ref().querier,
+        &vault.pair,
         &Coin::new(vault.swap_amount.into(), vault.get_swap_denom()),
         PriceType::Actual,
     )
     .unwrap();
 
-    let fee_rate = get_swap_fee_rate(&deps.as_mut(), &vault).unwrap()
-        + get_delegation_fee_rate(&deps.as_mut(), &vault).unwrap()
+    let config = get_config(deps.as_ref().storage).unwrap();
+
+    let fee_rate = config.swap_fee_percent
+        + config.delegation_fee_percent
         + Decimal::from_str(FIN_TAKER_FEE).unwrap();
 
     assert_eq!(
