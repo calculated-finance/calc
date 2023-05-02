@@ -19,6 +19,7 @@ fn update_fee_percent_with_valid_value_should_succeed() {
             Addr::unchecked(ADMIN),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::UpdateConfig {
+                executors: None,
                 fee_collectors: Some(vec![FeeCollector {
                     address: ADMIN.to_string(),
                     allocation: Decimal::from_str("1").unwrap(),
@@ -45,6 +46,7 @@ fn update_swap_fee_percent_more_than_100_percent_should_fail() {
             Addr::unchecked(ADMIN),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::UpdateConfig {
+                executors: None,
                 fee_collectors: Some(vec![FeeCollector {
                     address: ADMIN.to_string(),
                     allocation: Decimal::from_str("1").unwrap(),
@@ -75,6 +77,7 @@ fn update_fee_collectors_with_no_value_should_succeed() {
             Addr::unchecked(ADMIN),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::UpdateConfig {
+                executors: None,
                 fee_collectors: None,
                 swap_fee_percent: Some(Decimal::from_str("0.015").unwrap()),
                 delegation_fee_percent: Some(Decimal::from_str("0.0075").unwrap()),
@@ -97,6 +100,7 @@ fn update_fee_collectors_with_valid_value_should_succeed() {
             Addr::unchecked(ADMIN),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::UpdateConfig {
+                executors: None,
                 fee_collectors: Some(vec![
                     FeeCollector {
                         address: ADMIN.to_string(),
@@ -129,6 +133,7 @@ fn update_fee_collectors_with_total_allocations_more_than_100_percent_should_fai
             Addr::unchecked(ADMIN),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::UpdateConfig {
+                executors: None,
                 fee_collectors: Some(vec![
                     FeeCollector {
                         address: ADMIN.to_string(),
@@ -165,6 +170,7 @@ fn update_dca_plus_escrow_level_with_valid_value_should_succeed() {
             Addr::unchecked(ADMIN),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::UpdateConfig {
+                executors: None,
                 fee_collectors: None,
                 swap_fee_percent: None,
                 delegation_fee_percent: None,
@@ -202,6 +208,7 @@ fn update_dca_plus_escrow_level_more_than_100_percent_should_fail() {
             Addr::unchecked(ADMIN),
             mock.dca_contract_address.clone(),
             &ExecuteMsg::UpdateConfig {
+                executors: None,
                 fee_collectors: None,
                 swap_fee_percent: None,
                 delegation_fee_percent: None,

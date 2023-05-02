@@ -48,7 +48,6 @@ pub const AFTER_BANK_SWAP_REPLY_ID: u64 = 4;
 
 #[entry_point]
 pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     Ok(Response::new())
@@ -73,6 +72,7 @@ pub fn instantiate(
         deps.storage,
         Config {
             admin: msg.admin.clone(),
+            executors: msg.executors,
             fee_collectors: msg.fee_collectors,
             swap_fee_percent: msg.swap_fee_percent,
             delegation_fee_percent: msg.delegation_fee_percent,
@@ -140,6 +140,7 @@ pub fn execute(
             deposit_handler(deps, env, info, address, vault_id)
         }
         ExecuteMsg::UpdateConfig {
+            executors,
             fee_collectors,
             swap_fee_percent,
             delegation_fee_percent,
@@ -150,6 +151,7 @@ pub fn execute(
         } => update_config_handler(
             deps,
             info,
+            executors,
             fee_collectors,
             swap_fee_percent,
             delegation_fee_percent,
@@ -171,7 +173,7 @@ pub fn execute(
         ExecuteMsg::UpdateSwapAdjustments {
             position_type,
             adjustments,
-        } => update_swap_adjustments_handler(deps, env, position_type, adjustments),
+        } => update_swap_adjustments_handler(deps, env, info, position_type, adjustments),
         ExecuteMsg::DisburseEscrow { vault_id } => {
             disburse_escrow_handler(deps, env, info, vault_id)
         }

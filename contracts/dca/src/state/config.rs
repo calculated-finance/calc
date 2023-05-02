@@ -5,6 +5,7 @@ use cw_storage_plus::{Item, Map};
 #[cw_serde]
 pub struct Config {
     pub admin: Addr,
+    pub executors: Vec<Addr>,
     pub fee_collectors: Vec<FeeCollector>,
     pub swap_fee_percent: Decimal,
     pub delegation_fee_percent: Decimal,

@@ -12,6 +12,7 @@ use cosmwasm_std::{Addr, Decimal, DepsMut, MessageInfo, Response};
 pub fn update_config_handler(
     deps: DepsMut,
     info: MessageInfo,
+    executors: Option<Vec<Addr>>,
     fee_collectors: Option<Vec<FeeCollector>>,
     swap_fee_percent: Option<Decimal>,
     delegation_fee_percent: Option<Decimal>,
@@ -25,6 +26,7 @@ pub fn update_config_handler(
 
     let config = Config {
         admin: existing_config.admin,
+        executors: executors.unwrap_or(existing_config.executors),
         fee_collectors: fee_collectors.unwrap_or(existing_config.fee_collectors),
         swap_fee_percent: swap_fee_percent.unwrap_or(existing_config.swap_fee_percent),
         delegation_fee_percent: delegation_fee_percent
