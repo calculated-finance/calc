@@ -233,6 +233,17 @@ pub fn assert_address_is_valid(
     }
 }
 
+pub fn assert_addresses_are_valid(
+    deps: Deps,
+    addresses: &[Addr],
+    label: &str,
+) -> Result<(), ContractError> {
+    Ok(addresses
+        .iter()
+        .map(|address| assert_address_is_valid(deps, address.clone(), label.to_string()))
+        .collect::<Result<(), ContractError>>()?)
+}
+
 pub fn assert_destination_allocations_add_up_to_one(
     destinations: &[Destination],
 ) -> Result<(), ContractError> {

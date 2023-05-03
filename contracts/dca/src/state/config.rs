@@ -21,7 +21,7 @@ pub struct FeeCollector {
     pub allocation: Decimal,
 }
 
-const CONFIG: Item<Config> = Item::new("config_v6");
+const CONFIG: Item<Config> = Item::new("config_v7");
 
 pub fn get_config(store: &dyn Storage) -> StdResult<Config> {
     CONFIG.load(store)
