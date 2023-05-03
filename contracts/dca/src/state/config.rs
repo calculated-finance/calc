@@ -1,27 +1,8 @@
-use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Decimal, Order, StdError, StdResult, Storage};
+use crate::types::config::Config;
+use cosmwasm_std::{Decimal, Order, StdError, StdResult, Storage};
 use cw_storage_plus::{Item, Map};
 
-#[cw_serde]
-pub struct Config {
-    pub admin: Addr,
-    pub executors: Vec<Addr>,
-    pub fee_collectors: Vec<FeeCollector>,
-    pub swap_fee_percent: Decimal,
-    pub delegation_fee_percent: Decimal,
-    pub staking_router_address: Addr,
-    pub page_limit: u16,
-    pub paused: bool,
-    pub dca_plus_escrow_level: Decimal,
-}
-
-#[cw_serde]
-pub struct FeeCollector {
-    pub address: String,
-    pub allocation: Decimal,
-}
-
-const CONFIG: Item<Config> = Item::new("config_v7");
+const CONFIG: Item<Config> = Item::new("config_v6");
 
 pub fn get_config(store: &dyn Storage) -> StdResult<Config> {
     CONFIG.load(store)
@@ -48,7 +29,7 @@ pub fn clear_config(store: &mut dyn Storage) {
     CONFIG.remove(store);
 }
 
-const CUSTOM_FEES: Map<String, Decimal> = Map::new("fees_v20");
+const CUSTOM_FEES: Map<String, Decimal> = Map::new("fees_v6");
 
 pub fn create_custom_fee(
     storage: &mut dyn Storage,

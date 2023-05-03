@@ -11,40 +11,24 @@
         "create_pair": {
           "type": "object",
           "required": [
-            "address",
             "base_denom",
-            "quote_denom"
+            "quote_denom",
+            "route"
           ],
           "properties": {
-            "address": {
-              "$ref": "#/definitions/Addr"
-            },
             "base_denom": {
               "type": "string"
             },
             "quote_denom": {
               "type": "string"
-            }
-          },
-          "additionalProperties": false
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
-        "delete_pair"
-      ],
-      "properties": {
-        "delete_pair": {
-          "type": "object",
-          "required": [
-            "address"
-          ],
-          "properties": {
-            "address": {
-              "$ref": "#/definitions/Addr"
+            },
+            "route": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint64",
+                "minimum": 0.0
+              }
             }
           },
           "additionalProperties": false
@@ -61,8 +45,8 @@
         "create_vault": {
           "type": "object",
           "required": [
-            "pair_address",
             "swap_amount",
+            "target_denom",
             "time_interval"
           ],
           "properties": {
@@ -101,8 +85,15 @@
                 }
               ]
             },
-            "pair_address": {
-              "$ref": "#/definitions/Addr"
+            "performance_assessment_strategy": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/PerformanceAssessmentStrategyParams"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "position_type": {
               "anyOf": [
@@ -124,18 +115,21 @@
                 }
               ]
             },
-            "swap_amount": {
-              "$ref": "#/definitions/Uint128"
-            },
-            "target_receive_amount": {
+            "swap_adjustment_strategy": {
               "anyOf": [
                 {
-                  "$ref": "#/definitions/Uint128"
+                  "$ref": "#/definitions/SwapAdjustmentStrategyParams"
                 },
                 {
                   "type": "null"
                 }
               ]
+            },
+            "swap_amount": {
+              "$ref": "#/definitions/Uint128"
+            },
+            "target_denom": {
+              "type": "string"
             },
             "target_start_time_utc_seconds": {
               "anyOf": [
@@ -149,12 +143,6 @@
             },
             "time_interval": {
               "$ref": "#/definitions/TimeInterval"
-            },
-            "use_dca_plus": {
-              "type": [
-                "boolean",
-                "null"
-              ]
             }
           },
           "additionalProperties": false
@@ -177,6 +165,33 @@
           "properties": {
             "address": {
               "$ref": "#/definitions/Addr"
+            },
+            "vault_id": {
+              "$ref": "#/definitions/Uint128"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "update_vault"
+      ],
+      "properties": {
+        "update_vault": {
+          "type": "object",
+          "required": [
+            "vault_id"
+          ],
+          "properties": {
+            "label": {
+              "type": [
+                "string",
+                "null"
+              ]
             },
             "vault_id": {
               "$ref": "#/definitions/Uint128"
@@ -238,16 +253,6 @@
         "update_config": {
           "type": "object",
           "properties": {
-            "dca_plus_escrow_level": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/Decimal"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
             "delegation_fee_percent": {
               "anyOf": [
                 {
@@ -257,6 +262,15 @@
                   "type": "null"
                 }
               ]
+            },
+            "executors": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "$ref": "#/definitions/Addr"
+              }
             },
             "fee_collectors": {
               "type": [
@@ -281,10 +295,10 @@
                 "null"
               ]
             },
-            "staking_router_address": {
+            "risk_weighted_average_escrow_level": {
               "anyOf": [
                 {
-                  "$ref": "#/definitions/Addr"
+                  "$ref": "#/definitions/Decimal"
                 },
                 {
                   "type": "null"
@@ -300,37 +314,6 @@
                   "type": "null"
                 }
               ]
-            }
-          },
-          "additionalProperties": false
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
-        "update_vault"
-      ],
-      "properties": {
-        "update_vault": {
-          "type": "object",
-          "required": [
-            "address",
-            "vault_id"
-          ],
-          "properties": {
-            "address": {
-              "$ref": "#/definitions/Addr"
-            },
-            "label": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
-            "vault_id": {
-              "$ref": "#/definitions/Uint128"
             }
           },
           "additionalProperties": false
@@ -387,36 +370,21 @@
     {
       "type": "object",
       "required": [
-        "update_swap_adjustments"
+        "update_swap_adjustment"
       ],
       "properties": {
-        "update_swap_adjustments": {
+        "update_swap_adjustment": {
           "type": "object",
           "required": [
-            "adjustments",
-            "position_type"
+            "strategy",
+            "value"
           ],
           "properties": {
-            "adjustments": {
-              "type": "array",
-              "items": {
-                "type": "array",
-                "items": [
-                  {
-                    "type": "integer",
-                    "format": "uint8",
-                    "minimum": 0.0
-                  },
-                  {
-                    "$ref": "#/definitions/Decimal"
-                  }
-                ],
-                "maxItems": 2,
-                "minItems": 2
-              }
+            "strategy": {
+              "$ref": "#/definitions/SwapAdjustmentStrategy"
             },
-            "position_type": {
-              "$ref": "#/definitions/PositionType"
+            "value": {
+              "$ref": "#/definitions/Decimal"
             }
           },
           "additionalProperties": false
@@ -444,11 +412,87 @@
         }
       },
       "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "z_delegate"
+      ],
+      "properties": {
+        "z_delegate": {
+          "type": "object",
+          "required": [
+            "delegator_address",
+            "validator_address"
+          ],
+          "properties": {
+            "delegator_address": {
+              "$ref": "#/definitions/Addr"
+            },
+            "validator_address": {
+              "$ref": "#/definitions/Addr"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "z_provide_liquidity"
+      ],
+      "properties": {
+        "z_provide_liquidity": {
+          "type": "object",
+          "required": [
+            "duration",
+            "pool_id",
+            "provider_address"
+          ],
+          "properties": {
+            "duration": {
+              "$ref": "#/definitions/LockableDuration"
+            },
+            "pool_id": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            },
+            "provider_address": {
+              "$ref": "#/definitions/Addr"
+            },
+            "slippage_tolerance": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Decimal"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
     }
   ],
   "definitions": {
     "Addr": {
       "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+      "type": "string"
+    },
+    "BaseDenom": {
+      "type": "string",
+      "enum": [
+        "bitcoin"
+      ]
+    },
+    "Binary": {
+      "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.",
       "type": "string"
     },
     "Decimal": {
@@ -458,19 +502,25 @@
     "Destination": {
       "type": "object",
       "required": [
-        "action",
         "address",
         "allocation"
       ],
       "properties": {
-        "action": {
-          "$ref": "#/definitions/PostExecutionAction"
-        },
         "address": {
           "$ref": "#/definitions/Addr"
         },
         "allocation": {
           "$ref": "#/definitions/Decimal"
+        },
+        "msg": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Binary"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -491,6 +541,20 @@
       },
       "additionalProperties": false
     },
+    "LockableDuration": {
+      "type": "string",
+      "enum": [
+        "one_day",
+        "one_week",
+        "two_weeks"
+      ]
+    },
+    "PerformanceAssessmentStrategyParams": {
+      "type": "string",
+      "enum": [
+        "compare_to_standard_dca"
+      ]
+    },
     "PositionType": {
       "type": "string",
       "enum": [
@@ -498,25 +562,163 @@
         "exit"
       ]
     },
-    "PostExecutionAction": {
-      "type": "string",
-      "enum": [
-        "send",
-        "z_delegate"
+    "SwapAdjustmentStrategy": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "risk_weighted_average"
+          ],
+          "properties": {
+            "risk_weighted_average": {
+              "type": "object",
+              "required": [
+                "base_denom",
+                "model_id",
+                "position_type"
+              ],
+              "properties": {
+                "base_denom": {
+                  "$ref": "#/definitions/BaseDenom"
+                },
+                "model_id": {
+                  "type": "integer",
+                  "format": "uint8",
+                  "minimum": 0.0
+                },
+                "position_type": {
+                  "$ref": "#/definitions/PositionType"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "weighted_scale"
+          ],
+          "properties": {
+            "weighted_scale": {
+              "type": "object",
+              "required": [
+                "base_receive_amount",
+                "increase_only",
+                "multiplier"
+              ],
+              "properties": {
+                "base_receive_amount": {
+                  "$ref": "#/definitions/Uint128"
+                },
+                "increase_only": {
+                  "type": "boolean"
+                },
+                "multiplier": {
+                  "$ref": "#/definitions/Decimal"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "SwapAdjustmentStrategyParams": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "risk_weighted_average"
+          ],
+          "properties": {
+            "risk_weighted_average": {
+              "type": "object",
+              "required": [
+                "base_denom"
+              ],
+              "properties": {
+                "base_denom": {
+                  "$ref": "#/definitions/BaseDenom"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "weighted_scale"
+          ],
+          "properties": {
+            "weighted_scale": {
+              "type": "object",
+              "required": [
+                "base_receive_amount",
+                "increase_only",
+                "multiplier"
+              ],
+              "properties": {
+                "base_receive_amount": {
+                  "$ref": "#/definitions/Uint128"
+                },
+                "increase_only": {
+                  "type": "boolean"
+                },
+                "multiplier": {
+                  "$ref": "#/definitions/Decimal"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
       ]
     },
     "TimeInterval": {
-      "type": "string",
-      "enum": [
-        "every_second",
-        "every_minute",
-        "half_hourly",
-        "hourly",
-        "half_daily",
-        "daily",
-        "weekly",
-        "fortnightly",
-        "monthly"
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "every_second",
+            "every_minute",
+            "half_hourly",
+            "hourly",
+            "half_daily",
+            "daily",
+            "weekly",
+            "fortnightly",
+            "monthly"
+          ]
+        },
+        {
+          "type": "object",
+          "required": [
+            "custom"
+          ],
+          "properties": {
+            "custom": {
+              "type": "object",
+              "required": [
+                "seconds"
+              ],
+              "properties": {
+                "seconds": {
+                  "type": "integer",
+                  "format": "uint64",
+                  "minimum": 0.0
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
       ]
     },
     "Uint128": {

@@ -1,6 +1,6 @@
 {
   "contract_name": "dca",
-  "contract_version": "1.5.2",
+  "contract_version": "1.0.0",
   "idl_version": "1.0.0",
   "instantiate": {
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -8,23 +8,26 @@
     "type": "object",
     "required": [
       "admin",
-      "dca_plus_escrow_level",
       "delegation_fee_percent",
+      "executors",
       "fee_collectors",
       "page_limit",
       "paused",
-      "staking_router_address",
+      "risk_weighted_average_escrow_level",
       "swap_fee_percent"
     ],
     "properties": {
       "admin": {
         "$ref": "#/definitions/Addr"
       },
-      "dca_plus_escrow_level": {
-        "$ref": "#/definitions/Decimal"
-      },
       "delegation_fee_percent": {
         "$ref": "#/definitions/Decimal"
+      },
+      "executors": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/Addr"
+        }
       },
       "fee_collectors": {
         "type": "array",
@@ -40,8 +43,8 @@
       "paused": {
         "type": "boolean"
       },
-      "staking_router_address": {
-        "$ref": "#/definitions/Addr"
+      "risk_weighted_average_escrow_level": {
+        "$ref": "#/definitions/Decimal"
       },
       "swap_fee_percent": {
         "$ref": "#/definitions/Decimal"
@@ -88,40 +91,24 @@
           "create_pair": {
             "type": "object",
             "required": [
-              "address",
               "base_denom",
-              "quote_denom"
+              "quote_denom",
+              "route"
             ],
             "properties": {
-              "address": {
-                "$ref": "#/definitions/Addr"
-              },
               "base_denom": {
                 "type": "string"
               },
               "quote_denom": {
                 "type": "string"
-              }
-            },
-            "additionalProperties": false
-          }
-        },
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "required": [
-          "delete_pair"
-        ],
-        "properties": {
-          "delete_pair": {
-            "type": "object",
-            "required": [
-              "address"
-            ],
-            "properties": {
-              "address": {
-                "$ref": "#/definitions/Addr"
+              },
+              "route": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "uint64",
+                  "minimum": 0.0
+                }
               }
             },
             "additionalProperties": false
@@ -138,8 +125,8 @@
           "create_vault": {
             "type": "object",
             "required": [
-              "pair_address",
               "swap_amount",
+              "target_denom",
               "time_interval"
             ],
             "properties": {
@@ -178,8 +165,15 @@
                   }
                 ]
               },
-              "pair_address": {
-                "$ref": "#/definitions/Addr"
+              "performance_assessment_strategy": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/PerformanceAssessmentStrategyParams"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               "position_type": {
                 "anyOf": [
@@ -201,18 +195,21 @@
                   }
                 ]
               },
-              "swap_amount": {
-                "$ref": "#/definitions/Uint128"
-              },
-              "target_receive_amount": {
+              "swap_adjustment_strategy": {
                 "anyOf": [
                   {
-                    "$ref": "#/definitions/Uint128"
+                    "$ref": "#/definitions/SwapAdjustmentStrategyParams"
                   },
                   {
                     "type": "null"
                   }
                 ]
+              },
+              "swap_amount": {
+                "$ref": "#/definitions/Uint128"
+              },
+              "target_denom": {
+                "type": "string"
               },
               "target_start_time_utc_seconds": {
                 "anyOf": [
@@ -226,12 +223,6 @@
               },
               "time_interval": {
                 "$ref": "#/definitions/TimeInterval"
-              },
-              "use_dca_plus": {
-                "type": [
-                  "boolean",
-                  "null"
-                ]
               }
             },
             "additionalProperties": false
@@ -254,6 +245,33 @@
             "properties": {
               "address": {
                 "$ref": "#/definitions/Addr"
+              },
+              "vault_id": {
+                "$ref": "#/definitions/Uint128"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "update_vault"
+        ],
+        "properties": {
+          "update_vault": {
+            "type": "object",
+            "required": [
+              "vault_id"
+            ],
+            "properties": {
+              "label": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "vault_id": {
                 "$ref": "#/definitions/Uint128"
@@ -315,16 +333,6 @@
           "update_config": {
             "type": "object",
             "properties": {
-              "dca_plus_escrow_level": {
-                "anyOf": [
-                  {
-                    "$ref": "#/definitions/Decimal"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
-              },
               "delegation_fee_percent": {
                 "anyOf": [
                   {
@@ -334,6 +342,15 @@
                     "type": "null"
                   }
                 ]
+              },
+              "executors": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "$ref": "#/definitions/Addr"
+                }
               },
               "fee_collectors": {
                 "type": [
@@ -358,10 +375,10 @@
                   "null"
                 ]
               },
-              "staking_router_address": {
+              "risk_weighted_average_escrow_level": {
                 "anyOf": [
                   {
-                    "$ref": "#/definitions/Addr"
+                    "$ref": "#/definitions/Decimal"
                   },
                   {
                     "type": "null"
@@ -377,37 +394,6 @@
                     "type": "null"
                   }
                 ]
-              }
-            },
-            "additionalProperties": false
-          }
-        },
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "required": [
-          "update_vault"
-        ],
-        "properties": {
-          "update_vault": {
-            "type": "object",
-            "required": [
-              "address",
-              "vault_id"
-            ],
-            "properties": {
-              "address": {
-                "$ref": "#/definitions/Addr"
-              },
-              "label": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "vault_id": {
-                "$ref": "#/definitions/Uint128"
               }
             },
             "additionalProperties": false
@@ -464,36 +450,21 @@
       {
         "type": "object",
         "required": [
-          "update_swap_adjustments"
+          "update_swap_adjustment"
         ],
         "properties": {
-          "update_swap_adjustments": {
+          "update_swap_adjustment": {
             "type": "object",
             "required": [
-              "adjustments",
-              "position_type"
+              "strategy",
+              "value"
             ],
             "properties": {
-              "adjustments": {
-                "type": "array",
-                "items": {
-                  "type": "array",
-                  "items": [
-                    {
-                      "type": "integer",
-                      "format": "uint8",
-                      "minimum": 0.0
-                    },
-                    {
-                      "$ref": "#/definitions/Decimal"
-                    }
-                  ],
-                  "maxItems": 2,
-                  "minItems": 2
-                }
+              "strategy": {
+                "$ref": "#/definitions/SwapAdjustmentStrategy"
               },
-              "position_type": {
-                "$ref": "#/definitions/PositionType"
+              "value": {
+                "$ref": "#/definitions/Decimal"
               }
             },
             "additionalProperties": false
@@ -521,11 +492,87 @@
           }
         },
         "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "z_delegate"
+        ],
+        "properties": {
+          "z_delegate": {
+            "type": "object",
+            "required": [
+              "delegator_address",
+              "validator_address"
+            ],
+            "properties": {
+              "delegator_address": {
+                "$ref": "#/definitions/Addr"
+              },
+              "validator_address": {
+                "$ref": "#/definitions/Addr"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "z_provide_liquidity"
+        ],
+        "properties": {
+          "z_provide_liquidity": {
+            "type": "object",
+            "required": [
+              "duration",
+              "pool_id",
+              "provider_address"
+            ],
+            "properties": {
+              "duration": {
+                "$ref": "#/definitions/LockableDuration"
+              },
+              "pool_id": {
+                "type": "integer",
+                "format": "uint64",
+                "minimum": 0.0
+              },
+              "provider_address": {
+                "$ref": "#/definitions/Addr"
+              },
+              "slippage_tolerance": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/Decimal"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
       }
     ],
     "definitions": {
       "Addr": {
         "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+        "type": "string"
+      },
+      "BaseDenom": {
+        "type": "string",
+        "enum": [
+          "bitcoin"
+        ]
+      },
+      "Binary": {
+        "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.",
         "type": "string"
       },
       "Decimal": {
@@ -535,19 +582,25 @@
       "Destination": {
         "type": "object",
         "required": [
-          "action",
           "address",
           "allocation"
         ],
         "properties": {
-          "action": {
-            "$ref": "#/definitions/PostExecutionAction"
-          },
           "address": {
             "$ref": "#/definitions/Addr"
           },
           "allocation": {
             "$ref": "#/definitions/Decimal"
+          },
+          "msg": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/Binary"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false
@@ -568,6 +621,20 @@
         },
         "additionalProperties": false
       },
+      "LockableDuration": {
+        "type": "string",
+        "enum": [
+          "one_day",
+          "one_week",
+          "two_weeks"
+        ]
+      },
+      "PerformanceAssessmentStrategyParams": {
+        "type": "string",
+        "enum": [
+          "compare_to_standard_dca"
+        ]
+      },
       "PositionType": {
         "type": "string",
         "enum": [
@@ -575,25 +642,163 @@
           "exit"
         ]
       },
-      "PostExecutionAction": {
-        "type": "string",
-        "enum": [
-          "send",
-          "z_delegate"
+      "SwapAdjustmentStrategy": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "risk_weighted_average"
+            ],
+            "properties": {
+              "risk_weighted_average": {
+                "type": "object",
+                "required": [
+                  "base_denom",
+                  "model_id",
+                  "position_type"
+                ],
+                "properties": {
+                  "base_denom": {
+                    "$ref": "#/definitions/BaseDenom"
+                  },
+                  "model_id": {
+                    "type": "integer",
+                    "format": "uint8",
+                    "minimum": 0.0
+                  },
+                  "position_type": {
+                    "$ref": "#/definitions/PositionType"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "weighted_scale"
+            ],
+            "properties": {
+              "weighted_scale": {
+                "type": "object",
+                "required": [
+                  "base_receive_amount",
+                  "increase_only",
+                  "multiplier"
+                ],
+                "properties": {
+                  "base_receive_amount": {
+                    "$ref": "#/definitions/Uint128"
+                  },
+                  "increase_only": {
+                    "type": "boolean"
+                  },
+                  "multiplier": {
+                    "$ref": "#/definitions/Decimal"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "SwapAdjustmentStrategyParams": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "risk_weighted_average"
+            ],
+            "properties": {
+              "risk_weighted_average": {
+                "type": "object",
+                "required": [
+                  "base_denom"
+                ],
+                "properties": {
+                  "base_denom": {
+                    "$ref": "#/definitions/BaseDenom"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "weighted_scale"
+            ],
+            "properties": {
+              "weighted_scale": {
+                "type": "object",
+                "required": [
+                  "base_receive_amount",
+                  "increase_only",
+                  "multiplier"
+                ],
+                "properties": {
+                  "base_receive_amount": {
+                    "$ref": "#/definitions/Uint128"
+                  },
+                  "increase_only": {
+                    "type": "boolean"
+                  },
+                  "multiplier": {
+                    "$ref": "#/definitions/Decimal"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
         ]
       },
       "TimeInterval": {
-        "type": "string",
-        "enum": [
-          "every_second",
-          "every_minute",
-          "half_hourly",
-          "hourly",
-          "half_daily",
-          "daily",
-          "weekly",
-          "fortnightly",
-          "monthly"
+        "oneOf": [
+          {
+            "type": "string",
+            "enum": [
+              "every_second",
+              "every_minute",
+              "half_hourly",
+              "hourly",
+              "half_daily",
+              "daily",
+              "weekly",
+              "fortnightly",
+              "monthly"
+            ]
+          },
+          {
+            "type": "object",
+            "required": [
+              "custom"
+            ],
+            "properties": {
+              "custom": {
+                "type": "object",
+                "required": [
+                  "seconds"
+                ],
+                "properties": {
+                  "seconds": {
+                    "type": "integer",
+                    "format": "uint64",
+                    "minimum": 0.0
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
         ]
       },
       "Uint128": {
@@ -662,27 +867,6 @@
       {
         "type": "object",
         "required": [
-          "get_trigger_id_by_fin_limit_order_idx"
-        ],
-        "properties": {
-          "get_trigger_id_by_fin_limit_order_idx": {
-            "type": "object",
-            "required": [
-              "order_idx"
-            ],
-            "properties": {
-              "order_idx": {
-                "$ref": "#/definitions/Uint128"
-              }
-            },
-            "additionalProperties": false
-          }
-        },
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "required": [
           "get_vault"
         ],
         "properties": {
@@ -725,14 +909,12 @@
                 "minimum": 0.0
               },
               "start_after": {
-                "anyOf": [
-                  {
-                    "$ref": "#/definitions/Uint128"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "format": "uint128",
+                "minimum": 0.0
               },
               "status": {
                 "anyOf": [
@@ -768,14 +950,12 @@
                 "minimum": 0.0
               },
               "start_after": {
-                "anyOf": [
-                  {
-                    "$ref": "#/definitions/Uint128"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ]
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "format": "uint128",
+                "minimum": 0.0
               }
             },
             "additionalProperties": false
@@ -805,6 +985,12 @@
               },
               "resource_id": {
                 "$ref": "#/definitions/Uint128"
+              },
+              "reverse": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
               },
               "start_after": {
                 "type": [
@@ -837,6 +1023,12 @@
                 "format": "uint16",
                 "minimum": 0.0
               },
+              "reverse": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
               "start_after": {
                 "type": [
                   "integer",
@@ -867,47 +1059,10 @@
       {
         "type": "object",
         "required": [
-          "get_data_fixes_by_resource_id"
+          "get_vault_performance"
         ],
         "properties": {
-          "get_data_fixes_by_resource_id": {
-            "type": "object",
-            "required": [
-              "resource_id"
-            ],
-            "properties": {
-              "limit": {
-                "type": [
-                  "integer",
-                  "null"
-                ],
-                "format": "uint16",
-                "minimum": 0.0
-              },
-              "resource_id": {
-                "$ref": "#/definitions/Uint128"
-              },
-              "start_after": {
-                "type": [
-                  "integer",
-                  "null"
-                ],
-                "format": "uint64",
-                "minimum": 0.0
-              }
-            },
-            "additionalProperties": false
-          }
-        },
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "required": [
-          "get_dca_plus_performance"
-        ],
-        "properties": {
-          "get_dca_plus_performance": {
+          "get_vault_performance": {
             "type": "object",
             "required": [
               "vault_id"
@@ -991,23 +1146,26 @@
           "type": "object",
           "required": [
             "admin",
-            "dca_plus_escrow_level",
             "delegation_fee_percent",
+            "executors",
             "fee_collectors",
             "page_limit",
             "paused",
-            "staking_router_address",
+            "risk_weighted_average_escrow_level",
             "swap_fee_percent"
           ],
           "properties": {
             "admin": {
               "$ref": "#/definitions/Addr"
             },
-            "dca_plus_escrow_level": {
-              "$ref": "#/definitions/Decimal"
-            },
             "delegation_fee_percent": {
               "$ref": "#/definitions/Decimal"
+            },
+            "executors": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Addr"
+              }
             },
             "fee_collectors": {
               "type": "array",
@@ -1023,8 +1181,8 @@
             "paused": {
               "type": "boolean"
             },
-            "staking_router_address": {
-              "$ref": "#/definitions/Addr"
+            "risk_weighted_average_escrow_level": {
+              "$ref": "#/definitions/Decimal"
             },
             "swap_fee_percent": {
               "$ref": "#/definitions/Decimal"
@@ -1083,209 +1241,6 @@
       "definitions": {
         "Decimal": {
           "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
-          "type": "string"
-        }
-      }
-    },
-    "get_data_fixes_by_resource_id": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "DataFixesResponse",
-      "type": "object",
-      "required": [
-        "fixes"
-      ],
-      "properties": {
-        "fixes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/DataFix"
-          }
-        }
-      },
-      "additionalProperties": false,
-      "definitions": {
-        "Coin": {
-          "type": "object",
-          "required": [
-            "amount",
-            "denom"
-          ],
-          "properties": {
-            "amount": {
-              "$ref": "#/definitions/Uint128"
-            },
-            "denom": {
-              "type": "string"
-            }
-          }
-        },
-        "DataFix": {
-          "type": "object",
-          "required": [
-            "block_height",
-            "data",
-            "id",
-            "resource_id",
-            "timestamp"
-          ],
-          "properties": {
-            "block_height": {
-              "type": "integer",
-              "format": "uint64",
-              "minimum": 0.0
-            },
-            "data": {
-              "$ref": "#/definitions/DataFixData"
-            },
-            "id": {
-              "type": "integer",
-              "format": "uint64",
-              "minimum": 0.0
-            },
-            "resource_id": {
-              "$ref": "#/definitions/Uint128"
-            },
-            "timestamp": {
-              "$ref": "#/definitions/Timestamp"
-            }
-          },
-          "additionalProperties": false
-        },
-        "DataFixData": {
-          "oneOf": [
-            {
-              "type": "object",
-              "required": [
-                "vault_amounts"
-              ],
-              "properties": {
-                "vault_amounts": {
-                  "type": "object",
-                  "required": [
-                    "new_received",
-                    "new_swapped",
-                    "old_received",
-                    "old_swapped"
-                  ],
-                  "properties": {
-                    "new_received": {
-                      "$ref": "#/definitions/Coin"
-                    },
-                    "new_swapped": {
-                      "$ref": "#/definitions/Coin"
-                    },
-                    "old_received": {
-                      "$ref": "#/definitions/Coin"
-                    },
-                    "old_swapped": {
-                      "$ref": "#/definitions/Coin"
-                    }
-                  },
-                  "additionalProperties": false
-                }
-              },
-              "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "required": [
-                "execution_completed_event_amounts"
-              ],
-              "properties": {
-                "execution_completed_event_amounts": {
-                  "type": "object",
-                  "required": [
-                    "new_fee",
-                    "new_received",
-                    "new_sent",
-                    "old_fee",
-                    "old_received",
-                    "old_sent"
-                  ],
-                  "properties": {
-                    "new_fee": {
-                      "$ref": "#/definitions/Coin"
-                    },
-                    "new_received": {
-                      "$ref": "#/definitions/Coin"
-                    },
-                    "new_sent": {
-                      "$ref": "#/definitions/Coin"
-                    },
-                    "old_fee": {
-                      "$ref": "#/definitions/Coin"
-                    },
-                    "old_received": {
-                      "$ref": "#/definitions/Coin"
-                    },
-                    "old_sent": {
-                      "$ref": "#/definitions/Coin"
-                    }
-                  },
-                  "additionalProperties": false
-                }
-              },
-              "additionalProperties": false
-            }
-          ]
-        },
-        "Timestamp": {
-          "description": "A point in time in nanosecond precision.\n\nThis type can represent times from 1970-01-01T00:00:00Z to 2554-07-21T23:34:33Z.\n\n## Examples\n\n``` # use cosmwasm_std::Timestamp; let ts = Timestamp::from_nanos(1_000_000_202); assert_eq!(ts.nanos(), 1_000_000_202); assert_eq!(ts.seconds(), 1); assert_eq!(ts.subsec_nanos(), 202);\n\nlet ts = ts.plus_seconds(2); assert_eq!(ts.nanos(), 3_000_000_202); assert_eq!(ts.seconds(), 3); assert_eq!(ts.subsec_nanos(), 202); ```",
-          "allOf": [
-            {
-              "$ref": "#/definitions/Uint64"
-            }
-          ]
-        },
-        "Uint128": {
-          "description": "A thin wrapper around u128 that is using strings for JSON encoding/decoding, such that the full u128 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.\n\n# Examples\n\nUse `from` to create instances of this and `u128` to get the value out:\n\n``` # use cosmwasm_std::Uint128; let a = Uint128::from(123u128); assert_eq!(a.u128(), 123);\n\nlet b = Uint128::from(42u64); assert_eq!(b.u128(), 42);\n\nlet c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```",
-          "type": "string"
-        },
-        "Uint64": {
-          "description": "A thin wrapper around u64 that is using strings for JSON encoding/decoding, such that the full u64 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.\n\n# Examples\n\nUse `from` to create instances of this and `u64` to get the value out:\n\n``` # use cosmwasm_std::Uint64; let a = Uint64::from(42u64); assert_eq!(a.u64(), 42);\n\nlet b = Uint64::from(70u32); assert_eq!(b.u64(), 70); ```",
-          "type": "string"
-        }
-      }
-    },
-    "get_dca_plus_performance": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "DcaPlusPerformanceResponse",
-      "type": "object",
-      "required": [
-        "factor",
-        "fee"
-      ],
-      "properties": {
-        "factor": {
-          "$ref": "#/definitions/Decimal"
-        },
-        "fee": {
-          "$ref": "#/definitions/Coin"
-        }
-      },
-      "additionalProperties": false,
-      "definitions": {
-        "Coin": {
-          "type": "object",
-          "required": [
-            "amount",
-            "denom"
-          ],
-          "properties": {
-            "amount": {
-              "$ref": "#/definitions/Uint128"
-            },
-            "denom": {
-              "type": "string"
-            }
-          }
-        },
-        "Decimal": {
-          "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
-          "type": "string"
-        },
-        "Uint128": {
-          "description": "A thin wrapper around u128 that is using strings for JSON encoding/decoding, such that the full u128 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.\n\n# Examples\n\nUse `from` to create instances of this and `u128` to get the value out:\n\n``` # use cosmwasm_std::Uint128; let a = Uint128::from(123u128); assert_eq!(a.u128(), 123);\n\nlet b = Uint128::from(42u64); assert_eq!(b.u128(), 42);\n\nlet c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```",
           "type": "string"
         }
       }
@@ -1383,19 +1338,6 @@
         },
         "EventData": {
           "oneOf": [
-            {
-              "type": "object",
-              "required": [
-                "dca_vault_created"
-              ],
-              "properties": {
-                "dca_vault_created": {
-                  "type": "object",
-                  "additionalProperties": false
-                }
-              },
-              "additionalProperties": false
-            },
             {
               "type": "object",
               "required": [
@@ -1562,44 +1504,6 @@
             {
               "type": "object",
               "required": [
-                "dca_vault_z_delegation_succeeded"
-              ],
-              "properties": {
-                "dca_vault_z_delegation_succeeded": {
-                  "type": "object",
-                  "required": [
-                    "delegation",
-                    "validator_address"
-                  ],
-                  "properties": {
-                    "delegation": {
-                      "$ref": "#/definitions/Coin"
-                    },
-                    "validator_address": {
-                      "type": "string"
-                    }
-                  },
-                  "additionalProperties": false
-                }
-              },
-              "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "required": [
-                "dca_vault_delegation_failed"
-              ],
-              "properties": {
-                "dca_vault_delegation_failed": {
-                  "type": "object",
-                  "additionalProperties": false
-                }
-              },
-              "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "required": [
                 "dca_vault_escrow_disbursed"
               ],
               "properties": {
@@ -1630,7 +1534,7 @@
               "type": "string",
               "enum": [
                 "slippage_tolerance_exceeded",
-                "unknown_failure"
+                "swap_amount_adjusted_to_zero"
               ]
             },
             {
@@ -1646,37 +1550,6 @@
                   ],
                   "properties": {
                     "price": {
-                      "$ref": "#/definitions/Decimal"
-                    }
-                  },
-                  "additionalProperties": false
-                }
-              },
-              "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "required": [
-                "price_delta_limit_exceeded"
-              ],
-              "properties": {
-                "price_delta_limit_exceeded": {
-                  "type": "object",
-                  "required": [
-                    "actual_price_delta",
-                    "duration_in_seconds",
-                    "max_price_delta"
-                  ],
-                  "properties": {
-                    "actual_price_delta": {
-                      "$ref": "#/definitions/Decimal"
-                    },
-                    "duration_in_seconds": {
-                      "type": "integer",
-                      "format": "uint64",
-                      "minimum": 0.0
-                    },
-                    "max_price_delta": {
                       "$ref": "#/definitions/Decimal"
                     }
                   },
@@ -1778,19 +1651,6 @@
             {
               "type": "object",
               "required": [
-                "dca_vault_created"
-              ],
-              "properties": {
-                "dca_vault_created": {
-                  "type": "object",
-                  "additionalProperties": false
-                }
-              },
-              "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "required": [
                 "dca_vault_funds_deposited"
               ],
               "properties": {
@@ -1954,44 +1814,6 @@
             {
               "type": "object",
               "required": [
-                "dca_vault_z_delegation_succeeded"
-              ],
-              "properties": {
-                "dca_vault_z_delegation_succeeded": {
-                  "type": "object",
-                  "required": [
-                    "delegation",
-                    "validator_address"
-                  ],
-                  "properties": {
-                    "delegation": {
-                      "$ref": "#/definitions/Coin"
-                    },
-                    "validator_address": {
-                      "type": "string"
-                    }
-                  },
-                  "additionalProperties": false
-                }
-              },
-              "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "required": [
-                "dca_vault_delegation_failed"
-              ],
-              "properties": {
-                "dca_vault_delegation_failed": {
-                  "type": "object",
-                  "additionalProperties": false
-                }
-              },
-              "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "required": [
                 "dca_vault_escrow_disbursed"
               ],
               "properties": {
@@ -2022,7 +1844,7 @@
               "type": "string",
               "enum": [
                 "slippage_tolerance_exceeded",
-                "unknown_failure"
+                "swap_amount_adjusted_to_zero"
               ]
             },
             {
@@ -2038,37 +1860,6 @@
                   ],
                   "properties": {
                     "price": {
-                      "$ref": "#/definitions/Decimal"
-                    }
-                  },
-                  "additionalProperties": false
-                }
-              },
-              "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "required": [
-                "price_delta_limit_exceeded"
-              ],
-              "properties": {
-                "price_delta_limit_exceeded": {
-                  "type": "object",
-                  "required": [
-                    "actual_price_delta",
-                    "duration_in_seconds",
-                    "max_price_delta"
-                  ],
-                  "properties": {
-                    "actual_price_delta": {
-                      "$ref": "#/definitions/Decimal"
-                    },
-                    "duration_in_seconds": {
-                      "type": "integer",
-                      "format": "uint64",
-                      "minimum": 0.0
-                    },
-                    "max_price_delta": {
                       "$ref": "#/definitions/Decimal"
                     }
                   },
@@ -2114,26 +1905,27 @@
       },
       "additionalProperties": false,
       "definitions": {
-        "Addr": {
-          "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
-          "type": "string"
-        },
         "Pair": {
           "type": "object",
           "required": [
-            "address",
             "base_denom",
-            "quote_denom"
+            "quote_denom",
+            "route"
           ],
           "properties": {
-            "address": {
-              "$ref": "#/definitions/Addr"
-            },
             "base_denom": {
               "type": "string"
             },
             "quote_denom": {
               "type": "string"
+            },
+            "route": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint64",
+                "minimum": 0.0
+              }
             }
           },
           "additionalProperties": false
@@ -2163,26 +1955,6 @@
         }
       }
     },
-    "get_trigger_id_by_fin_limit_order_idx": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "TriggerIdResponse",
-      "type": "object",
-      "required": [
-        "trigger_id"
-      ],
-      "properties": {
-        "trigger_id": {
-          "$ref": "#/definitions/Uint128"
-        }
-      },
-      "additionalProperties": false,
-      "definitions": {
-        "Uint128": {
-          "description": "A thin wrapper around u128 that is using strings for JSON encoding/decoding, such that the full u128 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.\n\n# Examples\n\nUse `from` to create instances of this and `u128` to get the value out:\n\n``` # use cosmwasm_std::Uint128; let a = Uint128::from(123u128); assert_eq!(a.u128(), 123);\n\nlet b = Uint128::from(42u64); assert_eq!(b.u128(), 42);\n\nlet c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```",
-          "type": "string"
-        }
-      }
-    },
     "get_vault": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "VaultResponse",
@@ -2201,6 +1973,16 @@
           "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
           "type": "string"
         },
+        "BaseDenom": {
+          "type": "string",
+          "enum": [
+            "bitcoin"
+          ]
+        },
+        "Binary": {
+          "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.",
+          "type": "string"
+        },
         "Coin": {
           "type": "object",
           "required": [
@@ -2216,106 +1998,175 @@
             }
           }
         },
-        "DcaPlusConfig": {
-          "type": "object",
-          "required": [
-            "escrow_level",
-            "escrowed_balance",
-            "model_id",
-            "standard_dca_received_amount",
-            "standard_dca_swapped_amount",
-            "total_deposit"
-          ],
-          "properties": {
-            "escrow_level": {
-              "$ref": "#/definitions/Decimal"
-            },
-            "escrowed_balance": {
-              "$ref": "#/definitions/Coin"
-            },
-            "model_id": {
-              "type": "integer",
-              "format": "uint8",
-              "minimum": 0.0
-            },
-            "standard_dca_received_amount": {
-              "$ref": "#/definitions/Coin"
-            },
-            "standard_dca_swapped_amount": {
-              "$ref": "#/definitions/Coin"
-            },
-            "total_deposit": {
-              "$ref": "#/definitions/Coin"
-            }
-          }
-        },
         "Decimal": {
           "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
-          "type": "string"
-        },
-        "Decimal256": {
-          "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal256(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 115792089237316195423570985008687907853269984665640564039457.584007913129639935 (which is (2^256 - 1) / 10^18)",
           "type": "string"
         },
         "Destination": {
           "type": "object",
           "required": [
-            "action",
             "address",
             "allocation"
           ],
           "properties": {
-            "action": {
-              "$ref": "#/definitions/PostExecutionAction"
-            },
             "address": {
               "$ref": "#/definitions/Addr"
             },
             "allocation": {
               "$ref": "#/definitions/Decimal"
+            },
+            "msg": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Binary"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           },
           "additionalProperties": false
         },
-        "Pair": {
-          "type": "object",
-          "required": [
-            "address",
-            "base_denom",
-            "quote_denom"
-          ],
-          "properties": {
-            "address": {
-              "$ref": "#/definitions/Addr"
-            },
-            "base_denom": {
-              "type": "string"
-            },
-            "quote_denom": {
-              "type": "string"
+        "PerformanceAssessmentStrategy": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "compare_to_standard_dca"
+              ],
+              "properties": {
+                "compare_to_standard_dca": {
+                  "type": "object",
+                  "required": [
+                    "received_amount",
+                    "swapped_amount"
+                  ],
+                  "properties": {
+                    "received_amount": {
+                      "$ref": "#/definitions/Coin"
+                    },
+                    "swapped_amount": {
+                      "$ref": "#/definitions/Coin"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
             }
-          },
-          "additionalProperties": false
+          ]
         },
-        "PostExecutionAction": {
+        "PositionType": {
           "type": "string",
           "enum": [
-            "send",
-            "z_delegate"
+            "enter",
+            "exit"
+          ]
+        },
+        "SwapAdjustmentStrategy": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "risk_weighted_average"
+              ],
+              "properties": {
+                "risk_weighted_average": {
+                  "type": "object",
+                  "required": [
+                    "base_denom",
+                    "model_id",
+                    "position_type"
+                  ],
+                  "properties": {
+                    "base_denom": {
+                      "$ref": "#/definitions/BaseDenom"
+                    },
+                    "model_id": {
+                      "type": "integer",
+                      "format": "uint8",
+                      "minimum": 0.0
+                    },
+                    "position_type": {
+                      "$ref": "#/definitions/PositionType"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "weighted_scale"
+              ],
+              "properties": {
+                "weighted_scale": {
+                  "type": "object",
+                  "required": [
+                    "base_receive_amount",
+                    "increase_only",
+                    "multiplier"
+                  ],
+                  "properties": {
+                    "base_receive_amount": {
+                      "$ref": "#/definitions/Uint128"
+                    },
+                    "increase_only": {
+                      "type": "boolean"
+                    },
+                    "multiplier": {
+                      "$ref": "#/definitions/Decimal"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            }
           ]
         },
         "TimeInterval": {
-          "type": "string",
-          "enum": [
-            "every_second",
-            "every_minute",
-            "half_hourly",
-            "hourly",
-            "half_daily",
-            "daily",
-            "weekly",
-            "fortnightly",
-            "monthly"
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "every_second",
+                "every_minute",
+                "half_hourly",
+                "hourly",
+                "half_daily",
+                "daily",
+                "weekly",
+                "fortnightly",
+                "monthly"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "custom"
+              ],
+              "properties": {
+                "custom": {
+                  "type": "object",
+                  "required": [
+                    "seconds"
+                  ],
+                  "properties": {
+                    "seconds": {
+                      "type": "integer",
+                      "format": "uint64",
+                      "minimum": 0.0
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            }
           ]
         },
         "Timestamp": {
@@ -2348,37 +2199,6 @@
                 }
               },
               "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "required": [
-                "fin_limit_order"
-              ],
-              "properties": {
-                "fin_limit_order": {
-                  "type": "object",
-                  "required": [
-                    "target_price"
-                  ],
-                  "properties": {
-                    "order_idx": {
-                      "anyOf": [
-                        {
-                          "$ref": "#/definitions/Uint128"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ]
-                    },
-                    "target_price": {
-                      "$ref": "#/definitions/Decimal256"
-                    }
-                  },
-                  "additionalProperties": false
-                }
-              },
-              "additionalProperties": false
             }
           ]
         },
@@ -2395,14 +2215,17 @@
           "required": [
             "balance",
             "created_at",
+            "deposited_amount",
             "destinations",
+            "escrow_level",
+            "escrowed_amount",
             "id",
             "owner",
-            "pair",
             "received_amount",
             "status",
             "swap_amount",
             "swapped_amount",
+            "target_denom",
             "time_interval"
           ],
           "properties": {
@@ -2412,21 +2235,20 @@
             "created_at": {
               "$ref": "#/definitions/Timestamp"
             },
-            "dca_plus_config": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/DcaPlusConfig"
-                },
-                {
-                  "type": "null"
-                }
-              ]
+            "deposited_amount": {
+              "$ref": "#/definitions/Coin"
             },
             "destinations": {
               "type": "array",
               "items": {
                 "$ref": "#/definitions/Destination"
               }
+            },
+            "escrow_level": {
+              "$ref": "#/definitions/Decimal"
+            },
+            "escrowed_amount": {
+              "$ref": "#/definitions/Coin"
             },
             "id": {
               "$ref": "#/definitions/Uint128"
@@ -2450,8 +2272,15 @@
             "owner": {
               "$ref": "#/definitions/Addr"
             },
-            "pair": {
-              "$ref": "#/definitions/Pair"
+            "performance_assessment_strategy": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/PerformanceAssessmentStrategy"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "received_amount": {
               "$ref": "#/definitions/Coin"
@@ -2479,11 +2308,24 @@
             "status": {
               "$ref": "#/definitions/VaultStatus"
             },
+            "swap_adjustment_strategy": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/SwapAdjustmentStrategy"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "swap_amount": {
               "$ref": "#/definitions/Uint128"
             },
             "swapped_amount": {
               "$ref": "#/definitions/Coin"
+            },
+            "target_denom": {
+              "type": "string"
             },
             "time_interval": {
               "$ref": "#/definitions/TimeInterval"
@@ -2512,6 +2354,49 @@
         }
       }
     },
+    "get_vault_performance": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "VaultPerformanceResponse",
+      "type": "object",
+      "required": [
+        "factor",
+        "fee"
+      ],
+      "properties": {
+        "factor": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "fee": {
+          "$ref": "#/definitions/Coin"
+        }
+      },
+      "additionalProperties": false,
+      "definitions": {
+        "Coin": {
+          "type": "object",
+          "required": [
+            "amount",
+            "denom"
+          ],
+          "properties": {
+            "amount": {
+              "$ref": "#/definitions/Uint128"
+            },
+            "denom": {
+              "type": "string"
+            }
+          }
+        },
+        "Decimal": {
+          "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
+          "type": "string"
+        },
+        "Uint128": {
+          "description": "A thin wrapper around u128 that is using strings for JSON encoding/decoding, such that the full u128 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.\n\n# Examples\n\nUse `from` to create instances of this and `u128` to get the value out:\n\n``` # use cosmwasm_std::Uint128; let a = Uint128::from(123u128); assert_eq!(a.u128(), 123);\n\nlet b = Uint128::from(42u64); assert_eq!(b.u128(), 42);\n\nlet c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```",
+          "type": "string"
+        }
+      }
+    },
     "get_vaults": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "VaultsResponse",
@@ -2533,6 +2418,16 @@
           "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
           "type": "string"
         },
+        "BaseDenom": {
+          "type": "string",
+          "enum": [
+            "bitcoin"
+          ]
+        },
+        "Binary": {
+          "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.",
+          "type": "string"
+        },
         "Coin": {
           "type": "object",
           "required": [
@@ -2548,106 +2443,175 @@
             }
           }
         },
-        "DcaPlusConfig": {
-          "type": "object",
-          "required": [
-            "escrow_level",
-            "escrowed_balance",
-            "model_id",
-            "standard_dca_received_amount",
-            "standard_dca_swapped_amount",
-            "total_deposit"
-          ],
-          "properties": {
-            "escrow_level": {
-              "$ref": "#/definitions/Decimal"
-            },
-            "escrowed_balance": {
-              "$ref": "#/definitions/Coin"
-            },
-            "model_id": {
-              "type": "integer",
-              "format": "uint8",
-              "minimum": 0.0
-            },
-            "standard_dca_received_amount": {
-              "$ref": "#/definitions/Coin"
-            },
-            "standard_dca_swapped_amount": {
-              "$ref": "#/definitions/Coin"
-            },
-            "total_deposit": {
-              "$ref": "#/definitions/Coin"
-            }
-          }
-        },
         "Decimal": {
           "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
-          "type": "string"
-        },
-        "Decimal256": {
-          "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal256(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 115792089237316195423570985008687907853269984665640564039457.584007913129639935 (which is (2^256 - 1) / 10^18)",
           "type": "string"
         },
         "Destination": {
           "type": "object",
           "required": [
-            "action",
             "address",
             "allocation"
           ],
           "properties": {
-            "action": {
-              "$ref": "#/definitions/PostExecutionAction"
-            },
             "address": {
               "$ref": "#/definitions/Addr"
             },
             "allocation": {
               "$ref": "#/definitions/Decimal"
+            },
+            "msg": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Binary"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           },
           "additionalProperties": false
         },
-        "Pair": {
-          "type": "object",
-          "required": [
-            "address",
-            "base_denom",
-            "quote_denom"
-          ],
-          "properties": {
-            "address": {
-              "$ref": "#/definitions/Addr"
-            },
-            "base_denom": {
-              "type": "string"
-            },
-            "quote_denom": {
-              "type": "string"
+        "PerformanceAssessmentStrategy": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "compare_to_standard_dca"
+              ],
+              "properties": {
+                "compare_to_standard_dca": {
+                  "type": "object",
+                  "required": [
+                    "received_amount",
+                    "swapped_amount"
+                  ],
+                  "properties": {
+                    "received_amount": {
+                      "$ref": "#/definitions/Coin"
+                    },
+                    "swapped_amount": {
+                      "$ref": "#/definitions/Coin"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
             }
-          },
-          "additionalProperties": false
+          ]
         },
-        "PostExecutionAction": {
+        "PositionType": {
           "type": "string",
           "enum": [
-            "send",
-            "z_delegate"
+            "enter",
+            "exit"
+          ]
+        },
+        "SwapAdjustmentStrategy": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "risk_weighted_average"
+              ],
+              "properties": {
+                "risk_weighted_average": {
+                  "type": "object",
+                  "required": [
+                    "base_denom",
+                    "model_id",
+                    "position_type"
+                  ],
+                  "properties": {
+                    "base_denom": {
+                      "$ref": "#/definitions/BaseDenom"
+                    },
+                    "model_id": {
+                      "type": "integer",
+                      "format": "uint8",
+                      "minimum": 0.0
+                    },
+                    "position_type": {
+                      "$ref": "#/definitions/PositionType"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "weighted_scale"
+              ],
+              "properties": {
+                "weighted_scale": {
+                  "type": "object",
+                  "required": [
+                    "base_receive_amount",
+                    "increase_only",
+                    "multiplier"
+                  ],
+                  "properties": {
+                    "base_receive_amount": {
+                      "$ref": "#/definitions/Uint128"
+                    },
+                    "increase_only": {
+                      "type": "boolean"
+                    },
+                    "multiplier": {
+                      "$ref": "#/definitions/Decimal"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            }
           ]
         },
         "TimeInterval": {
-          "type": "string",
-          "enum": [
-            "every_second",
-            "every_minute",
-            "half_hourly",
-            "hourly",
-            "half_daily",
-            "daily",
-            "weekly",
-            "fortnightly",
-            "monthly"
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "every_second",
+                "every_minute",
+                "half_hourly",
+                "hourly",
+                "half_daily",
+                "daily",
+                "weekly",
+                "fortnightly",
+                "monthly"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "custom"
+              ],
+              "properties": {
+                "custom": {
+                  "type": "object",
+                  "required": [
+                    "seconds"
+                  ],
+                  "properties": {
+                    "seconds": {
+                      "type": "integer",
+                      "format": "uint64",
+                      "minimum": 0.0
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            }
           ]
         },
         "Timestamp": {
@@ -2680,37 +2644,6 @@
                 }
               },
               "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "required": [
-                "fin_limit_order"
-              ],
-              "properties": {
-                "fin_limit_order": {
-                  "type": "object",
-                  "required": [
-                    "target_price"
-                  ],
-                  "properties": {
-                    "order_idx": {
-                      "anyOf": [
-                        {
-                          "$ref": "#/definitions/Uint128"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ]
-                    },
-                    "target_price": {
-                      "$ref": "#/definitions/Decimal256"
-                    }
-                  },
-                  "additionalProperties": false
-                }
-              },
-              "additionalProperties": false
             }
           ]
         },
@@ -2727,14 +2660,17 @@
           "required": [
             "balance",
             "created_at",
+            "deposited_amount",
             "destinations",
+            "escrow_level",
+            "escrowed_amount",
             "id",
             "owner",
-            "pair",
             "received_amount",
             "status",
             "swap_amount",
             "swapped_amount",
+            "target_denom",
             "time_interval"
           ],
           "properties": {
@@ -2744,21 +2680,20 @@
             "created_at": {
               "$ref": "#/definitions/Timestamp"
             },
-            "dca_plus_config": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/DcaPlusConfig"
-                },
-                {
-                  "type": "null"
-                }
-              ]
+            "deposited_amount": {
+              "$ref": "#/definitions/Coin"
             },
             "destinations": {
               "type": "array",
               "items": {
                 "$ref": "#/definitions/Destination"
               }
+            },
+            "escrow_level": {
+              "$ref": "#/definitions/Decimal"
+            },
+            "escrowed_amount": {
+              "$ref": "#/definitions/Coin"
             },
             "id": {
               "$ref": "#/definitions/Uint128"
@@ -2782,8 +2717,15 @@
             "owner": {
               "$ref": "#/definitions/Addr"
             },
-            "pair": {
-              "$ref": "#/definitions/Pair"
+            "performance_assessment_strategy": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/PerformanceAssessmentStrategy"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "received_amount": {
               "$ref": "#/definitions/Coin"
@@ -2811,11 +2753,24 @@
             "status": {
               "$ref": "#/definitions/VaultStatus"
             },
+            "swap_adjustment_strategy": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/SwapAdjustmentStrategy"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "swap_amount": {
               "$ref": "#/definitions/Uint128"
             },
             "swapped_amount": {
               "$ref": "#/definitions/Coin"
+            },
+            "target_denom": {
+              "type": "string"
             },
             "time_interval": {
               "$ref": "#/definitions/TimeInterval"
@@ -2865,6 +2820,16 @@
           "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
           "type": "string"
         },
+        "BaseDenom": {
+          "type": "string",
+          "enum": [
+            "bitcoin"
+          ]
+        },
+        "Binary": {
+          "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.",
+          "type": "string"
+        },
         "Coin": {
           "type": "object",
           "required": [
@@ -2880,106 +2845,175 @@
             }
           }
         },
-        "DcaPlusConfig": {
-          "type": "object",
-          "required": [
-            "escrow_level",
-            "escrowed_balance",
-            "model_id",
-            "standard_dca_received_amount",
-            "standard_dca_swapped_amount",
-            "total_deposit"
-          ],
-          "properties": {
-            "escrow_level": {
-              "$ref": "#/definitions/Decimal"
-            },
-            "escrowed_balance": {
-              "$ref": "#/definitions/Coin"
-            },
-            "model_id": {
-              "type": "integer",
-              "format": "uint8",
-              "minimum": 0.0
-            },
-            "standard_dca_received_amount": {
-              "$ref": "#/definitions/Coin"
-            },
-            "standard_dca_swapped_amount": {
-              "$ref": "#/definitions/Coin"
-            },
-            "total_deposit": {
-              "$ref": "#/definitions/Coin"
-            }
-          }
-        },
         "Decimal": {
           "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
-          "type": "string"
-        },
-        "Decimal256": {
-          "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal256(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 115792089237316195423570985008687907853269984665640564039457.584007913129639935 (which is (2^256 - 1) / 10^18)",
           "type": "string"
         },
         "Destination": {
           "type": "object",
           "required": [
-            "action",
             "address",
             "allocation"
           ],
           "properties": {
-            "action": {
-              "$ref": "#/definitions/PostExecutionAction"
-            },
             "address": {
               "$ref": "#/definitions/Addr"
             },
             "allocation": {
               "$ref": "#/definitions/Decimal"
+            },
+            "msg": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Binary"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           },
           "additionalProperties": false
         },
-        "Pair": {
-          "type": "object",
-          "required": [
-            "address",
-            "base_denom",
-            "quote_denom"
-          ],
-          "properties": {
-            "address": {
-              "$ref": "#/definitions/Addr"
-            },
-            "base_denom": {
-              "type": "string"
-            },
-            "quote_denom": {
-              "type": "string"
+        "PerformanceAssessmentStrategy": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "compare_to_standard_dca"
+              ],
+              "properties": {
+                "compare_to_standard_dca": {
+                  "type": "object",
+                  "required": [
+                    "received_amount",
+                    "swapped_amount"
+                  ],
+                  "properties": {
+                    "received_amount": {
+                      "$ref": "#/definitions/Coin"
+                    },
+                    "swapped_amount": {
+                      "$ref": "#/definitions/Coin"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
             }
-          },
-          "additionalProperties": false
+          ]
         },
-        "PostExecutionAction": {
+        "PositionType": {
           "type": "string",
           "enum": [
-            "send",
-            "z_delegate"
+            "enter",
+            "exit"
+          ]
+        },
+        "SwapAdjustmentStrategy": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "risk_weighted_average"
+              ],
+              "properties": {
+                "risk_weighted_average": {
+                  "type": "object",
+                  "required": [
+                    "base_denom",
+                    "model_id",
+                    "position_type"
+                  ],
+                  "properties": {
+                    "base_denom": {
+                      "$ref": "#/definitions/BaseDenom"
+                    },
+                    "model_id": {
+                      "type": "integer",
+                      "format": "uint8",
+                      "minimum": 0.0
+                    },
+                    "position_type": {
+                      "$ref": "#/definitions/PositionType"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "weighted_scale"
+              ],
+              "properties": {
+                "weighted_scale": {
+                  "type": "object",
+                  "required": [
+                    "base_receive_amount",
+                    "increase_only",
+                    "multiplier"
+                  ],
+                  "properties": {
+                    "base_receive_amount": {
+                      "$ref": "#/definitions/Uint128"
+                    },
+                    "increase_only": {
+                      "type": "boolean"
+                    },
+                    "multiplier": {
+                      "$ref": "#/definitions/Decimal"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            }
           ]
         },
         "TimeInterval": {
-          "type": "string",
-          "enum": [
-            "every_second",
-            "every_minute",
-            "half_hourly",
-            "hourly",
-            "half_daily",
-            "daily",
-            "weekly",
-            "fortnightly",
-            "monthly"
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "every_second",
+                "every_minute",
+                "half_hourly",
+                "hourly",
+                "half_daily",
+                "daily",
+                "weekly",
+                "fortnightly",
+                "monthly"
+              ]
+            },
+            {
+              "type": "object",
+              "required": [
+                "custom"
+              ],
+              "properties": {
+                "custom": {
+                  "type": "object",
+                  "required": [
+                    "seconds"
+                  ],
+                  "properties": {
+                    "seconds": {
+                      "type": "integer",
+                      "format": "uint64",
+                      "minimum": 0.0
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            }
           ]
         },
         "Timestamp": {
@@ -3012,37 +3046,6 @@
                 }
               },
               "additionalProperties": false
-            },
-            {
-              "type": "object",
-              "required": [
-                "fin_limit_order"
-              ],
-              "properties": {
-                "fin_limit_order": {
-                  "type": "object",
-                  "required": [
-                    "target_price"
-                  ],
-                  "properties": {
-                    "order_idx": {
-                      "anyOf": [
-                        {
-                          "$ref": "#/definitions/Uint128"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ]
-                    },
-                    "target_price": {
-                      "$ref": "#/definitions/Decimal256"
-                    }
-                  },
-                  "additionalProperties": false
-                }
-              },
-              "additionalProperties": false
             }
           ]
         },
@@ -3059,14 +3062,17 @@
           "required": [
             "balance",
             "created_at",
+            "deposited_amount",
             "destinations",
+            "escrow_level",
+            "escrowed_amount",
             "id",
             "owner",
-            "pair",
             "received_amount",
             "status",
             "swap_amount",
             "swapped_amount",
+            "target_denom",
             "time_interval"
           ],
           "properties": {
@@ -3076,21 +3082,20 @@
             "created_at": {
               "$ref": "#/definitions/Timestamp"
             },
-            "dca_plus_config": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/DcaPlusConfig"
-                },
-                {
-                  "type": "null"
-                }
-              ]
+            "deposited_amount": {
+              "$ref": "#/definitions/Coin"
             },
             "destinations": {
               "type": "array",
               "items": {
                 "$ref": "#/definitions/Destination"
               }
+            },
+            "escrow_level": {
+              "$ref": "#/definitions/Decimal"
+            },
+            "escrowed_amount": {
+              "$ref": "#/definitions/Coin"
             },
             "id": {
               "$ref": "#/definitions/Uint128"
@@ -3114,8 +3119,15 @@
             "owner": {
               "$ref": "#/definitions/Addr"
             },
-            "pair": {
-              "$ref": "#/definitions/Pair"
+            "performance_assessment_strategy": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/PerformanceAssessmentStrategy"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "received_amount": {
               "$ref": "#/definitions/Coin"
@@ -3143,11 +3155,24 @@
             "status": {
               "$ref": "#/definitions/VaultStatus"
             },
+            "swap_adjustment_strategy": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/SwapAdjustmentStrategy"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
             "swap_amount": {
               "$ref": "#/definitions/Uint128"
             },
             "swapped_amount": {
               "$ref": "#/definitions/Coin"
+            },
+            "target_denom": {
+              "type": "string"
             },
             "time_interval": {
               "$ref": "#/definitions/TimeInterval"

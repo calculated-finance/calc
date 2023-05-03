@@ -20,23 +20,26 @@
       "type": "object",
       "required": [
         "admin",
-        "dca_plus_escrow_level",
         "delegation_fee_percent",
+        "executors",
         "fee_collectors",
         "page_limit",
         "paused",
-        "staking_router_address",
+        "risk_weighted_average_escrow_level",
         "swap_fee_percent"
       ],
       "properties": {
         "admin": {
           "$ref": "#/definitions/Addr"
         },
-        "dca_plus_escrow_level": {
-          "$ref": "#/definitions/Decimal"
-        },
         "delegation_fee_percent": {
           "$ref": "#/definitions/Decimal"
+        },
+        "executors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Addr"
+          }
         },
         "fee_collectors": {
           "type": "array",
@@ -52,8 +55,8 @@
         "paused": {
           "type": "boolean"
         },
-        "staking_router_address": {
-          "$ref": "#/definitions/Addr"
+        "risk_weighted_average_escrow_level": {
+          "$ref": "#/definitions/Decimal"
         },
         "swap_fee_percent": {
           "$ref": "#/definitions/Decimal"

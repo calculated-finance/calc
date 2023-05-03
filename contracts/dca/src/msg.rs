@@ -1,13 +1,18 @@
-use crate::state::config::{Config, FeeCollector};
-use crate::state::data_fixes::DataFix;
-use crate::types::vault::Vault;
-use base::events::event::Event;
-use base::pair::Pair;
-use base::triggers::trigger::TimeInterval;
-use base::vaults::vault::{Destination, VaultStatus};
+use crate::types::config::Config;
+use crate::types::destination::Destination;
+use crate::types::event::Event;
+use crate::types::fee_collector::FeeCollector;
+use crate::types::pair::Pair;
+use crate::types::performance_assessment_strategy::PerformanceAssessmentStrategyParams;
+use crate::types::position_type::PositionType;
+use crate::types::post_execution_action::LockableDuration;
+use crate::types::swap_adjustment_strategy::{
+    SwapAdjustmentStrategy, SwapAdjustmentStrategyParams,
+};
+use crate::types::time_interval::TimeInterval;
+use crate::types::vault::{Vault, VaultStatus};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Coin, Decimal, Uint128, Uint64};
-use fin_helpers::position_type::PositionType;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -16,52 +21,42 @@ pub struct InstantiateMsg {
     pub fee_collectors: Vec<FeeCollector>,
     pub swap_fee_percent: Decimal,
     pub delegation_fee_percent: Decimal,
-    pub staking_router_address: Addr,
     pub page_limit: u16,
     pub paused: bool,
-    pub dca_plus_escrow_level: Decimal,
+    pub risk_weighted_average_escrow_level: Decimal,
 }
 
 #[cw_serde]
-pub struct MigrateMsg {
-    pub admin: Addr,
-    pub executors: Vec<Addr>,
-    pub fee_collectors: Vec<FeeCollector>,
-    pub swap_fee_percent: Decimal,
-    pub delegation_fee_percent: Decimal,
-    pub staking_router_address: Addr,
-    pub page_limit: u16,
-    pub paused: bool,
-    pub dca_plus_escrow_level: Decimal,
-}
+pub struct MigrateMsg {}
 
 #[cw_serde]
 pub enum ExecuteMsg {
     CreatePair {
-        address: Addr,
         base_denom: String,
         quote_denom: String,
-    },
-    DeletePair {
-        address: Addr,
+        route: Vec<u64>,
     },
     CreateVault {
         owner: Option<Addr>,
         label: Option<String>,
         destinations: Option<Vec<Destination>>,
-        pair_address: Addr,
+        target_denom: String,
         position_type: Option<PositionType>,
         slippage_tolerance: Option<Decimal>,
         minimum_receive_amount: Option<Uint128>,
         swap_amount: Uint128,
         time_interval: TimeInterval,
         target_start_time_utc_seconds: Option<Uint64>,
-        target_receive_amount: Option<Uint128>,
-        use_dca_plus: Option<bool>,
+        performance_assessment_strategy: Option<PerformanceAssessmentStrategyParams>,
+        swap_adjustment_strategy: Option<SwapAdjustmentStrategyParams>,
     },
     Deposit {
         address: Addr,
         vault_id: Uint128,
+    },
+    UpdateVault {
+        vault_id: Uint128,
+        label: Option<String>,
     },
     CancelVault {
         vault_id: Uint128,
@@ -74,15 +69,9 @@ pub enum ExecuteMsg {
         fee_collectors: Option<Vec<FeeCollector>>,
         swap_fee_percent: Option<Decimal>,
         delegation_fee_percent: Option<Decimal>,
-        staking_router_address: Option<Addr>,
         page_limit: Option<u16>,
         paused: Option<bool>,
-        dca_plus_escrow_level: Option<Decimal>,
-    },
-    UpdateVault {
-        address: Addr,
-        vault_id: Uint128,
-        label: Option<String>,
+        risk_weighted_average_escrow_level: Option<Decimal>,
     },
     CreateCustomSwapFee {
         denom: String,
@@ -91,12 +80,22 @@ pub enum ExecuteMsg {
     RemoveCustomSwapFee {
         denom: String,
     },
-    UpdateSwapAdjustments {
-        position_type: PositionType,
-        adjustments: Vec<(u8, Decimal)>,
+    UpdateSwapAdjustment {
+        strategy: SwapAdjustmentStrategy,
+        value: Decimal,
     },
     DisburseEscrow {
         vault_id: Uint128,
+    },
+    ZDelegate {
+        delegator_address: Addr,
+        validator_address: Addr,
+    },
+    ZProvideLiquidity {
+        provider_address: Addr,
+        pool_id: u64,
+        duration: LockableDuration,
+        slippage_tolerance: Option<Decimal>,
     },
 }
 
@@ -109,20 +108,18 @@ pub enum QueryMsg {
     GetPairs {},
     #[returns(TriggerIdsResponse)]
     GetTimeTriggerIds { limit: Option<u16> },
-    #[returns(TriggerIdResponse)]
-    GetTriggerIdByFinLimitOrderIdx { order_idx: Uint128 },
     #[returns(VaultResponse)]
     GetVault { vault_id: Uint128 },
     #[returns(VaultsResponse)]
     GetVaultsByAddress {
         address: Addr,
         status: Option<VaultStatus>,
-        start_after: Option<Uint128>,
+        start_after: Option<u128>,
         limit: Option<u16>,
     },
     #[returns(VaultsResponse)]
     GetVaults {
-        start_after: Option<Uint128>,
+        start_after: Option<u128>,
         limit: Option<u16>,
     },
     #[returns(EventsResponse)]
@@ -130,22 +127,18 @@ pub enum QueryMsg {
         resource_id: Uint128,
         start_after: Option<u64>,
         limit: Option<u16>,
+        reverse: Option<bool>,
     },
     #[returns(EventsResponse)]
     GetEvents {
         start_after: Option<u64>,
         limit: Option<u16>,
+        reverse: Option<bool>,
     },
     #[returns(CustomFeesResponse)]
     GetCustomSwapFees {},
-    #[returns(DataFixesResponse)]
-    GetDataFixesByResourceId {
-        resource_id: Uint128,
-        start_after: Option<u64>,
-        limit: Option<u16>,
-    },
-    #[returns(DcaPlusPerformanceResponse)]
-    GetDcaPlusPerformance { vault_id: Uint128 },
+    #[returns(VaultPerformanceResponse)]
+    GetVaultPerformance { vault_id: Uint128 },
     #[returns(DisburseEscrowTasksResponse)]
     GetDisburseEscrowTasks { limit: Option<u16> },
 }
@@ -176,7 +169,7 @@ pub struct VaultResponse {
 }
 
 #[cw_serde]
-pub struct DcaPlusPerformanceResponse {
+pub struct VaultPerformanceResponse {
     pub fee: Coin,
     pub factor: Decimal,
 }
@@ -194,11 +187,6 @@ pub struct EventsResponse {
 #[cw_serde]
 pub struct CustomFeesResponse {
     pub custom_fees: Vec<(String, Decimal)>,
-}
-
-#[cw_serde]
-pub struct DataFixesResponse {
-    pub fixes: Vec<DataFix>,
 }
 
 #[cw_serde]
