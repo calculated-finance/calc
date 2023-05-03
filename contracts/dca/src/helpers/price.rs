@@ -1,79 +1,147 @@
-use super::routes::{calculate_route, get_pool, get_token_out_denom};
+use super::orders::FinOrderResponseWithoutDenom;
 use crate::types::{pair::Pair, position_type::PositionType};
-use cosmwasm_std::{Coin, Decimal, Env, QuerierWrapper, StdResult, Uint128};
-use osmosis_std::types::osmosis::{
-    gamm::v2::QuerySpotPriceRequest, poolmanager::v1beta1::PoolmanagerQuerier,
-};
+use cosmwasm_std::{Addr, Coin, Decimal, QuerierWrapper, StdError, StdResult, Uint128};
+use kujira::{fin::QueryMsg as FinQueryMsg, Precision};
+use serde::{Deserialize, Serialize};
+
+fn query_quote_price(
+    querier: &QuerierWrapper,
+    pair: &Pair,
+    swap_denom: &str,
+) -> StdResult<Decimal> {
+    let position_type = pair.position_type(swap_denom.to_string());
+
+    let book_response = querier.query_wasm_smart::<FinBookResponse>(
+        pair.address.clone(),
+        &FinQueryMsg::Book {
+            limit: Some(1),
+            offset: None,
+        },
+    )?;
+
+    let book = match position_type {
+        PositionType::Enter => book_response.base,
+        PositionType::Exit => book_response.quote,
+    };
+
+    if book.is_empty() {
+        return Err(StdError::generic_err(format!(
+            "No orders found for pair {:?}",
+            pair
+        )));
+    }
+
+    Ok(book[0].quote_price)
+}
 
 pub fn query_belief_price(
     querier: &QuerierWrapper,
     pair: &Pair,
-    mut swap_denom: String,
+    swap_denom: &str,
 ) -> StdResult<Decimal> {
-    let pool_ids = match pair.position_type(swap_denom.clone()) {
-        PositionType::Enter => pair.route.clone(),
-        PositionType::Exit => pair.route.clone().into_iter().rev().collect(),
+    let position_type = match swap_denom == pair.quote_denom {
+        true => PositionType::Enter,
+        false => PositionType::Exit,
     };
 
-    let mut price = Decimal::one();
+    let book_price = query_quote_price(querier, &pair, swap_denom)?;
 
-    for pool_id in pool_ids.into_iter() {
-        let target_denom = get_token_out_denom(querier, swap_denom.clone(), pool_id)?;
-
-        let pool = get_pool(querier, pool_id)?;
-
-        let swap_fee = pool
-            .pool_params
-            .unwrap()
-            .swap_fee
-            .parse::<Decimal>()
-            .unwrap();
-
-        let pool_price = QuerySpotPriceRequest {
-            pool_id,
-            base_asset_denom: target_denom.clone(),
-            quote_asset_denom: swap_denom,
-        }
-        .query(querier)?
-        .spot_price
-        .parse::<Decimal>()?
-            * (Decimal::one() + swap_fee);
-
-        price = pool_price * price;
-
-        swap_denom = target_denom;
-    }
-
-    Ok(price)
+    Ok(match position_type {
+        PositionType::Enter => book_price,
+        PositionType::Exit => Decimal::one()
+            .checked_div(book_price)
+            .expect("should return a valid inverted price for fin sell"),
+    })
 }
 
 pub fn query_price(
     querier: &QuerierWrapper,
-    env: &Env,
     pair: &Pair,
     swap_amount: &Coin,
 ) -> StdResult<Decimal> {
-    let routes = calculate_route(querier, pair, swap_amount.denom.clone())?;
+    if ![pair.base_denom.clone(), pair.quote_denom.clone()].contains(&swap_amount.denom) {
+        return Err(StdError::generic_err(format!(
+            "Provided swap denom {} not in pair {}",
+            swap_amount.denom, pair.address
+        )));
+    }
 
-    let token_out_amount = PoolmanagerQuerier::new(querier)
-        .estimate_swap_exact_amount_in(
-            env.contract.address.to_string(),
-            0,
-            swap_amount.to_string(),
-            routes.clone(),
-        )
-        .unwrap_or_else(|_| {
-            panic!(
-                "amount of {} received for swapping {} via {:#?}",
-                routes.last().unwrap().token_out_denom,
-                swap_amount,
-                routes
-            )
-        })
-        .token_out_amount
-        .parse::<Uint128>()?;
+    if swap_amount.amount == Uint128::zero() {
+        return query_belief_price(querier, &pair, &swap_amount.denom);
+    }
 
-    Ok(Decimal::from_ratio(swap_amount.amount, token_out_amount))
+    let position_type = match swap_amount.denom == pair.quote_denom {
+        true => PositionType::Enter,
+        false => PositionType::Exit,
+    };
+
+    let mut spent = Uint128::zero();
+    let mut received = Uint128::zero();
+    let mut limit = 20;
+    let mut offset = 0;
+
+    while spent <= swap_amount.amount {
+        let book_response = querier.query_wasm_smart::<FinBookResponse>(
+            pair.address.clone(),
+            &FinQueryMsg::Book {
+                limit: Some(limit),
+                offset: Some(offset),
+            },
+        )?;
+
+        let book = match position_type {
+            PositionType::Enter => book_response.base,
+            PositionType::Exit => book_response.quote,
+        };
+
+        if book.is_empty() {
+            break;
+        }
+
+        book.iter().for_each(|order| {
+            let price_in_swap_denom = match position_type {
+                PositionType::Enter => order.quote_price,
+                PositionType::Exit => Decimal::one()
+                    .checked_div(order.quote_price)
+                    .expect("order price in swap denom"),
+            };
+
+            let cost_in_swap_denom = order.total_offer_amount * price_in_swap_denom;
+            let swap_amount_remaining = swap_amount.amount - spent;
+
+            if cost_in_swap_denom == Uint128::zero() {
+                received += order.total_offer_amount;
+            } else if cost_in_swap_denom < swap_amount_remaining {
+                spent += cost_in_swap_denom;
+                received += order.total_offer_amount;
+            } else {
+                spent = swap_amount.amount;
+                let portion_of_order_to_fill =
+                    Decimal::from_ratio(swap_amount_remaining, cost_in_swap_denom);
+                received += order.total_offer_amount * portion_of_order_to_fill;
+                return;
+            }
+        });
+
+        if spent == swap_amount.amount {
+            break;
+        }
+
+        offset = offset.checked_add(limit).unwrap_or(u8::MAX);
+
+        if Decimal::from_ratio(spent, swap_amount.amount) < Decimal::percent(50) {
+            limit = limit.checked_mul(2).unwrap_or(u8::MAX);
+        }
+    }
+
+    if spent < swap_amount.amount || received.is_zero() {
+        return Err(StdError::generic_err(format!(
+            "Not enough liquidity to swap {}",
+            swap_amount
+        )));
+    }
+
+    Ok(Decimal::from_ratio(swap_amount.amount, received))
 }
 
 pub fn calculate_slippage(actual_price: Decimal, belief_price: Decimal) -> Decimal {
@@ -88,101 +156,324 @@ pub fn calculate_slippage(actual_price: Decimal, belief_price: Decimal) -> Decim
     difference / belief_price
 }
 
-#[cfg(test)]
-mod query_belief_price_tests {
-    use std::str::FromStr;
+pub fn query_order_details(
+    querier: QuerierWrapper,
+    pair_address: Addr,
+    order_idx: Uint128,
+) -> StdResult<FinOrderResponseWithoutDenom> {
+    let fin_order_query_msg = FinQueryMsg::Order { order_idx };
+    Ok(querier.query_wasm_smart(pair_address, &fin_order_query_msg)?)
+}
 
-    use super::*;
+pub fn query_pair_config(
+    querier: QuerierWrapper,
+    pair_address: Addr,
+) -> StdResult<FinConfigResponse> {
+    let fin_pair_config_query_msg = FinQueryMsg::Config {};
+
+    let pair_config_response: FinConfigResponse =
+        querier.query_wasm_smart(pair_address, &fin_pair_config_query_msg)?;
+
+    Ok(pair_config_response)
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct FinPoolResponseWithoutDenom {
+    pub quote_price: Decimal,
+    pub total_offer_amount: Uint128,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct FinBookResponse {
+    pub base: Vec<FinPoolResponseWithoutDenom>,
+    pub quote: Vec<FinPoolResponseWithoutDenom>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct FinConfigResponse {
+    pub decimal_delta: Option<i8>,
+    pub price_precision: Precision,
+}
+
+#[cfg(test)]
+mod query_quote_price_tests {
     use crate::{
-        constants::SWAP_FEE_RATE,
-        tests::{
-            helpers::instantiate_contract,
-            mocks::{calc_mock_dependencies, ADMIN},
-        },
+        constants::{ONE, ONE_DECIMAL, TEN_MICRONS},
+        helpers::price::{query_quote_price, FinBookResponse},
+        tests::helpers::set_fin_price,
+        types::pair::Pair,
     };
     use cosmwasm_std::{
-        testing::{mock_env, mock_info},
-        to_binary, StdError,
+        from_binary, testing::mock_dependencies, to_binary, Addr, QueryRequest, WasmQuery,
     };
-    use osmosis_std::types::osmosis::gamm::v2::QuerySpotPriceResponse;
-    use prost::Message;
+    use kujira::fin::QueryMsg;
 
     #[test]
-    fn query_belief_price_with_single_pool_id_should_succeed() {
-        let mut deps = calc_mock_dependencies();
-        let env = mock_env();
-        let info = mock_info(ADMIN, &vec![]);
+    fn quote_price_comes_from_quote_book_for_fin_sell() {
+        let mut deps = mock_dependencies();
 
-        instantiate_contract(deps.as_mut(), env.clone(), info.clone());
+        set_fin_price(&mut deps, &ONE_DECIMAL, &ONE, &TEN_MICRONS);
 
-        deps.querier.update_stargate(|path, data| {
-            if path == "/osmosis.gamm.v2.Query/SpotPrice" {
-                let price = match QuerySpotPriceRequest::decode(data.as_slice())
-                    .unwrap()
-                    .pool_id
-                {
-                    3 => "0.8",
-                    _ => "1.0",
-                };
+        let book = from_binary::<FinBookResponse>(
+            &deps
+                .querier
+                .handle_query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: Addr::unchecked("pair").to_string(),
+                    msg: to_binary(&QueryMsg::Book {
+                        limit: Some(20),
+                        offset: Some(0),
+                    })
+                    .unwrap(),
+                }))
+                .unwrap()
+                .unwrap(),
+        )
+        .unwrap();
 
-                return to_binary(&QuerySpotPriceResponse {
-                    spot_price: price.to_string(),
-                });
-            }
-            Err(StdError::generic_err("invoke fallback"))
-        });
+        let response = query_quote_price(
+            &deps.as_ref().querier,
+            &Pair {
+                address: Addr::unchecked("pair"),
+                base_denom: "base".to_string(),
+                quote_denom: "quote".to_string(),
+            },
+            "base",
+        )
+        .unwrap();
 
-        let pair = Pair::default();
+        assert_eq!(book.quote.first().unwrap().quote_price, response);
+    }
 
-        let price =
-            query_belief_price(&deps.as_ref().querier, &pair.clone(), pair.quote_denom).unwrap();
+    #[test]
+    fn quote_price_comes_from_base_book_for_fin_buy() {
+        let mut deps = mock_dependencies();
+
+        set_fin_price(&mut deps, &ONE_DECIMAL, &ONE, &TEN_MICRONS);
+
+        let book = from_binary::<FinBookResponse>(
+            &deps
+                .querier
+                .handle_query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: Addr::unchecked("pair").to_string(),
+                    msg: to_binary(&QueryMsg::Book {
+                        limit: Some(20),
+                        offset: Some(0),
+                    })
+                    .unwrap(),
+                }))
+                .unwrap()
+                .unwrap(),
+        )
+        .unwrap();
+
+        let response = query_quote_price(
+            &deps.as_ref().querier,
+            &Pair {
+                address: Addr::unchecked("pair"),
+                base_denom: "base".to_string(),
+                quote_denom: "quote".to_string(),
+            },
+            "quote",
+        )
+        .unwrap();
+
+        assert_eq!(book.base.first().unwrap().quote_price, response);
+    }
+}
+
+#[cfg(test)]
+mod query_belief_price_tests {
+    use crate::{
+        constants::{ONE, ONE_DECIMAL, TEN_MICRONS},
+        helpers::price::{query_belief_price, query_quote_price},
+        tests::helpers::set_fin_price,
+        types::pair::Pair,
+    };
+    use cosmwasm_std::{testing::mock_dependencies, Addr, Decimal};
+
+    #[test]
+    fn belief_price_is_quote_price_for_fin_buy() {
+        let mut deps = mock_dependencies();
+
+        set_fin_price(&mut deps, &ONE_DECIMAL, &ONE, &TEN_MICRONS);
+
+        let pair = &Pair {
+            address: Addr::unchecked("pair"),
+            base_denom: "base".to_string(),
+            quote_denom: "quote".to_string(),
+        };
+
+        let quote_price = query_quote_price(&deps.as_ref().querier, pair, "quote").unwrap();
+
+        let belief_price = query_belief_price(
+            &deps.as_ref().querier,
+            &Pair {
+                address: Addr::unchecked("pair"),
+                base_denom: "base".to_string(),
+                quote_denom: "quote".to_string(),
+            },
+            "quote",
+        )
+        .unwrap();
+
+        assert_eq!(quote_price, belief_price);
+    }
+
+    #[test]
+    fn belief_price_is_inverted_quote_price_for_fin_sell() {
+        let mut deps = mock_dependencies();
+
+        set_fin_price(&mut deps, &ONE_DECIMAL, &ONE, &TEN_MICRONS);
+
+        let pair = &Pair {
+            address: Addr::unchecked("pair"),
+            base_denom: "base".to_string(),
+            quote_denom: "quote".to_string(),
+        };
+
+        let quote_price = query_quote_price(&deps.as_ref().querier, pair, "base").unwrap();
+        let belief_price = query_belief_price(&deps.as_ref().querier, pair, "base").unwrap();
+
+        assert_eq!(quote_price, Decimal::one() / belief_price);
+    }
+}
+
+#[cfg(test)]
+mod query_actual_price_tests {
+    use crate::{
+        constants::{ONE, ONE_DECIMAL, TEN, TEN_MICRONS},
+        helpers::price::{query_belief_price, query_price},
+        tests::helpers::set_fin_price,
+        types::pair::Pair,
+    };
+    use cosmwasm_std::{testing::mock_dependencies, Addr, Coin};
+
+    #[test]
+    fn actual_price_equals_belief_price_when_swap_amount_is_small() {
+        let mut deps = mock_dependencies();
+
+        set_fin_price(&mut deps, &ONE_DECIMAL, &ONE, &TEN_MICRONS);
+
+        let pair = Pair {
+            address: Addr::unchecked("pair"),
+            base_denom: "base".to_string(),
+            quote_denom: "quote".to_string(),
+        };
+
+        let belief_price = query_belief_price(&deps.as_ref().querier, &pair, "base").unwrap();
+
+        let actual_price =
+            query_price(&deps.as_ref().querier, &pair, &Coin::new(100, "base")).unwrap();
+
+        assert_eq!(belief_price, actual_price);
+    }
+
+    #[test]
+    fn actual_price_higher_than_belief_price_when_swap_amount_is_large_for_fin_buy() {
+        let mut deps = mock_dependencies();
+
+        set_fin_price(&mut deps, &ONE_DECIMAL, &ONE, &TEN_MICRONS);
+
+        let pair = Pair {
+            address: Addr::unchecked("pair"),
+            base_denom: "base".to_string(),
+            quote_denom: "quote".to_string(),
+        };
+
+        let swap_denom = "base";
+
+        let belief_price = query_belief_price(&deps.as_ref().querier, &pair, swap_denom).unwrap();
+
+        let actual_price = query_price(
+            &deps.as_ref().querier,
+            &pair,
+            &Coin::new((ONE + ONE).into(), swap_denom),
+        )
+        .unwrap();
+
+        assert!(actual_price > belief_price);
+    }
+
+    #[test]
+    fn actual_price_higher_than_belief_price_when_swap_amount_is_large_for_fin_sell() {
+        let mut deps = mock_dependencies();
+
+        set_fin_price(&mut deps, &ONE_DECIMAL, &ONE, &TEN_MICRONS);
+
+        let pair = Pair {
+            address: Addr::unchecked("pair"),
+            base_denom: "base".to_string(),
+            quote_denom: "quote".to_string(),
+        };
+
+        let swap_denom = "quote";
+
+        let belief_price = query_belief_price(&deps.as_ref().querier, &pair, swap_denom).unwrap();
+
+        let actual_price = query_price(
+            &deps.as_ref().querier,
+            &pair,
+            &Coin::new((ONE + ONE).into(), swap_denom),
+        )
+        .unwrap();
+
+        assert!(actual_price > belief_price);
+    }
+
+    #[test]
+    fn throws_error_when_book_depth_is_small_than_swap_amount() {
+        let mut deps = mock_dependencies();
+
+        set_fin_price(&mut deps, &ONE_DECIMAL, &ONE, &TEN_MICRONS);
+
+        let pair = Pair {
+            address: Addr::unchecked("pair"),
+            base_denom: "base".to_string(),
+            quote_denom: "quote".to_string(),
+        };
+
+        let swap_denom = "quote";
+
+        let error = query_price(
+            &deps.as_ref().querier,
+            &pair,
+            &Coin::new((TEN + TEN).into(), swap_denom),
+        )
+        .unwrap_err();
 
         assert_eq!(
-            price,
-            Decimal::percent(80) * (Decimal::one() + Decimal::from_str(SWAP_FEE_RATE).unwrap())
+            error.to_string(),
+            "Generic error: Not enough liquidity to swap 20000000quote"
         );
     }
 
     #[test]
-    fn query_belief_price_with_multiple_pool_ids_id_should_succeed() {
-        let mut deps = calc_mock_dependencies();
-        let env = mock_env();
-        let info = mock_info(ADMIN, &vec![]);
+    fn throws_error_when_swap_denom_not_in_pair() {
+        let mut deps = mock_dependencies();
 
-        instantiate_contract(deps.as_mut(), env.clone(), info.clone());
-
-        deps.querier.update_stargate(|path, data| {
-            if path == "/osmosis.gamm.v2.Query/SpotPrice" {
-                let price = match QuerySpotPriceRequest::decode(data.as_slice())
-                    .unwrap()
-                    .pool_id
-                {
-                    1 => "0.2",
-                    4 => "1.2",
-                    _ => "1.0",
-                };
-
-                return to_binary(&QuerySpotPriceResponse {
-                    spot_price: price.to_string(),
-                });
-            }
-            Err(StdError::generic_err("invoke fallback"))
-        });
+        set_fin_price(&mut deps, &ONE_DECIMAL, &ONE, &TEN_MICRONS);
 
         let pair = Pair {
-            route: vec![4, 1],
-            ..Pair::default()
+            address: Addr::unchecked("pair"),
+            base_denom: "base".to_string(),
+            quote_denom: "quote".to_string(),
         };
 
-        let price =
-            query_belief_price(&deps.as_ref().querier, &pair.clone(), pair.quote_denom).unwrap();
+        let swap_denom = "other";
+
+        let error = query_price(
+            &deps.as_ref().querier,
+            &pair.clone(),
+            &Coin::new(TEN.into(), swap_denom),
+        )
+        .unwrap_err();
 
         assert_eq!(
-            price,
-            Decimal::percent(20)
-                * (Decimal::one() + Decimal::from_str(SWAP_FEE_RATE).unwrap())
-                * Decimal::percent(120)
-                * (Decimal::one() + Decimal::from_str(SWAP_FEE_RATE).unwrap())
+            error.to_string(),
+            format!(
+                "Generic error: Provided swap denom {} not in pair {}",
+                swap_denom, pair.address
+            )
         );
     }
 }

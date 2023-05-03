@@ -3,6 +3,7 @@ use crate::{
     constants::{ONE, TEN},
     contract::instantiate,
     handlers::get_vault::get_vault_handler,
+    helpers::price::{FinBookResponse, FinPoolResponseWithoutDenom},
     msg::{ExecuteMsg, InstantiateMsg},
     state::{
         cache::{VaultCache, VAULT_CACHE},
@@ -27,8 +28,12 @@ use crate::{
     },
 };
 use cosmwasm_std::{
-    to_binary, Addr, BlockInfo, Coin, Decimal, DepsMut, Env, MessageInfo, Timestamp, Uint128,
+    from_binary,
+    testing::{MockApi, MockQuerier},
+    to_binary, Addr, BlockInfo, Coin, ContractResult, Decimal, DepsMut, Env, MemoryStorage,
+    MessageInfo, OwnedDeps, SystemResult, Timestamp, Uint128, WasmQuery,
 };
+use kujira::fin::QueryMsg as FinQueryMsg;
 use std::{cmp::max, str::FromStr};
 
 pub fn instantiate_contract(deps: DepsMut, env: Env, info: MessageInfo) {
@@ -239,4 +244,43 @@ pub fn setup_vault(deps: DepsMut, env: Env, mut vault: Vault) -> Vault {
         .unwrap();
 
     get_vault_handler(deps.as_ref(), vault.id).unwrap().vault
+}
+
+pub fn set_fin_price(
+    deps: &mut OwnedDeps<MemoryStorage, MockApi, MockQuerier>,
+    price: &'static Decimal,
+    offer_size: &'static Uint128,
+    depth: &'static Uint128,
+) {
+    deps.querier.update_wasm(|query| match query.clone() {
+        WasmQuery::Smart { msg, .. } => match from_binary(&msg).unwrap() {
+            FinQueryMsg::Book { offset, .. } => SystemResult::Ok(ContractResult::Ok(
+                to_binary(&FinBookResponse {
+                    base: match offset {
+                        Some(0) | None => (0..depth.u128())
+                            .map(|order| FinPoolResponseWithoutDenom {
+                                quote_price: price.clone()
+                                    + Decimal::percent(order.try_into().unwrap()),
+                                total_offer_amount: offer_size.clone(),
+                            })
+                            .collect(),
+                        _ => vec![],
+                    },
+                    quote: match offset {
+                        Some(0) | None => (0..depth.u128())
+                            .map(|order| FinPoolResponseWithoutDenom {
+                                quote_price: price.clone()
+                                    - Decimal::percent(order.try_into().unwrap()),
+                                total_offer_amount: offer_size.clone(),
+                            })
+                            .collect(),
+                        _ => vec![],
+                    },
+                })
+                .unwrap(),
+            )),
+            _ => panic!(),
+        },
+        _ => panic!(),
+    });
 }

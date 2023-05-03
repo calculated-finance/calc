@@ -15,7 +15,7 @@ pub fn get_vault_performance_handler(
 
     let pair = find_pair(deps.storage, &vault.denoms())?;
 
-    let current_price = query_belief_price(&deps.querier, &pair, vault.get_swap_denom())?;
+    let current_price = query_belief_price(&deps.querier, &pair, &vault.get_swap_denom())?;
 
     vault.performance_assessment_strategy.clone().map_or(
         Err(StdError::GenericErr {

@@ -1,9 +1,9 @@
 pub mod cache;
 pub mod config;
+pub mod dca_plus_config;
 pub mod destinations;
 pub mod disburse_escrow_tasks;
 pub mod events;
-pub mod old_destinations;
 pub mod old_pairs;
 pub mod old_triggers;
 pub mod old_vaults;

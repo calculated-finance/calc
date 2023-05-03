@@ -1,4 +1,5 @@
 pub mod config;
+pub mod dca_plus_config;
 pub mod destination;
 pub mod event;
 pub mod fee_collector;

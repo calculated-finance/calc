@@ -67,8 +67,8 @@ pub fn execute(
         ExecuteMsg::CreatePair {
             base_denom,
             quote_denom,
-            route,
-        } => create_pair_handler(deps, info, base_denom, quote_denom, route),
+            address,
+        } => create_pair_handler(deps, info, address, base_denom, quote_denom),
         ExecuteMsg::CreateVault {
             owner,
             label,

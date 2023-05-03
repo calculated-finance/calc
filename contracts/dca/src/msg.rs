@@ -34,7 +34,7 @@ pub enum ExecuteMsg {
     CreatePair {
         base_denom: String,
         quote_denom: String,
-        route: Vec<u64>,
+        address: Addr,
     },
     CreateVault {
         owner: Option<Addr>,

@@ -145,7 +145,6 @@ pub fn create_vault_handler(
         time_interval,
         started_at: None,
         escrow_level,
-        deposited_amount: info.funds[0].clone(),
         swapped_amount: Coin::new(0, swap_denom),
         received_amount: Coin::new(0, target_denom.clone()),
         escrowed_amount: Coin::new(0, target_denom),
@@ -338,9 +337,9 @@ mod create_vault_tests {
         create_pair_handler(
             deps.as_mut(),
             admin_info.clone(),
+            pair.address,
             pair.base_denom.clone(),
             pair.quote_denom.clone(),
-            pair.route.clone(),
         )
         .unwrap();
 
@@ -388,9 +387,9 @@ mod create_vault_tests {
         create_pair_handler(
             deps.as_mut(),
             admin_info.clone(),
+            pair.address,
             pair.base_denom.clone(),
             pair.quote_denom.clone(),
-            pair.route.clone(),
         )
         .unwrap();
 
@@ -559,9 +558,9 @@ mod create_vault_tests {
         create_pair_handler(
             deps.as_mut(),
             admin_info.clone(),
+            pair.address,
             pair.base_denom.clone(),
             pair.quote_denom.clone(),
-            pair.route.clone(),
         )
         .unwrap();
 
@@ -638,9 +637,9 @@ mod create_vault_tests {
         create_pair_handler(
             deps.as_mut(),
             info.clone(),
+            pair.address,
             pair.base_denom.clone(),
             pair.quote_denom.clone(),
-            pair.route.clone(),
         )
         .unwrap();
 
@@ -685,9 +684,9 @@ mod create_vault_tests {
         create_pair_handler(
             deps.as_mut(),
             info.clone(),
+            pair.address,
             pair.base_denom.clone(),
             pair.quote_denom.clone(),
-            pair.route.clone(),
         )
         .unwrap();
 
@@ -732,9 +731,9 @@ mod create_vault_tests {
         create_pair_handler(
             deps.as_mut(),
             info.clone(),
+            pair.address,
             pair.base_denom.clone(),
             pair.quote_denom.clone(),
-            pair.route.clone(),
         )
         .unwrap();
 
@@ -807,9 +806,9 @@ mod create_vault_tests {
         create_pair_handler(
             deps.as_mut(),
             info.clone(),
+            pair.address,
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
         )
         .unwrap();
 
@@ -864,9 +863,9 @@ mod create_vault_tests {
         create_pair_handler(
             deps.as_mut(),
             info.clone(),
+            pair.address,
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
         )
         .unwrap();
 
@@ -912,9 +911,9 @@ mod create_vault_tests {
         create_pair_handler(
             deps.as_mut(),
             info.clone(),
+            pair.address,
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
         )
         .unwrap();
 
@@ -984,9 +983,9 @@ mod create_vault_tests {
         create_pair_handler(
             deps.as_mut(),
             info.clone(),
+            pair.address,
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
         )
         .unwrap();
 
@@ -1034,9 +1033,9 @@ mod create_vault_tests {
         create_pair_handler(
             deps.as_mut(),
             info.clone(),
+            pair.address,
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
         )
         .unwrap();
 
@@ -1087,9 +1086,9 @@ mod create_vault_tests {
         create_pair_handler(
             deps.as_mut(),
             info.clone(),
+            pair.address,
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
         )
         .unwrap();
 
@@ -1142,9 +1141,9 @@ mod create_vault_tests {
         create_pair_handler(
             deps.as_mut(),
             info.clone(),
+            pair.address,
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
         )
         .unwrap();
 

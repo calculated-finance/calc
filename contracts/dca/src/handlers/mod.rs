@@ -14,6 +14,7 @@ pub mod get_events_by_resource_id;
 pub mod get_pairs;
 pub mod get_swap_adjustment;
 pub mod get_time_trigger_ids;
+pub mod get_trigger_id_by_fin_limit_order_idx;
 pub mod get_vault;
 pub mod get_vault_performance;
 pub mod get_vaults;

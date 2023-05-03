@@ -37,9 +37,9 @@ mod get_pairs_tests {
         create_pair_handler(
             deps.as_mut(),
             info.clone(),
+            pair.address.clone(),
             pair.base_denom.clone(),
             pair.quote_denom.clone(),
-            pair.route.clone(),
         )
         .unwrap();
 

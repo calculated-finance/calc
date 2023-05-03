@@ -12,7 +12,7 @@ pub fn update_swap_adjustment_handler(
     strategy: SwapAdjustmentStrategy,
     value: Decimal,
 ) -> Result<Response, ContractError> {
-    assert_sender_is_executor(deps.storage, &env, &info.sender)?;
+    assert_sender_is_executor(deps.storage, &env, info.sender)?;
     update_swap_adjustment(deps.storage, strategy, value, env.block.time)?;
     Ok(Response::new())
 }

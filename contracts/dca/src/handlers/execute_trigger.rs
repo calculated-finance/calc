@@ -1,7 +1,8 @@
 use crate::constants::AFTER_SWAP_REPLY_ID;
 use crate::error::ContractError;
-use crate::helpers::price::query_belief_price;
-use crate::helpers::swaps::create_osmosis_swap_message;
+use crate::helpers::orders::create_withdraw_limit_order_msg;
+use crate::helpers::price::{query_belief_price, query_order_details};
+use crate::helpers::swaps::create_fin_swap_message;
 use crate::helpers::time::get_next_target_time;
 use crate::helpers::validation::{assert_contract_is_not_paused, assert_target_time_is_in_past};
 use crate::helpers::vault::{
@@ -61,6 +62,31 @@ pub fn execute_trigger_handler(
         TriggerConfiguration::Time { target_time } => {
             assert_target_time_is_in_past(env.block.time, target_time)?;
         }
+        TriggerConfiguration::FinLimitOrder { order_idx, .. } => {
+            if let Some(order_idx) = order_idx {
+                let pair = find_pair(deps.storage, &vault.denoms())?;
+
+                let limit_order =
+                    query_order_details(deps.querier, pair.address.clone(), order_idx)?;
+
+                if limit_order.offer_amount != Uint128::zero() {
+                    return Err(ContractError::CustomError {
+                        val: String::from("fin limit order has not been completely filled"),
+                    });
+                }
+
+                if limit_order.filled_amount > Uint128::zero() {
+                    response = response.add_message(create_withdraw_limit_order_msg(
+                        pair.address.clone(),
+                        order_idx,
+                    ));
+                }
+            } else {
+                return Err(ContractError::CustomError {
+                    val: String::from("fin limit order has not been created"),
+                });
+            }
+        }
     }
 
     if vault.is_scheduled() {
@@ -75,7 +101,7 @@ pub fn execute_trigger_handler(
 
     let pair = find_pair(deps.storage, &vault.denoms())?;
 
-    let belief_price = query_belief_price(&deps.querier, &pair, vault.get_swap_denom())?;
+    let belief_price = query_belief_price(&deps.querier, &pair, &vault.get_swap_denom())?;
 
     create_event(
         deps.storage,
@@ -204,10 +230,9 @@ pub fn execute_trigger_handler(
         },
     )?;
 
-    Ok(response.add_submessage(create_osmosis_swap_message(
+    Ok(response.add_submessage(create_fin_swap_message(
         &deps.querier,
-        &env,
-        &pair,
+        pair,
         swap_amount,
         vault.slippage_tolerance,
         Some(AFTER_SWAP_REPLY_ID),
@@ -930,10 +955,12 @@ mod execute_trigger_tests {
 
         let old_target_time = match vault.trigger.unwrap() {
             TriggerConfiguration::Time { target_time } => target_time,
+            _ => panic!("wrong trigger type"),
         };
 
         let new_target_time = match updated_vault.trigger.unwrap() {
             TriggerConfiguration::Time { target_time } => target_time,
+            _ => panic!("wrong trigger type"),
         };
 
         assert_eq!(old_target_time.seconds(), env.block.time.seconds());
@@ -966,10 +993,12 @@ mod execute_trigger_tests {
 
         let old_target_time = match vault.trigger.unwrap() {
             TriggerConfiguration::Time { target_time } => target_time,
+            _ => panic!("wrong trigger type"),
         };
 
         let new_target_time = match updated_vault.trigger.unwrap() {
             TriggerConfiguration::Time { target_time } => target_time,
+            _ => panic!("wrong trigger type"),
         };
 
         assert_eq!(old_target_time.seconds(), env.block.time.seconds());
@@ -1046,10 +1075,12 @@ mod execute_trigger_tests {
 
         let old_target_time = match vault.trigger.unwrap() {
             TriggerConfiguration::Time { target_time } => target_time,
+            _ => panic!("wrong trigger type"),
         };
 
         let new_target_time = match updated_vault.trigger.unwrap() {
             TriggerConfiguration::Time { target_time } => target_time,
+            _ => panic!("wrong trigger type"),
         };
 
         assert_eq!(old_target_time.seconds(), env.block.time.seconds());
@@ -1273,10 +1304,12 @@ mod execute_trigger_tests {
 
         let old_target_time = match vault.trigger.unwrap() {
             TriggerConfiguration::Time { target_time } => target_time,
+            _ => panic!("wrong trigger type"),
         };
 
         let new_target_time = match updated_vault.trigger.unwrap() {
             TriggerConfiguration::Time { target_time } => target_time,
+            _ => panic!("wrong trigger type"),
         };
 
         assert_eq!(old_target_time.seconds(), env.block.time.seconds());

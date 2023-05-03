@@ -1,40 +1,43 @@
-use super::{price::query_belief_price, routes::calculate_route};
-use crate::types::pair::Pair;
-use cosmwasm_std::{Coin, Decimal, Env, QuerierWrapper, ReplyOn, StdResult, SubMsg, Uint128};
-use osmosis_std::types::osmosis::poolmanager::v1beta1::MsgSwapExactAmountIn;
+use cosmwasm_std::{
+    to_binary, Coin, CosmosMsg, Decimal, Decimal256, QuerierWrapper, ReplyOn, StdResult, SubMsg,
+    WasmMsg,
+};
+use kujira::fin::ExecuteMsg;
+use std::str::FromStr;
 
-pub fn create_osmosis_swap_message(
+use crate::types::pair::Pair;
+
+use super::price::query_belief_price;
+
+pub fn create_fin_swap_message(
     querier: &QuerierWrapper,
-    env: &Env,
-    pair: &Pair,
+    pair: Pair,
     swap_amount: Coin,
     slippage_tolerance: Option<Decimal>,
     reply_id: Option<u64>,
     reply_on: Option<ReplyOn>,
 ) -> StdResult<SubMsg> {
-    let routes = calculate_route(querier, pair, swap_amount.denom.clone())?;
+    let belief_price = slippage_tolerance
+        .map(|_| query_belief_price(querier, &pair, &swap_amount.denom).expect("belief price"));
 
-    let token_out_min_amount = match slippage_tolerance {
-        Some(slippage_tolerance) => {
-            let belief_price = query_belief_price(querier, pair, swap_amount.denom.clone())?;
-
-            swap_amount.amount
-                * (Decimal::one() / belief_price)
-                * (Decimal::one() - slippage_tolerance)
-        }
-        _ => Uint128::one(),
-    };
-
-    let msg = MsgSwapExactAmountIn {
-        sender: env.contract.address.to_string(),
-        token_in: Some(swap_amount.into()),
-        token_out_min_amount: token_out_min_amount.to_string(),
-        routes,
-    };
+    let swap_message = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: pair.address.to_string(),
+        msg: to_binary(&ExecuteMsg::Swap {
+            belief_price: belief_price
+                .map(|belief_price| Decimal256::from_str(&belief_price.to_string()).unwrap()),
+            max_spread: slippage_tolerance.map(|slippage_tolerance| {
+                Decimal256::from_str(&slippage_tolerance.to_string()).unwrap()
+            }),
+            to: None,
+            offer_asset: None,
+            callback: None,
+        })?,
+        funds: vec![swap_amount],
+    });
 
     Ok(SubMsg {
         id: reply_id.unwrap_or(0),
-        msg: msg.into(),
+        msg: swap_message,
         gas_limit: None,
         reply_on: reply_on.unwrap_or(ReplyOn::Never),
     })

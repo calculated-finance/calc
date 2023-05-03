@@ -26,7 +26,7 @@ pub fn disburse_escrow_handler(
     info: MessageInfo,
     vault_id: Uint128,
 ) -> Result<Response, ContractError> {
-    assert_sender_is_executor(deps.storage, env, &info.sender)?;
+    assert_sender_is_executor(deps.storage, env, info.sender.clone())?;
 
     let vault = get_vault(deps.storage, vault_id)?;
 
@@ -35,7 +35,7 @@ pub fn disburse_escrow_handler(
     }
 
     let pair = find_pair(deps.storage, &vault.denoms())?;
-    let current_price = query_belief_price(&deps.querier, &pair, vault.get_swap_denom())?;
+    let current_price = query_belief_price(&deps.querier, &pair, &vault.get_swap_denom())?;
     let performance_fee = get_performance_fee(&vault, current_price)?;
     let amount_to_disburse = subtract(&vault.escrowed_amount, &performance_fee)?;
 

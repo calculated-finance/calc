@@ -1,8 +1,8 @@
 use crate::types::pair::Pair;
-use cosmwasm_std::{Order, StdResult, Storage};
+use cosmwasm_std::{Addr, Order, StdError, StdResult, Storage};
 use cw_storage_plus::Map;
 
-const PAIRS: Map<String, Pair> = Map::new("pairs_v6");
+const PAIRS: Map<String, Pair> = Map::new("pairs_2");
 
 pub fn save_pair(storage: &mut dyn Storage, pair: &Pair) -> StdResult<()> {
     PAIRS.save(storage, pair.key(), pair)
@@ -20,6 +20,23 @@ pub fn find_pair(storage: &dyn Storage, denoms: &[String; 2]) -> StdResult<Pair>
     }
 
     PAIRS.load(storage, key_from(&[denoms[1].clone(), denoms[0].clone()]))
+}
+
+pub fn find_pair_by_address(storage: &dyn Storage, address: Addr) -> StdResult<Pair> {
+    PAIRS
+        .range(storage, None, None, Order::Ascending)
+        .find(|result| {
+            result
+                .as_ref()
+                .map(|(_, pair)| pair.address == address)
+                .unwrap_or(false)
+        })
+        .map(|result| result.map(|(_, pair)| pair))
+        .unwrap_or_else(|| {
+            Err(StdError::NotFound {
+                kind: format!("Pair with address {}", address).to_string(),
+            })
+        })
 }
 
 pub fn get_pairs(storage: &dyn Storage) -> Vec<Pair> {

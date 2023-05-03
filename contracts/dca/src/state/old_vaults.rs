@@ -1,7 +1,7 @@
 use super::{
+    dca_plus_config::{dca_plus_config_from, get_dca_plus_config, DCA_PLUS_CONFIGS},
     destinations::{destination_from, get_destinations, OldDestination, DESTINATIONS},
-    old_pairs::PAIRS,
-    pairs::find_pair,
+    pairs::{find_pair, find_pair_by_address},
     triggers::get_trigger,
 };
 use crate::{
@@ -9,7 +9,9 @@ use crate::{
     types::{
         dca_plus_config::DcaPlusConfig,
         pair::Pair,
+        performance_assessment_strategy::PerformanceAssessmentStrategy,
         price_delta_limit::PriceDeltaLimit,
+        swap_adjustment_strategy::{BaseDenom, SwapAdjustmentStrategy},
         time_interval::TimeInterval,
         trigger::TriggerConfiguration,
         vault::{Vault, VaultBuilder, VaultStatus},
@@ -17,7 +19,7 @@ use crate::{
 };
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{to_binary, Addr, Coin, Decimal, Env, StdResult, Storage, Timestamp, Uint128};
-use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, Item, Map, UniqueIndex};
+use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, Item, UniqueIndex};
 
 const VAULT_COUNTER: Item<u64> = Item::new("vault_counter_v20");
 
@@ -39,29 +41,6 @@ struct OldVault {
     pub swapped_amount: Coin,
     pub received_amount: Coin,
     pub price_delta_limits: Vec<PriceDeltaLimit>,
-}
-
-impl From<Vault> for OldVault {
-    fn from(vault: Vault) -> Self {
-        Self {
-            id: vault.id,
-            created_at: vault.created_at,
-            owner: vault.owner,
-            label: vault.label,
-            destinations: vec![],
-            status: vault.status,
-            balance: vault.balance,
-            pair_address: vault.pair.address,
-            swap_amount: vault.swap_amount,
-            slippage_tolerance: vault.slippage_tolerance,
-            minimum_receive_amount: vault.minimum_receive_amount,
-            time_interval: vault.time_interval,
-            started_at: vault.started_at,
-            swapped_amount: vault.swapped_amount,
-            received_amount: vault.received_amount,
-            price_delta_limits: vec![],
-        }
-    }
 }
 
 fn old_vault_from(storage: &dyn Storage, vault: &Vault) -> StdResult<OldVault> {
@@ -109,29 +88,47 @@ fn vault_from(
         label: data.label.clone(),
         destinations: destinations
             .into_iter()
-            .map(|d| destination_from(&d, data.owner.clone(), env.contract.address))
+            .map(|d| destination_from(&d, data.owner.clone(), env.contract.address.clone()))
             .collect(),
         status: data.status.clone(),
         balance: data.balance.clone(),
-        pair,
+        target_denom: pair.other_denom(data.balance.denom.clone()),
         swap_amount: data.swap_amount,
         slippage_tolerance: data.slippage_tolerance,
         minimum_receive_amount: data.minimum_receive_amount,
         time_interval: data.time_interval.clone(),
         started_at: data.started_at,
+        escrow_level: dca_plus_config
+            .clone()
+            .map_or(Decimal::zero(), |dca_plus_config| {
+                dca_plus_config.escrow_level
+            }),
+        escrowed_amount: dca_plus_config.clone().map_or(
+            Coin::new(0, data.balance.denom.clone()),
+            |dca_plus_config| dca_plus_config.escrowed_balance,
+        ),
         swapped_amount: data.swapped_amount.clone(),
+        deposited_amount: dca_plus_config
+            .clone()
+            .map_or(data.balance.clone(), |dca_plus_config| {
+                dca_plus_config.total_deposit
+            }),
         received_amount: data.received_amount.clone(),
         trigger,
-        dca_plus_config,
+        swap_adjustment_strategy: dca_plus_config.clone().map(|dca_plus_config| {
+            SwapAdjustmentStrategy::RiskWeightedAverage {
+                model_id: dca_plus_config.model_id,
+                base_denom: BaseDenom::Bitcoin,
+                position_type: pair.position_type(data.balance.denom.clone()),
+            }
+        }),
+        performance_assessment_strategy: dca_plus_config.map(|dca_plus_config| {
+            PerformanceAssessmentStrategy::CompareToStandardDca {
+                swapped_amount: dca_plus_config.standard_dca_swapped_amount,
+                received_amount: dca_plus_config.standard_dca_received_amount,
+            }
+        }),
     }
-}
-
-const DCA_PLUS_CONFIGS: Map<u128, DcaPlusConfig> = Map::new("dca_plus_configs_v20");
-
-fn get_dca_plus_config(store: &dyn Storage, vault_id: Uint128) -> Option<DcaPlusConfig> {
-    DCA_PLUS_CONFIGS
-        .may_load(store, vault_id.into())
-        .unwrap_or(None)
 }
 
 struct VaultIndexes<'a> {
@@ -164,10 +161,11 @@ pub fn save_vault(store: &mut dyn Storage, vault_builder: VaultBuilder) -> StdRe
         vault.id.into(),
         &to_binary(&vault.destinations).expect("serialised destinations"),
     )?;
-    if let Some(dca_plus_config) = vault.dca_plus_config.clone() {
+    if let Some(dca_plus_config) = dca_plus_config_from(&vault) {
         DCA_PLUS_CONFIGS.save(store, vault.id.into(), &dca_plus_config)?;
     }
-    vault_store().save(store, vault.id.into(), &vault.clone().into())?;
+    let old_vault = &old_vault_from(store, &vault)?;
+    vault_store().save(store, vault.id.into(), old_vault)?;
     Ok(vault)
 }
 
@@ -176,7 +174,7 @@ pub fn get_vault(env: &Env, store: &dyn Storage, vault_id: Uint128) -> StdResult
     Ok(vault_from(
         env,
         &data,
-        PAIRS.load(store, data.pair_address.clone())?,
+        find_pair_by_address(store, data.pair_address.clone())?,
         get_trigger(store, vault_id)?.map(|t| t.configuration),
         &mut get_destinations(store, vault_id)?,
         get_dca_plus_config(store, vault_id),
@@ -213,7 +211,7 @@ pub fn get_vaults_by_address(
             vault_from(
                 env,
                 &vault_data,
-                PAIRS.load(store, vault_data.pair_address.clone()).expect(
+                find_pair_by_address(store, vault_data.pair_address.clone()).expect(
                     format!("a pair for pair address {:?}", vault_data.pair_address).as_str(),
                 ),
                 get_trigger(store, vault_data.id.into())
@@ -246,7 +244,7 @@ pub fn get_vaults(
             vault_from(
                 env,
                 &vault_data,
-                PAIRS.load(store, vault_data.pair_address.clone()).expect(
+                find_pair_by_address(store, vault_data.pair_address.clone()).expect(
                     format!("a pair for pair address {:?}", vault_data.pair_address).as_str(),
                 ),
                 get_trigger(store, vault_data.id.into())
@@ -265,10 +263,11 @@ pub fn update_vault(store: &mut dyn Storage, vault: &Vault) -> StdResult<()> {
         vault.id.into(),
         &to_binary(&vault.destinations).expect("serialised destinations"),
     )?;
-    if let Some(dca_plus_config) = &vault.dca_plus_config {
-        DCA_PLUS_CONFIGS.save(store, vault.id.into(), dca_plus_config)?;
+    if let Some(dca_plus_config) = dca_plus_config_from(vault) {
+        DCA_PLUS_CONFIGS.save(store, vault.id.into(), &dca_plus_config)?;
     }
-    vault_store().save(store, vault.id.into(), &vault.clone().into())
+    let old_vault = &old_vault_from(store, vault)?;
+    vault_store().save(store, vault.id.into(), old_vault)
 }
 
 pub fn clear_vaults(store: &mut dyn Storage) {
@@ -279,7 +278,10 @@ pub fn clear_vaults(store: &mut dyn Storage) {
 #[cfg(test)]
 mod destination_store_tests {
     use super::*;
-    use crate::types::vault::VaultBuilder;
+    use crate::{
+        state::pairs::save_pair,
+        types::{destination::Destination, vault::VaultBuilder},
+    };
     use cosmwasm_std::{
         testing::{mock_dependencies, mock_env},
         Addr, Coin, Decimal, Env, Uint128,
@@ -321,11 +323,9 @@ mod destination_store_tests {
 
         let pair = Pair::default();
 
-        PAIRS
-            .save(store, pair.address.clone(), &pair.clone())
-            .unwrap();
+        save_pair(store, &pair.clone()).unwrap();
 
-        let vault_builder = create_vault_builder(env);
+        let vault_builder = create_vault_builder(env.clone());
         let mut vault = save_vault(store, vault_builder).unwrap();
 
         vault.status = VaultStatus::Inactive;

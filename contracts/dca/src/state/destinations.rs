@@ -36,9 +36,9 @@ pub fn destination_from(
     owner: Addr,
     contract_address: Addr,
 ) -> Destination {
-    match old_destination.action {
+    match old_destination.action.clone() {
         PostExecutionAction::Send => Destination {
-            address: old_destination.address,
+            address: old_destination.address.clone(),
             allocation: old_destination.allocation,
             msg: None,
         },
@@ -48,7 +48,7 @@ pub fn destination_from(
             msg: Some(
                 to_binary(&ExecuteMsg::ZDelegate {
                     delegator_address: owner,
-                    validator_address: old_destination.address,
+                    validator_address: old_destination.address.clone(),
                 })
                 .unwrap(),
             ),
@@ -62,31 +62,30 @@ pub fn destination_from(
 }
 
 pub fn old_destination_from(destination: Destination) -> OldDestination {
-    if let Some(msg) = destination.msg {
+    if let Some(msg) = destination.msg.clone() {
         from_binary::<ExecuteMsg>(&msg).map_or_else(
             |_| OldDestination {
-                address: destination.address,
-                allocation: destination.allocation,
+                address: destination.address.clone(),
+                allocation: destination.allocation.clone(),
                 action: PostExecutionAction::Custom {
-                    contract_addr: destination.address,
-                    msg: destination.msg,
+                    contract_addr: destination.address.clone(),
+                    msg: destination.msg.clone(),
                 },
             },
-            |execute_msg| match execute_msg {
+            |execute_msg| match execute_msg.clone() {
                 ExecuteMsg::ZDelegate {
-                    delegator_address,
-                    validator_address,
+                    validator_address, ..
                 } => OldDestination {
                     address: validator_address,
                     allocation: destination.allocation,
                     action: PostExecutionAction::ZDelegate,
                 },
                 _ => OldDestination {
-                    address: destination.address,
+                    address: destination.address.clone(),
                     allocation: destination.allocation,
                     action: PostExecutionAction::Custom {
-                        contract_addr: destination.address,
-                        msg: destination.msg,
+                        contract_addr: destination.address.clone(),
+                        msg: destination.msg.clone(),
                     },
                 },
             },

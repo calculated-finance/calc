@@ -1,15 +1,16 @@
 use crate::types::trigger::{Trigger, TriggerConfiguration};
 use cosmwasm_std::{Order, StdResult, Storage, Timestamp, Uint128};
-use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex};
+use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, MultiIndex, UniqueIndex};
 use std::marker::PhantomData;
 
 struct TriggerIndexes<'a> {
     pub due_date: MultiIndex<'a, u64, Trigger, u128>,
+    pub order_idx: UniqueIndex<'a, u128, Trigger, u128>,
 }
 
 impl<'a> IndexList<Trigger> for TriggerIndexes<'a> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<Trigger>> + '_> {
-        let v: Vec<&dyn Index<Trigger>> = vec![&self.due_date];
+        let v: Vec<&dyn Index<Trigger>> = vec![&self.due_date, &self.order_idx];
         Box::new(v.into_iter())
     }
 }
@@ -19,12 +20,22 @@ fn trigger_store<'a>() -> IndexedMap<'a, u128, Trigger, TriggerIndexes<'a>> {
         due_date: MultiIndex::new(
             |_, trigger| match trigger.configuration {
                 TriggerConfiguration::Time { target_time } => target_time.seconds(),
+                _ => u64::MAX,
             },
-            "triggers_v8",
-            "triggers_v8__due_date",
+            "triggers_v30",
+            "triggers_v30__due_date",
+        ),
+        order_idx: UniqueIndex::new(
+            |trigger| match trigger.configuration {
+                TriggerConfiguration::FinLimitOrder { order_idx, .. } => {
+                    order_idx.unwrap_or_default().into()
+                }
+                _ => 0,
+            },
+            "triggers_v30__order_idx",
         ),
     };
-    IndexedMap::new("triggers_v8", indexes)
+    IndexedMap::new("triggers_v30", indexes)
 }
 
 pub fn save_trigger(store: &mut dyn Storage, trigger: Trigger) -> StdResult<()> {
@@ -51,7 +62,7 @@ pub fn get_time_triggers(
             store,
             None,
             Some(Bound::Inclusive((
-                (due_before.seconds(), Uint128::MAX.into()),
+                (due_before.seconds(), u128::MAX),
                 PhantomData,
             ))),
             Order::Ascending,
@@ -59,6 +70,17 @@ pub fn get_time_triggers(
         .take(limit.unwrap_or(30) as usize)
         .flat_map(|result| result.map(|(_, trigger)| trigger.vault_id))
         .collect::<Vec<Uint128>>())
+}
+
+pub fn get_trigger_by_order_idx(
+    store: &dyn Storage,
+    order_idx: Uint128,
+) -> StdResult<Option<Trigger>> {
+    trigger_store()
+        .idx
+        .order_idx
+        .item(store, order_idx.into())
+        .map(|result| result.map(|(_, trigger)| trigger))
 }
 
 #[cfg(test)]
