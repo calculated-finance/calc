@@ -1,7 +1,4 @@
-use crate::constants::{
-    AFTER_BOND_LP_TOKENS_REPLY_ID, AFTER_DELEGATION_REPLY_ID, AFTER_PROVIDE_LIQUIDITY_REPLY_ID,
-    AFTER_SWAP_REPLY_ID,
-};
+use crate::constants::{AFTER_DELEGATION_REPLY_ID, AFTER_SWAP_REPLY_ID};
 use crate::error::ContractError;
 use crate::handlers::cancel_vault::cancel_vault_handler;
 use crate::handlers::create_custom_swap_fee::create_custom_swap_fee_handler;
@@ -29,9 +26,6 @@ use crate::handlers::update_config::update_config_handler;
 use crate::handlers::update_swap_adjustment_handler::update_swap_adjustment_handler;
 use crate::handlers::update_vault::update_vault_handler;
 use crate::handlers::z_delegate::{log_delegation_result, z_delegate_handler};
-use crate::handlers::z_provide_liquidity::{
-    bond_lp_tokens, log_bond_lp_tokens_result, z_provide_liquidity_handler,
-};
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{
@@ -149,20 +143,6 @@ pub fn execute(
             delegator_address,
             validator_address,
         ),
-        ExecuteMsg::ZProvideLiquidity {
-            provider_address,
-            pool_id,
-            duration,
-            slippage_tolerance,
-        } => z_provide_liquidity_handler(
-            deps,
-            env,
-            info,
-            provider_address,
-            pool_id,
-            duration,
-            slippage_tolerance,
-        ),
     }
 }
 
@@ -171,8 +151,6 @@ pub fn reply(deps: DepsMut, env: Env, reply: Reply) -> Result<Response, Contract
     match reply.id {
         AFTER_SWAP_REPLY_ID => disburse_funds_handler(deps, &env, reply),
         AFTER_DELEGATION_REPLY_ID => log_delegation_result(reply),
-        AFTER_PROVIDE_LIQUIDITY_REPLY_ID => bond_lp_tokens(deps.as_ref(), env),
-        AFTER_BOND_LP_TOKENS_REPLY_ID => log_bond_lp_tokens_result(deps, reply),
         id => Err(ContractError::CustomError {
             val: format!("unhandled DCA contract reply id: {}", id),
         }),

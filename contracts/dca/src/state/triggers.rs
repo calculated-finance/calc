@@ -30,7 +30,7 @@ fn trigger_store<'a>() -> IndexedMap<'a, u128, Trigger, TriggerIndexes<'a>> {
                 TriggerConfiguration::FinLimitOrder { order_idx, .. } => {
                     order_idx.unwrap_or_default().into()
                 }
-                _ => 0,
+                _ => u128::MAX - trigger.vault_id.u128(), // allows a unique entry that will never be found via an order_idx
             },
             "triggers_v30__order_idx",
         ),
@@ -130,7 +130,7 @@ mod tests {
     }
 
     #[test]
-    fn stores_and_fetches_separate_tasks_at_the_same_timestamp() {
+    fn stores_and_fetches_separate_triggers_at_the_same_timestamp() {
         let mut deps = mock_dependencies();
         let env = mock_env();
 

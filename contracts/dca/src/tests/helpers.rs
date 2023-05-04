@@ -1,9 +1,9 @@
-use super::mocks::{ADMIN, DENOM_STAKE, DENOM_UOSMO, USER, VALIDATOR};
+use super::mocks::{ADMIN, DENOM_UDEMO, DENOM_UKUJI, USER, VALIDATOR};
 use crate::{
     constants::{ONE, TEN},
     contract::instantiate,
     handlers::get_vault::get_vault_handler,
-    helpers::price::{FinBookResponse, FinPoolResponseWithoutDenom},
+    helpers::price::FinSimulationResponse,
     msg::{ExecuteMsg, InstantiateMsg},
     state::{
         cache::{VaultCache, VAULT_CACHE},
@@ -33,7 +33,7 @@ use cosmwasm_std::{
     to_binary, Addr, BlockInfo, Coin, ContractResult, Decimal, DepsMut, Env, MemoryStorage,
     MessageInfo, OwnedDeps, SystemResult, Timestamp, Uint128, WasmQuery,
 };
-use kujira::fin::QueryMsg as FinQueryMsg;
+use kujira::fin::QueryMsg;
 use std::{cmp::max, str::FromStr};
 
 pub fn instantiate_contract(deps: DepsMut, env: Env, info: MessageInfo) {
@@ -96,8 +96,8 @@ impl Default for Pair {
     fn default() -> Self {
         Self {
             address: Addr::unchecked("pair"),
-            base_denom: "demo".to_string(),
-            quote_denom: "ukuji".to_string(),
+            base_denom: DENOM_UDEMO.to_string(),
+            quote_denom: DENOM_UKUJI.to_string(),
         }
     }
 }
@@ -131,18 +131,18 @@ impl Default for Vault {
                 ),
             }],
             status: VaultStatus::Active,
-            balance: Coin::new(TEN.into(), DENOM_UOSMO),
-            target_denom: DENOM_STAKE.to_string(),
+            balance: Coin::new(TEN.into(), DENOM_UDEMO),
+            target_denom: DENOM_UKUJI.to_string(),
             swap_amount: ONE,
             slippage_tolerance: None,
             minimum_receive_amount: None,
             time_interval: TimeInterval::Daily,
             started_at: None,
             escrow_level: Decimal::percent(0),
-            deposited_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-            swapped_amount: Coin::new(0, DENOM_UOSMO),
-            received_amount: Coin::new(0, DENOM_STAKE),
-            escrowed_amount: Coin::new(0, DENOM_STAKE),
+            deposited_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+            swapped_amount: Coin::new(0, DENOM_UDEMO),
+            received_amount: Coin::new(0, DENOM_UKUJI),
+            escrowed_amount: Coin::new(0, DENOM_UKUJI),
             trigger: Some(TriggerConfiguration::Time {
                 target_time: Timestamp::from_seconds(0),
             }),
@@ -173,8 +173,8 @@ impl Default for SwapAdjustmentStrategyParams {
 impl Default for PerformanceAssessmentStrategy {
     fn default() -> Self {
         Self::CompareToStandardDca {
-            swapped_amount: Coin::new(0, DENOM_UOSMO),
-            received_amount: Coin::new(0, DENOM_STAKE),
+            swapped_amount: Coin::new(0, DENOM_UDEMO),
+            received_amount: Coin::new(0, DENOM_UKUJI),
         }
     }
 }
@@ -196,8 +196,8 @@ impl Default for EventBuilder {
 impl Default for EventData {
     fn default() -> Self {
         EventData::DcaVaultExecutionTriggered {
-            base_denom: DENOM_STAKE.to_string(),
-            quote_denom: DENOM_UOSMO.to_string(),
+            base_denom: DENOM_UKUJI.to_string(),
+            quote_denom: DENOM_UDEMO.to_string(),
             asset_price: Decimal::new(Uint128::one()),
         }
     }
@@ -246,41 +246,17 @@ pub fn setup_vault(deps: DepsMut, env: Env, mut vault: Vault) -> Vault {
     get_vault_handler(deps.as_ref(), vault.id).unwrap().vault
 }
 
-pub fn set_fin_price(
-    deps: &mut OwnedDeps<MemoryStorage, MockApi, MockQuerier>,
-    price: &'static Decimal,
-    offer_size: &'static Uint128,
-    depth: &'static Uint128,
-) {
-    deps.querier.update_wasm(|query| match query.clone() {
-        WasmQuery::Smart { msg, .. } => match from_binary(&msg).unwrap() {
-            FinQueryMsg::Book { offset, .. } => SystemResult::Ok(ContractResult::Ok(
-                to_binary(&FinBookResponse {
-                    base: match offset {
-                        Some(0) | None => (0..depth.u128())
-                            .map(|order| FinPoolResponseWithoutDenom {
-                                quote_price: price.clone()
-                                    + Decimal::percent(order.try_into().unwrap()),
-                                total_offer_amount: offer_size.clone(),
-                            })
-                            .collect(),
-                        _ => vec![],
-                    },
-                    quote: match offset {
-                        Some(0) | None => (0..depth.u128())
-                            .map(|order| FinPoolResponseWithoutDenom {
-                                quote_price: price.clone()
-                                    - Decimal::percent(order.try_into().unwrap()),
-                                total_offer_amount: offer_size.clone(),
-                            })
-                            .collect(),
-                        _ => vec![],
-                    },
+pub fn set_fin_price(deps: &mut OwnedDeps<MemoryStorage, MockApi, MockQuerier>, price: Decimal) {
+    deps.querier.update_wasm(move |query| {
+        SystemResult::Ok(ContractResult::Ok(match query {
+            WasmQuery::Smart { msg, .. } => match from_binary(msg).unwrap() {
+                QueryMsg::Simulation { offer_asset } => to_binary(&FinSimulationResponse {
+                    return_amount: offer_asset.amount * (Decimal::one() / price.clone()),
                 })
                 .unwrap(),
-            )),
-            _ => panic!(),
-        },
-        _ => panic!(),
+                _ => unimplemented!(),
+            },
+            _ => unimplemented!(),
+        }))
     });
 }

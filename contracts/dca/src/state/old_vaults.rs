@@ -1,13 +1,15 @@
 use super::{
     dca_plus_config::{dca_plus_config_from, get_dca_plus_config, DCA_PLUS_CONFIGS},
-    destinations::{destination_from, get_destinations, OldDestination, DESTINATIONS},
+    destinations::{get_destinations, save_destinations, OldDestination},
     pairs::{find_pair, find_pair_by_address},
     triggers::get_trigger,
+    vaults::VAULT_COUNTER,
 };
 use crate::{
     helpers::state::fetch_and_increment_counter,
     types::{
         dca_plus_config::DcaPlusConfig,
+        destination::Destination,
         pair::Pair,
         performance_assessment_strategy::PerformanceAssessmentStrategy,
         price_delta_limit::PriceDeltaLimit,
@@ -18,10 +20,8 @@ use crate::{
     },
 };
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{to_binary, Addr, Coin, Decimal, Env, StdResult, Storage, Timestamp, Uint128};
-use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, Item, UniqueIndex};
-
-const VAULT_COUNTER: Item<u64> = Item::new("vault_counter_v20");
+use cosmwasm_std::{Addr, Coin, Decimal, Env, StdResult, Storage, Timestamp, Uint128};
+use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, UniqueIndex};
 
 #[cw_serde]
 struct OldVault {
@@ -66,30 +66,18 @@ fn old_vault_from(storage: &dyn Storage, vault: &Vault) -> StdResult<OldVault> {
 }
 
 fn vault_from(
-    env: &Env,
     data: &OldVault,
     pair: Pair,
     trigger: Option<TriggerConfiguration>,
-    destinations: &mut Vec<OldDestination>,
+    destinations: Vec<Destination>,
     dca_plus_config: Option<DcaPlusConfig>,
 ) -> Vault {
-    destinations.append(
-        &mut data
-            .destinations
-            .clone()
-            .into_iter()
-            .map(|destination| destination.into())
-            .collect(),
-    );
     Vault {
         id: data.id,
         created_at: data.created_at,
         owner: data.owner.clone(),
         label: data.label.clone(),
-        destinations: destinations
-            .into_iter()
-            .map(|d| destination_from(&d, data.owner.clone(), env.contract.address.clone()))
-            .collect(),
+        destinations,
         status: data.status.clone(),
         balance: data.balance.clone(),
         target_denom: pair.other_denom(data.balance.denom.clone()),
@@ -156,11 +144,7 @@ fn vault_store<'a>() -> IndexedMap<'a, u128, OldVault, VaultIndexes<'a>> {
 
 pub fn save_vault(store: &mut dyn Storage, vault_builder: VaultBuilder) -> StdResult<Vault> {
     let vault = vault_builder.build(fetch_and_increment_counter(store, VAULT_COUNTER)?.into());
-    DESTINATIONS.save(
-        store,
-        vault.id.into(),
-        &to_binary(&vault.destinations).expect("serialised destinations"),
-    )?;
+    save_destinations(store, vault.id, &vault.destinations)?;
     if let Some(dca_plus_config) = dca_plus_config_from(&vault) {
         DCA_PLUS_CONFIGS.save(store, vault.id.into(), &dca_plus_config)?;
     }
@@ -172,11 +156,15 @@ pub fn save_vault(store: &mut dyn Storage, vault_builder: VaultBuilder) -> StdRe
 pub fn get_vault(env: &Env, store: &dyn Storage, vault_id: Uint128) -> StdResult<Vault> {
     let data = vault_store().load(store, vault_id.into())?;
     Ok(vault_from(
-        env,
         &data,
         find_pair_by_address(store, data.pair_address.clone())?,
         get_trigger(store, vault_id)?.map(|t| t.configuration),
-        &mut get_destinations(store, vault_id)?,
+        get_destinations(
+            store,
+            vault_id,
+            data.owner.clone(),
+            env.contract.address.clone(),
+        )?,
         get_dca_plus_config(store, vault_id),
     ))
 }
@@ -209,7 +197,6 @@ pub fn get_vaults_by_address(
             let (_, vault_data) =
                 result.expect(format!("a vault with id after {:?}", start_after).as_str());
             vault_from(
-                env,
                 &vault_data,
                 find_pair_by_address(store, vault_data.pair_address.clone()).expect(
                     format!("a pair for pair address {:?}", vault_data.pair_address).as_str(),
@@ -217,7 +204,13 @@ pub fn get_vaults_by_address(
                 get_trigger(store, vault_data.id.into())
                     .expect(format!("a trigger for vault id {}", vault_data.id).as_str())
                     .map(|trigger| trigger.configuration),
-                &mut get_destinations(store, vault_data.id).expect("vault destinations"),
+                get_destinations(
+                    store,
+                    vault_data.id,
+                    vault_data.owner.clone(),
+                    env.contract.address.clone(),
+                )
+                .expect("vault destinations"),
                 get_dca_plus_config(store, vault_data.id),
             )
         })
@@ -242,7 +235,6 @@ pub fn get_vaults(
             let (_, vault_data) =
                 result.expect(format!("a vault with id after {:?}", start_after).as_str());
             vault_from(
-                env,
                 &vault_data,
                 find_pair_by_address(store, vault_data.pair_address.clone()).expect(
                     format!("a pair for pair address {:?}", vault_data.pair_address).as_str(),
@@ -250,7 +242,13 @@ pub fn get_vaults(
                 get_trigger(store, vault_data.id.into())
                     .expect(format!("a trigger for vault id {}", vault_data.id).as_str())
                     .map(|trigger| trigger.configuration),
-                &mut get_destinations(store, vault_data.id).expect("vault destinations"),
+                get_destinations(
+                    store,
+                    vault_data.id,
+                    vault_data.owner.clone(),
+                    env.contract.address.clone(),
+                )
+                .expect("vault destinations"),
                 get_dca_plus_config(store, vault_data.id),
             )
         })
@@ -258,11 +256,7 @@ pub fn get_vaults(
 }
 
 pub fn update_vault(store: &mut dyn Storage, vault: &Vault) -> StdResult<()> {
-    DESTINATIONS.save(
-        store,
-        vault.id.into(),
-        &to_binary(&vault.destinations).expect("serialised destinations"),
-    )?;
+    save_destinations(store, vault.id, &vault.destinations)?;
     if let Some(dca_plus_config) = dca_plus_config_from(vault) {
         DCA_PLUS_CONFIGS.save(store, vault.id.into(), &dca_plus_config)?;
     }
@@ -280,6 +274,7 @@ mod destination_store_tests {
     use super::*;
     use crate::{
         state::pairs::save_pair,
+        tests::mocks::{DENOM_UDEMO, DENOM_UKUJI},
         types::{destination::Destination, vault::VaultBuilder},
     };
     use cosmwasm_std::{
@@ -298,8 +293,8 @@ mod destination_store_tests {
                 msg: None,
             }],
             VaultStatus::Active,
-            Coin::new(1000u128, "ukuji".to_string()),
-            "demo".to_string(),
+            Coin::new(1000u128, DENOM_UKUJI.to_string()),
+            DENOM_UDEMO.to_string(),
             Uint128::new(100),
             None,
             None,
@@ -307,9 +302,9 @@ mod destination_store_tests {
             TimeInterval::Daily,
             None,
             Decimal::zero(),
-            Coin::new(0, "ukuji".to_string()),
-            Coin::new(0, "demo".to_string()),
-            Coin::new(0, "demo".to_string()),
+            Coin::new(0, DENOM_UKUJI.to_string()),
+            Coin::new(0, DENOM_UDEMO.to_string()),
+            Coin::new(0, DENOM_UDEMO.to_string()),
             None,
             None,
         )

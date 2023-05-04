@@ -243,17 +243,16 @@ pub fn execute_trigger_handler(
 #[cfg(test)]
 mod execute_trigger_tests {
     use super::*;
-    use crate::constants::{ONE, ONE_MICRON, SWAP_FEE_RATE, TEN, TWO_MICRONS};
+    use crate::constants::{ONE, ONE_MICRON, TEN, TWO_MICRONS};
     use crate::handlers::get_events_by_resource_id::get_events_by_resource_id_handler;
     use crate::helpers::fees::{get_delegation_fee_rate, get_swap_fee_rate};
-    use crate::helpers::vault::get_swap_amount;
-    use crate::msg::ExecuteMsg;
+    use crate::helpers::price::FinSimulationResponse;
     use crate::state::config::update_config;
     use crate::state::swap_adjustments::update_swap_adjustment;
     use crate::state::triggers::delete_trigger;
     use crate::state::vaults::get_vault;
-    use crate::tests::helpers::{instantiate_contract, setup_vault};
-    use crate::tests::mocks::{calc_mock_dependencies, ADMIN, DENOM_STAKE, DENOM_UOSMO};
+    use crate::tests::helpers::{instantiate_contract, set_fin_price, setup_vault};
+    use crate::tests::mocks::{calc_mock_dependencies, ADMIN, DENOM_UDEMO, DENOM_UKUJI};
     use crate::types::config::Config;
     use crate::types::event::{Event, EventData, ExecutionSkippedReason};
     use crate::types::performance_assessment_strategy::PerformanceAssessmentStrategy;
@@ -261,12 +260,13 @@ mod execute_trigger_tests {
     use crate::types::swap_adjustment_strategy::{BaseDenom, SwapAdjustmentStrategy};
     use crate::types::trigger::TriggerConfiguration;
     use crate::types::vault::{Vault, VaultStatus};
-    use cosmwasm_std::testing::{mock_env, mock_info};
-    use cosmwasm_std::{to_binary, Coin, Decimal, ReplyOn, StdError, SubMsg, Uint128, WasmMsg};
-    use osmosis_std::types::osmosis::gamm::v2::QuerySpotPriceResponse;
-    use osmosis_std::types::osmosis::poolmanager::v1beta1::{
-        EstimateSwapExactAmountInResponse, MsgSwapExactAmountIn, SwapAmountInRoute,
+    use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use cosmwasm_std::{
+        from_binary, to_binary, Coin, ContractResult, CosmosMsg, Decimal, Decimal256, ReplyOn,
+        SubMsg, SystemResult, Uint128, WasmMsg, WasmQuery,
     };
+    use kujira::fin::{ExecuteMsg as FinExecuteMsg, QueryMsg};
+    use kujira::Asset;
     use std::str::FromStr;
 
     #[test]
@@ -466,7 +466,7 @@ mod execute_trigger_tests {
             data: EventData::DcaVaultExecutionTriggered {
                 base_denom: pair.base_denom,
                 quote_denom: pair.quote_denom,
-                asset_price: Decimal::one() + Decimal::from_str(SWAP_FEE_RATE).unwrap()
+                asset_price: Decimal::one()
             }
         }));
     }
@@ -526,12 +526,12 @@ mod execute_trigger_tests {
             deps.as_mut(),
             env.clone(),
             Vault {
-                deposited_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                escrowed_amount: Coin::new((TEN * Decimal::percent(5)).into(), DENOM_STAKE),
+                deposited_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                escrowed_amount: Coin::new((TEN * Decimal::percent(5)).into(), DENOM_UKUJI),
                 performance_assessment_strategy: Some(
                     PerformanceAssessmentStrategy::CompareToStandardDca {
-                        swapped_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                        received_amount: Coin::new(TEN.into(), DENOM_STAKE),
+                        swapped_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                        received_amount: Coin::new(TEN.into(), DENOM_UKUJI),
                     },
                 ),
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
@@ -551,7 +551,7 @@ mod execute_trigger_tests {
 
     #[test]
     fn with_swap_adjusted_to_zero_should_publish_execution_skipped_event() {
-        let mut deps = calc_mock_dependencies();
+        let mut deps = mock_dependencies();
         let env = mock_env();
         let info = mock_info(ADMIN, &[]);
 
@@ -570,12 +570,7 @@ mod execute_trigger_tests {
             },
         );
 
-        deps.querier.update_stargate(|path, _| match path {
-            "/osmosis.gamm.v2.Query/SpotPrice" => to_binary(&QuerySpotPriceResponse {
-                spot_price: "3".to_string(),
-            }),
-            _ => Err(StdError::generic_err("message not customised")),
-        });
+        set_fin_price(&mut deps, Decimal::percent(300));
 
         execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
 
@@ -596,7 +591,7 @@ mod execute_trigger_tests {
 
     #[test]
     fn with_swap_adjusted_to_zero_should_not_send_swap_message() {
-        let mut deps = calc_mock_dependencies();
+        let mut deps = mock_dependencies();
         let env = mock_env();
         let info = mock_info(ADMIN, &[]);
 
@@ -615,12 +610,7 @@ mod execute_trigger_tests {
             },
         );
 
-        deps.querier.update_stargate(|path, _| match path {
-            "/osmosis.gamm.v2.Query/SpotPrice" => to_binary(&QuerySpotPriceResponse {
-                spot_price: "3".to_string(),
-            }),
-            _ => Err(StdError::generic_err("message not customised")),
-        });
+        set_fin_price(&mut deps, Decimal::percent(300));
 
         let response = execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
 
@@ -639,8 +629,8 @@ mod execute_trigger_tests {
             deps.as_mut(),
             env.clone(),
             Vault {
-                deposited_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                escrowed_amount: Coin::new(0, DENOM_STAKE),
+                deposited_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                escrowed_amount: Coin::new(0, DENOM_UKUJI),
                 performance_assessment_strategy: Some(PerformanceAssessmentStrategy::default()),
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
                 ..Vault::default()
@@ -667,25 +657,25 @@ mod execute_trigger_tests {
 
         let response = execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
 
+        let pair = find_pair(&deps.storage, &vault.denoms()).unwrap();
+
         assert!(response.messages.contains(&SubMsg {
             id: AFTER_SWAP_REPLY_ID,
-            msg: MsgSwapExactAmountIn {
-                sender: env.contract.address.to_string(),
-                token_in: Some(
-                    Coin::new(
-                        (vault.swap_amount * swap_adjustment).into(),
-                        vault.get_swap_denom()
-                    )
-                    .clone()
-                    .into()
-                ),
-                token_out_min_amount: Uint128::one().to_string(),
-                routes: vec![SwapAmountInRoute {
-                    pool_id: 3,
-                    token_out_denom: vault.target_denom,
-                }],
-            }
-            .into(),
+            msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: pair.address.to_string(),
+                msg: to_binary(&FinExecuteMsg::Swap {
+                    belief_price: None,
+                    max_spread: None,
+                    to: None,
+                    offer_asset: None,
+                    callback: None,
+                })
+                .unwrap(),
+                funds: vec![Coin::new(
+                    (vault.swap_amount * swap_adjustment).into(),
+                    vault.get_swap_denom(),
+                )],
+            }),
             gas_limit: None,
             reply_on: ReplyOn::Always,
         }))
@@ -694,7 +684,7 @@ mod execute_trigger_tests {
     #[test]
     fn with_rwa_swap_adjustment_strategy_and_exceeded_slippage_tolerance_should_simulate_skipped_execution(
     ) {
-        let mut deps = calc_mock_dependencies();
+        let mut deps = mock_dependencies();
         let env = mock_env();
         let info = mock_info(ADMIN, &[]);
 
@@ -710,14 +700,16 @@ mod execute_trigger_tests {
             },
         );
 
-        deps.querier.update_stargate(|path, _| match path {
-            "/osmosis.poolmanager.v1beta1.Query/EstimateSwapExactAmountIn" => {
-                to_binary(&EstimateSwapExactAmountInResponse {
-                    token_out_amount: (ONE / TWO_MICRONS).to_string(),
-                })
-            }
-            _ => Err(StdError::generic_err("message not supported")),
-        });
+        set_fin_price(&mut deps, Decimal::percent(200));
+
+        // deps.querier.update_stargate(|path, _| match path {
+        //     "/osmosis.poolmanager.v1beta1.Query/EstimateSwapExactAmountIn" => {
+        //         to_binary(&EstimateSwapExactAmountInResponse {
+        //             token_out_amount: (ONE / TWO_MICRONS).to_string(),
+        //         })
+        //     }
+        //     _ => Err(StdError::generic_err("message not supported")),
+        // });
 
         execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
 
@@ -750,6 +742,15 @@ mod execute_trigger_tests {
             },
         );
 
+        deps.querier.update_wasm(|_| {
+            SystemResult::Ok(ContractResult::Ok(
+                to_binary(&FinSimulationResponse {
+                    return_amount: ONE / TWO_MICRONS,
+                })
+                .unwrap(),
+            ))
+        });
+
         execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
 
         let events = get_events_by_resource_id_handler(deps.as_ref(), vault.id, None, None, None)
@@ -763,7 +764,7 @@ mod execute_trigger_tests {
             block_height: env.block.height,
             data: EventData::SimulatedDcaVaultExecutionSkipped {
                 reason: ExecutionSkippedReason::PriceThresholdExceeded {
-                    price: Decimal::one() + Decimal::from_str(SWAP_FEE_RATE).unwrap()
+                    price: Decimal::percent(200)
                 },
             }
         }));
@@ -782,6 +783,7 @@ mod execute_trigger_tests {
             deps.as_mut(),
             env.clone(),
             Vault {
+                swap_amount: TEN,
                 slippage_tolerance: Some(Decimal::percent(1)),
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
                 performance_assessment_strategy: Some(PerformanceAssessmentStrategy::default()),
@@ -789,13 +791,22 @@ mod execute_trigger_tests {
             },
         );
 
-        deps.querier.update_stargate(|path, _| match path {
-            "/osmosis.poolmanager.v1beta1.Query/EstimateSwapExactAmountIn" => {
-                to_binary(&EstimateSwapExactAmountInResponse {
-                    token_out_amount: (ONE / TWO_MICRONS).to_string(),
-                })
-            }
-            _ => Err(StdError::generic_err("message not supported")),
+        deps.querier.update_wasm(|query| {
+            SystemResult::Ok(ContractResult::Ok(match query {
+                WasmQuery::Smart { msg, .. } => match from_binary(&msg).unwrap() {
+                    QueryMsg::Simulation {
+                        offer_asset: Asset { amount: ONE, .. },
+                    } => to_binary(&FinSimulationResponse { return_amount: ONE }).unwrap(),
+                    QueryMsg::Simulation {
+                        offer_asset: Asset { amount: TEN, .. },
+                    } => to_binary(&FinSimulationResponse {
+                        return_amount: TEN - ONE,
+                    })
+                    .unwrap(),
+                    _ => panic!(),
+                },
+                _ => panic!(),
+            }))
         });
 
         execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
@@ -829,7 +840,7 @@ mod execute_trigger_tests {
             Vault {
                 status: VaultStatus::Inactive,
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
-                balance: Coin::new(TEN.into(), DENOM_UOSMO),
+                balance: Coin::new(TEN.into(), DENOM_UDEMO),
                 performance_assessment_strategy: Some(PerformanceAssessmentStrategy::default()),
                 escrow_level: Decimal::percent(5),
                 ..Vault::default()
@@ -862,7 +873,7 @@ mod execute_trigger_tests {
 
     #[test]
     fn for_inactive_vault_with_finished_performance_assessment_should_disburse_escrow() {
-        let mut deps = calc_mock_dependencies();
+        let mut deps = mock_dependencies();
         let env = mock_env();
         let info = mock_info(ADMIN, &[]);
 
@@ -873,14 +884,14 @@ mod execute_trigger_tests {
             env.clone(),
             Vault {
                 status: VaultStatus::Inactive,
-                balance: Coin::new(0, DENOM_UOSMO),
+                balance: Coin::new(0, DENOM_UDEMO),
                 escrow_level: Decimal::percent(5),
-                deposited_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                escrowed_amount: Coin::new(ONE.into(), DENOM_STAKE),
+                deposited_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                escrowed_amount: Coin::new(ONE.into(), DENOM_UKUJI),
                 performance_assessment_strategy: Some(
                     PerformanceAssessmentStrategy::CompareToStandardDca {
-                        swapped_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                        received_amount: Coin::new(TEN.into(), DENOM_STAKE),
+                        swapped_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                        received_amount: Coin::new(TEN.into(), DENOM_UKUJI),
                     },
                 ),
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
@@ -888,14 +899,16 @@ mod execute_trigger_tests {
             },
         );
 
-        deps.querier.update_stargate(|path, _| match path {
-            "/osmosis.poolmanager.v1beta1.Query/EstimateSwapExactAmountIn" => {
-                to_binary(&EstimateSwapExactAmountInResponse {
-                    token_out_amount: (ONE / TWO_MICRONS).to_string(),
-                })
-            }
-            _ => Err(StdError::generic_err("message not supported")),
-        });
+        set_fin_price(&mut deps, Decimal::percent(200));
+
+        // deps.querier.update_stargate(|path, _| match path {
+        //     "/osmosis.poolmanager.v1beta1.Query/EstimateSwapExactAmountIn" => {
+        //         to_binary(&EstimateSwapExactAmountInResponse {
+        //             token_out_amount: (ONE / TWO_MICRONS).to_string(),
+        //         })
+        //     }
+        //     _ => Err(StdError::generic_err("message not supported")),
+        // });
 
         let response = execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
 
@@ -919,14 +932,14 @@ mod execute_trigger_tests {
             env.clone(),
             Vault {
                 status: VaultStatus::Inactive,
-                balance: Coin::new(0, DENOM_UOSMO),
+                balance: Coin::new(0, DENOM_UDEMO),
                 escrow_level: Decimal::percent(5),
-                deposited_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                escrowed_amount: Coin::new(ONE_MICRON.into(), DENOM_STAKE),
+                deposited_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                escrowed_amount: Coin::new(ONE_MICRON.into(), DENOM_UKUJI),
                 performance_assessment_strategy: Some(
                     PerformanceAssessmentStrategy::CompareToStandardDca {
-                        swapped_amount: Coin::new(ONE.into(), DENOM_UOSMO),
-                        received_amount: Coin::new(ONE.into(), DENOM_STAKE),
+                        swapped_amount: Coin::new(ONE.into(), DENOM_UDEMO),
+                        received_amount: Coin::new(ONE.into(), DENOM_UKUJI),
                     },
                 ),
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
@@ -1035,7 +1048,7 @@ mod execute_trigger_tests {
 
     #[test]
     fn for_inactive_vault_with_active_performance_asssessment_should_create_a_new_trigger() {
-        let mut deps = calc_mock_dependencies();
+        let mut deps = mock_dependencies();
         let env = mock_env();
         let info = mock_info(ADMIN, &[]);
 
@@ -1047,12 +1060,12 @@ mod execute_trigger_tests {
             Vault {
                 status: VaultStatus::Inactive,
                 escrow_level: Decimal::percent(5),
-                deposited_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                escrowed_amount: Coin::new(ONE_MICRON.into(), DENOM_STAKE),
+                deposited_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                escrowed_amount: Coin::new(ONE_MICRON.into(), DENOM_UKUJI),
                 performance_assessment_strategy: Some(
                     PerformanceAssessmentStrategy::CompareToStandardDca {
-                        swapped_amount: Coin::new(ONE.into(), DENOM_UOSMO),
-                        received_amount: Coin::new(ONE.into(), DENOM_STAKE),
+                        swapped_amount: Coin::new(ONE.into(), DENOM_UDEMO),
+                        received_amount: Coin::new(ONE.into(), DENOM_UKUJI),
                     },
                 ),
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
@@ -1060,14 +1073,16 @@ mod execute_trigger_tests {
             },
         );
 
-        deps.querier.update_stargate(|path, _| match path {
-            "/osmosis.poolmanager.v1beta1.Query/EstimateSwapExactAmountIn" => {
-                to_binary(&EstimateSwapExactAmountInResponse {
-                    token_out_amount: (ONE / TWO_MICRONS).to_string(),
-                })
-            }
-            _ => Err(StdError::generic_err("message not supported")),
-        });
+        set_fin_price(&mut deps, Decimal::percent(200));
+
+        // deps.querier.update_stargate(|path, _| match path {
+        //     "/osmosis.poolmanager.v1beta1.Query/EstimateSwapExactAmountIn" => {
+        //         to_binary(&EstimateSwapExactAmountInResponse {
+        //             token_out_amount: (ONE / TWO_MICRONS).to_string(),
+        //         })
+        //     }
+        //     _ => Err(StdError::generic_err("message not supported")),
+        // });
 
         execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
 
@@ -1104,12 +1119,12 @@ mod execute_trigger_tests {
             Vault {
                 status: VaultStatus::Inactive,
                 escrow_level: Decimal::percent(5),
-                deposited_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                escrowed_amount: Coin::new((TEN * Decimal::percent(5)).into(), DENOM_STAKE),
+                deposited_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                escrowed_amount: Coin::new((TEN * Decimal::percent(5)).into(), DENOM_UKUJI),
                 performance_assessment_strategy: Some(
                     PerformanceAssessmentStrategy::CompareToStandardDca {
-                        swapped_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                        received_amount: Coin::new(TEN.into(), DENOM_STAKE),
+                        swapped_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                        received_amount: Coin::new(TEN.into(), DENOM_UKUJI),
                     },
                 ),
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
@@ -1137,25 +1152,25 @@ mod execute_trigger_tests {
 
         let response = execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
 
+        let pair = find_pair(&deps.storage, &vault.denoms()).unwrap();
+
         assert!(response.messages.contains(&SubMsg {
             id: AFTER_SWAP_REPLY_ID,
-            msg: MsgSwapExactAmountIn {
-                sender: env.contract.address.to_string(),
-                token_in: Some(
-                    Coin::new(vault.swap_amount.into(), vault.get_swap_denom())
-                        .clone()
-                        .into()
-                ),
-                token_out_min_amount: Uint128::one().to_string(),
-                routes: vec![SwapAmountInRoute {
-                    pool_id: 3,
-                    token_out_denom: vault.target_denom,
-                }],
-            }
-            .into(),
+            msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: pair.address.to_string(),
+                msg: to_binary(&FinExecuteMsg::Swap {
+                    belief_price: None,
+                    max_spread: None,
+                    to: None,
+                    offer_asset: None,
+                    callback: None,
+                })
+                .unwrap(),
+                funds: vec![Coin::new(vault.swap_amount.into(), vault.get_swap_denom())],
+            }),
             gas_limit: None,
             reply_on: ReplyOn::Always,
-        }))
+        }));
     }
 
     #[test]
@@ -1170,7 +1185,7 @@ mod execute_trigger_tests {
             deps.as_mut(),
             env.clone(),
             Vault {
-                balance: Coin::new((ONE / TWO_MICRONS).into(), DENOM_UOSMO),
+                balance: Coin::new((ONE / TWO_MICRONS).into(), DENOM_UDEMO),
                 swap_amount: ONE,
                 ..Vault::default()
             },
@@ -1178,21 +1193,25 @@ mod execute_trigger_tests {
 
         let response = execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
 
+        let pair = find_pair(&deps.storage, &vault.denoms()).unwrap();
+
         assert!(response.messages.contains(&SubMsg {
             id: AFTER_SWAP_REPLY_ID,
-            msg: MsgSwapExactAmountIn {
-                sender: env.contract.address.to_string(),
-                token_in: Some(vault.balance.clone().into()),
-                token_out_min_amount: Uint128::one().to_string(),
-                routes: vec![SwapAmountInRoute {
-                    pool_id: 3,
-                    token_out_denom: vault.target_denom,
-                }],
-            }
-            .into(),
+            msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: pair.address.to_string(),
+                msg: to_binary(&FinExecuteMsg::Swap {
+                    belief_price: None,
+                    max_spread: None,
+                    to: None,
+                    offer_asset: None,
+                    callback: None,
+                })
+                .unwrap(),
+                funds: vec![vault.balance.clone()],
+            }),
             gas_limit: None,
             reply_on: ReplyOn::Always,
-        }))
+        }));
     }
 
     #[test]
@@ -1212,35 +1231,30 @@ mod execute_trigger_tests {
             },
         );
 
-        let belief_price = Decimal::one() + Decimal::from_str(SWAP_FEE_RATE).unwrap();
-
         let response = execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
 
-        let token_out_min_amount = get_swap_amount(&deps.as_ref(), &env, &vault)
-            .unwrap()
-            .amount
-            * (Decimal::one() / belief_price)
-            * (Decimal::one() - vault.slippage_tolerance.unwrap());
+        let pair = find_pair(&deps.storage, &vault.denoms()).unwrap();
 
         assert!(response.messages.contains(&SubMsg {
             id: AFTER_SWAP_REPLY_ID,
-            msg: MsgSwapExactAmountIn {
-                sender: env.contract.address.to_string(),
-                token_in: Some(
-                    get_swap_amount(&deps.as_ref(), &env, &vault)
-                        .unwrap()
-                        .into()
-                ),
-                token_out_min_amount: token_out_min_amount.to_string(),
-                routes: vec![SwapAmountInRoute {
-                    pool_id: 3,
-                    token_out_denom: vault.target_denom,
-                }],
-            }
-            .into(),
+            msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: pair.address.to_string(),
+                msg: to_binary(&FinExecuteMsg::Swap {
+                    belief_price: Some(Decimal256::one()),
+                    max_spread: Some(
+                        Decimal256::from_str(&vault.slippage_tolerance.unwrap().to_string())
+                            .unwrap()
+                    ),
+                    to: None,
+                    offer_asset: None,
+                    callback: None,
+                })
+                .unwrap(),
+                funds: vec![Coin::new(vault.swap_amount.into(), vault.get_swap_denom(),)],
+            }),
             gas_limit: None,
             reply_on: ReplyOn::Always,
-        }))
+        }));
     }
 
     #[test]
@@ -1274,7 +1288,7 @@ mod execute_trigger_tests {
             block_height: env.block.height,
             data: EventData::DcaVaultExecutionSkipped {
                 reason: ExecutionSkippedReason::PriceThresholdExceeded {
-                    price: Decimal::one() + Decimal::from_str(SWAP_FEE_RATE).unwrap()
+                    price: Decimal::one()
                 }
             }
         }));
@@ -1339,24 +1353,24 @@ mod execute_trigger_tests {
 
         let response = execute_trigger_handler(deps.as_mut(), env.clone(), vault.id).unwrap();
 
+        let pair = find_pair(&deps.storage, &vault.denoms()).unwrap();
+
         assert!(response.messages.contains(&SubMsg {
             id: AFTER_SWAP_REPLY_ID,
-            msg: MsgSwapExactAmountIn {
-                sender: env.contract.address.to_string(),
-                token_in: Some(
-                    Coin::new(vault.swap_amount.into(), vault.get_swap_denom())
-                        .clone()
-                        .into()
-                ),
-                token_out_min_amount: Uint128::one().to_string(),
-                routes: vec![SwapAmountInRoute {
-                    pool_id: 3,
-                    token_out_denom: vault.target_denom,
-                }],
-            }
-            .into(),
+            msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: pair.address.to_string(),
+                msg: to_binary(&FinExecuteMsg::Swap {
+                    belief_price: None,
+                    max_spread: None,
+                    to: None,
+                    offer_asset: None,
+                    callback: None,
+                })
+                .unwrap(),
+                funds: vec![Coin::new(vault.swap_amount.into(), vault.get_swap_denom(),)],
+            }),
             gas_limit: None,
             reply_on: ReplyOn::Always,
-        }))
+        }));
     }
 }

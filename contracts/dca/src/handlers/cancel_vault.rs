@@ -70,7 +70,7 @@ mod cancel_vault_tests {
     use crate::handlers::get_vault::get_vault_handler;
     use crate::state::disburse_escrow_tasks::get_disburse_escrow_tasks;
     use crate::tests::helpers::{instantiate_contract, setup_vault};
-    use crate::tests::mocks::{ADMIN, DENOM_UOSMO};
+    use crate::tests::mocks::{ADMIN, DENOM_UDEMO};
     use crate::types::event::{EventBuilder, EventData};
     use crate::types::vault::{Vault, VaultStatus};
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
@@ -224,7 +224,7 @@ mod cancel_vault_tests {
             deps.as_mut(),
             env.clone(),
             Vault {
-                escrowed_amount: Coin::new(ONE.into(), DENOM_UOSMO.to_string()),
+                escrowed_amount: Coin::new(ONE.into(), DENOM_UDEMO.to_string()),
                 ..Vault::default()
             },
         );

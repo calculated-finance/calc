@@ -267,24 +267,21 @@ pub fn simulate_standard_dca_execution(
 
 #[cfg(test)]
 mod get_swap_amount_tests {
-    use std::str::FromStr;
-
     use super::*;
     use crate::{
         constants::{ONE, SWAP_FEE_RATE, TWO_MICRONS},
         state::swap_adjustments::update_swap_adjustment,
         tests::{
-            helpers::{instantiate_contract, setup_vault},
-            mocks::{calc_mock_dependencies, ADMIN, DENOM_UOSMO},
+            helpers::{instantiate_contract, set_fin_price, setup_vault},
+            mocks::{ADMIN, DENOM_UDEMO},
         },
         types::swap_adjustment_strategy::SwapAdjustmentStrategy,
     };
     use cosmwasm_std::{
         coin,
         testing::{mock_dependencies, mock_env, mock_info},
-        to_binary, StdError,
     };
-    use osmosis_std::types::osmosis::gamm::v2::QuerySpotPriceResponse;
+    use std::str::FromStr;
 
     #[test]
     fn should_return_full_balance_when_vault_has_low_funds() {
@@ -292,7 +289,7 @@ mod get_swap_amount_tests {
         let env = mock_env();
 
         let vault = Vault {
-            balance: Coin::new(ONE.into(), DENOM_UOSMO),
+            balance: Coin::new(ONE.into(), DENOM_UDEMO),
             swap_amount: ONE + ONE,
             ..Vault::default()
         };
@@ -359,7 +356,7 @@ mod get_swap_amount_tests {
             deps.as_mut(),
             env.clone(),
             Vault {
-                balance: coin((ONE / TWO_MICRONS).into(), DENOM_UOSMO),
+                balance: coin((ONE / TWO_MICRONS).into(), DENOM_UDEMO),
                 swap_amount: ONE,
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
                 ..Vault::default()
@@ -393,7 +390,7 @@ mod get_swap_amount_tests {
             deps.as_mut(),
             env.clone(),
             Vault {
-                balance: coin((ONE / TWO_MICRONS).into(), DENOM_UOSMO),
+                balance: coin((ONE / TWO_MICRONS).into(), DENOM_UDEMO),
                 swap_amount: ONE,
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
                 ..Vault::default()
@@ -427,7 +424,7 @@ mod get_swap_amount_tests {
             deps.as_mut(),
             env.clone(),
             Vault {
-                balance: coin((ONE * Decimal::percent(150)).into(), DENOM_UOSMO),
+                balance: coin((ONE * Decimal::percent(150)).into(), DENOM_UDEMO),
                 swap_amount: ONE,
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
                 ..Vault::default()
@@ -454,7 +451,7 @@ mod get_swap_amount_tests {
 
     #[test]
     fn ws_should_return_decreased_swap_amount_when_price_increased() {
-        let mut deps = calc_mock_dependencies();
+        let mut deps = mock_dependencies();
         let env = mock_env();
 
         instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &[]));
@@ -466,6 +463,7 @@ mod get_swap_amount_tests {
             deps.as_mut(),
             env.clone(),
             Vault {
+                swap_amount: base_receive_amount,
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::WeightedScale {
                     base_receive_amount,
                     multiplier,
@@ -479,12 +477,7 @@ mod get_swap_amount_tests {
         let current_price =
             Decimal::percent(120) * (Decimal::one() + Decimal::from_str(SWAP_FEE_RATE).unwrap());
 
-        deps.querier.update_stargate(|path, _| match path {
-            "/osmosis.gamm.v2.Query/SpotPrice" => to_binary(&QuerySpotPriceResponse {
-                spot_price: "1.2".to_string(),
-            }),
-            _ => Err(StdError::generic_err("message not customised")),
-        });
+        set_fin_price(&mut deps, current_price);
 
         let swap_amount = get_swap_amount(&deps.as_ref(), &env, &vault).unwrap();
 
@@ -492,12 +485,13 @@ mod get_swap_amount_tests {
             swap_amount.amount,
             vault.swap_amount
                 * (Decimal::one() - (current_price.abs_diff(base_price) / base_price) * multiplier)
+                - Uint128::one() // rounding
         );
     }
 
     #[test]
     fn ws_should_not_return_decreased_swap_amount_when_price_increased_but_increase_only_is_true() {
-        let mut deps = calc_mock_dependencies();
+        let mut deps = mock_dependencies();
         let env = mock_env();
 
         instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &[]));
@@ -518,12 +512,7 @@ mod get_swap_amount_tests {
             },
         );
 
-        deps.querier.update_stargate(|path, _| match path {
-            "/osmosis.gamm.v2.Query/SpotPrice" => to_binary(&QuerySpotPriceResponse {
-                spot_price: "1.2".to_string(),
-            }),
-            _ => Err(StdError::generic_err("message not customised")),
-        });
+        set_fin_price(&mut deps, Decimal::percent(120));
 
         let swap_amount = get_swap_amount(&deps.as_ref(), &env, &vault).unwrap();
 
@@ -532,7 +521,7 @@ mod get_swap_amount_tests {
 
     #[test]
     fn ws_should_return_increased_swap_amount_when_price_decreased() {
-        let mut deps = calc_mock_dependencies();
+        let mut deps = mock_dependencies();
         let env = mock_env();
 
         instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &[]));
@@ -557,12 +546,7 @@ mod get_swap_amount_tests {
         let current_price =
             Decimal::percent(70) * (Decimal::one() + Decimal::from_str(SWAP_FEE_RATE).unwrap());
 
-        deps.querier.update_stargate(|path, _| match path {
-            "/osmosis.gamm.v2.Query/SpotPrice" => to_binary(&QuerySpotPriceResponse {
-                spot_price: "0.7".to_string(),
-            }),
-            _ => Err(StdError::generic_err("message not customised")),
-        });
+        set_fin_price(&mut deps, current_price);
 
         let swap_amount = get_swap_amount(&deps.as_ref(), &env, &vault).unwrap();
 
@@ -570,12 +554,13 @@ mod get_swap_amount_tests {
             swap_amount.amount,
             vault.swap_amount
                 * (Decimal::one() + (current_price.abs_diff(base_price) / base_price) * multiplier)
+                - Uint128::one() // rounding
         );
     }
 
     #[test]
     fn ws_should_return_swap_amount_zero_when_price_increased_enough() {
-        let mut deps = calc_mock_dependencies();
+        let mut deps = mock_dependencies();
         let env = mock_env();
 
         instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &[]));
@@ -596,12 +581,7 @@ mod get_swap_amount_tests {
             },
         );
 
-        deps.querier.update_stargate(|path, _| match path {
-            "/osmosis.gamm.v2.Query/SpotPrice" => to_binary(&QuerySpotPriceResponse {
-                spot_price: "2.0".to_string(),
-            }),
-            _ => Err(StdError::generic_err("message not customised")),
-        });
+        set_fin_price(&mut deps, Decimal::percent(200));
 
         let swap_amount = get_swap_amount(&deps.as_ref(), &env, &vault).unwrap();
 
@@ -930,8 +910,9 @@ mod get_performance_factor_tests {
 #[cfg(test)]
 mod simulate_standard_dca_execution_tests {
     use super::simulate_standard_dca_execution;
+    use crate::helpers::price::FinSimulationResponse;
     use crate::tests::helpers::setup_vault;
-    use crate::tests::mocks::DENOM_STAKE;
+    use crate::tests::mocks::DENOM_UKUJI;
     use crate::types::event::{Event, EventData, ExecutionSkippedReason};
     use crate::types::performance_assessment_strategy::PerformanceAssessmentStrategy;
     use crate::{
@@ -940,15 +921,19 @@ mod simulate_standard_dca_execution_tests {
         helpers::fees::{get_delegation_fee_rate, get_swap_fee_rate},
         tests::{
             helpers::instantiate_contract,
-            mocks::{calc_mock_dependencies, ADMIN, DENOM_UOSMO},
+            mocks::{calc_mock_dependencies, ADMIN, DENOM_UDEMO},
         },
         types::{swap_adjustment_strategy::SwapAdjustmentStrategy, vault::Vault},
+    };
+    use cosmwasm_std::{
+        from_binary, to_binary, Coin, ContractResult, Response, SystemResult, WasmQuery,
     };
     use cosmwasm_std::{
         testing::{mock_dependencies, mock_env, mock_info},
         Decimal,
     };
-    use cosmwasm_std::{Coin, Response};
+    use kujira::fin::QueryMsg;
+    use kujira::Asset;
 
     #[test]
     fn for_standard_dca_vault_succeeds() {
@@ -987,8 +972,8 @@ mod simulate_standard_dca_execution_tests {
         let vault = Vault {
             performance_assessment_strategy: Some(
                 PerformanceAssessmentStrategy::CompareToStandardDca {
-                    swapped_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                    received_amount: Coin::new(TEN.into(), DENOM_STAKE),
+                    swapped_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                    received_amount: Coin::new(TEN.into(), DENOM_UKUJI),
                 },
             ),
             ..Vault::default()
@@ -1065,7 +1050,7 @@ mod simulate_standard_dca_execution_tests {
 
     #[test]
     fn publishes_simulated_execution_skipped_event_when_slippage_exceeded() {
-        let deps = calc_mock_dependencies();
+        let mut deps = calc_mock_dependencies();
         let mut storage_deps = mock_dependencies();
         let env = mock_env();
 
@@ -1083,6 +1068,24 @@ mod simulate_standard_dca_execution_tests {
                 ..Vault::default()
             },
         );
+
+        deps.querier.update_wasm(|query| {
+            SystemResult::Ok(ContractResult::Ok(match query {
+                WasmQuery::Smart { msg, .. } => match from_binary(&msg).unwrap() {
+                    QueryMsg::Simulation {
+                        offer_asset: Asset { amount: ONE, .. },
+                    } => to_binary(&FinSimulationResponse { return_amount: ONE }).unwrap(),
+                    QueryMsg::Simulation {
+                        offer_asset: Asset { amount: TEN, .. },
+                    } => to_binary(&FinSimulationResponse {
+                        return_amount: TEN - ONE,
+                    })
+                    .unwrap(),
+                    _ => panic!(),
+                },
+                _ => panic!(),
+            }))
+        });
 
         simulate_standard_dca_execution(
             Response::new(),

@@ -66,7 +66,7 @@ mod z_delegate_tests {
     use super::*;
     use crate::{
         helpers::authz::create_authz_exec_message,
-        tests::mocks::{DENOM_STAKE, DENOM_UOSMO, USER, VALIDATOR},
+        tests::mocks::{DENOM_UDEMO, DENOM_UKUJI, USER, VALIDATOR},
     };
     use cosmos_sdk_proto::cosmos::base::v1beta1::Coin as ProtoCoin;
     use cosmos_sdk_proto::cosmos::staking::v1beta1::MsgDelegate;
@@ -98,7 +98,7 @@ mod z_delegate_tests {
     fn with_more_than_one_asset_fails() {
         let info = mock_info(
             USER,
-            &[Coin::new(100, DENOM_STAKE), Coin::new(100, DENOM_UOSMO)],
+            &[Coin::new(100, DENOM_UKUJI), Coin::new(100, DENOM_UDEMO)],
         );
 
         let response = z_delegate_handler(
@@ -118,7 +118,7 @@ mod z_delegate_tests {
 
     #[test]
     fn sends_bank_message() {
-        let amount_to_delegate = Coin::new(100, DENOM_UOSMO);
+        let amount_to_delegate = Coin::new(100, DENOM_UKUJI);
         let info = mock_info(USER, &[amount_to_delegate.clone()]);
 
         let delegator_address = Addr::unchecked(info.sender.clone());
@@ -140,7 +140,7 @@ mod z_delegate_tests {
 
     #[test]
     fn sends_delegate_message() {
-        let amount_to_delegate = Coin::new(100, DENOM_UOSMO);
+        let amount_to_delegate = Coin::new(100, DENOM_UKUJI);
         let info = mock_info(USER, &[amount_to_delegate.clone()]);
 
         let delegator_address = Addr::unchecked(info.sender.clone());

@@ -88,8 +88,8 @@ mod disburse_escrow_tests {
             vaults::get_vault,
         },
         tests::{
-            helpers::{instantiate_contract, setup_vault},
-            mocks::{calc_mock_dependencies, ADMIN, DENOM_STAKE, DENOM_UOSMO},
+            helpers::{instantiate_contract, set_fin_price, setup_vault},
+            mocks::{calc_mock_dependencies, ADMIN, DENOM_UDEMO, DENOM_UKUJI},
         },
         types::{
             destination::Destination,
@@ -100,10 +100,9 @@ mod disburse_escrow_tests {
         },
     };
     use cosmwasm_std::{
-        testing::{mock_env, mock_info},
-        to_binary, BankMsg, Coin, Decimal, StdError, SubMsg, Uint128,
+        testing::{mock_dependencies, mock_env, mock_info},
+        BankMsg, Coin, Decimal, SubMsg,
     };
-    use osmosis_std::types::osmosis::gamm::v2::QuerySpotPriceResponse;
 
     #[test]
     fn when_escrowed_balance_is_empty_sends_no_messages() {
@@ -117,7 +116,7 @@ mod disburse_escrow_tests {
             deps.as_mut(),
             env.clone(),
             Vault {
-                escrowed_amount: Coin::new(0, DENOM_STAKE),
+                escrowed_amount: Coin::new(0, DENOM_UKUJI),
                 ..Vault::default()
             },
         );
@@ -141,12 +140,12 @@ mod disburse_escrow_tests {
             Vault {
                 status: VaultStatus::Inactive,
                 destinations: vec![Destination::default()],
-                deposited_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                escrowed_amount: Coin::new((ONE * Decimal::percent(5)).into(), DENOM_STAKE),
+                deposited_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                escrowed_amount: Coin::new((ONE * Decimal::percent(5)).into(), DENOM_UKUJI),
                 performance_assessment_strategy: Some(
                     PerformanceAssessmentStrategy::CompareToStandardDca {
-                        swapped_amount: Coin::new(ONE.into(), DENOM_UOSMO),
-                        received_amount: Coin::new(ONE.into(), DENOM_STAKE),
+                        swapped_amount: Coin::new(ONE.into(), DENOM_UDEMO),
+                        received_amount: Coin::new(ONE.into(), DENOM_UKUJI),
                     },
                 ),
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
@@ -164,7 +163,7 @@ mod disburse_escrow_tests {
 
     #[test]
     fn when_large_fee_is_owed_returns_entire_escrow_to_fee_collector() {
-        let mut deps = calc_mock_dependencies();
+        let mut deps = mock_dependencies();
         let env = mock_env();
         let info = mock_info(ADMIN, &[]);
 
@@ -175,14 +174,14 @@ mod disburse_escrow_tests {
             env.clone(),
             Vault {
                 status: VaultStatus::Inactive,
-                swapped_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                received_amount: Coin::new(TEN.into(), DENOM_STAKE),
-                deposited_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                escrowed_amount: Coin::new((ONE * Decimal::percent(5)).into(), DENOM_STAKE),
+                swapped_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                received_amount: Coin::new(TEN.into(), DENOM_UKUJI),
+                deposited_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                escrowed_amount: Coin::new((ONE * Decimal::percent(5)).into(), DENOM_UKUJI),
                 performance_assessment_strategy: Some(
                     PerformanceAssessmentStrategy::CompareToStandardDca {
-                        swapped_amount: Coin::new(ONE.into(), DENOM_UOSMO),
-                        received_amount: Coin::new(ONE.into(), DENOM_STAKE),
+                        swapped_amount: Coin::new(ONE.into(), DENOM_UDEMO),
+                        received_amount: Coin::new(ONE.into(), DENOM_UKUJI),
                     },
                 ),
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
@@ -190,12 +189,7 @@ mod disburse_escrow_tests {
             },
         );
 
-        deps.querier.update_stargate(|path, _| match path {
-            "/osmosis.gamm.v2.Query/SpotPrice" => to_binary(&QuerySpotPriceResponse {
-                spot_price: "10.0".to_string(),
-            }),
-            _ => Err(StdError::generic_err("message not customised")),
-        });
+        set_fin_price(&mut deps, Decimal::percent(1000));
 
         let config = get_config(&deps.storage).unwrap();
 
@@ -220,14 +214,14 @@ mod disburse_escrow_tests {
             env.clone(),
             Vault {
                 status: VaultStatus::Inactive,
-                swapped_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                received_amount: Coin::new((TEN + ONE).into(), DENOM_STAKE),
-                deposited_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                escrowed_amount: Coin::new(((TEN + ONE) * Decimal::percent(5)).into(), DENOM_STAKE),
+                swapped_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                received_amount: Coin::new((TEN + ONE).into(), DENOM_UKUJI),
+                deposited_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                escrowed_amount: Coin::new(((TEN + ONE) * Decimal::percent(5)).into(), DENOM_UKUJI),
                 performance_assessment_strategy: Some(
                     PerformanceAssessmentStrategy::CompareToStandardDca {
-                        swapped_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                        received_amount: Coin::new(TEN.into(), DENOM_STAKE),
+                        swapped_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                        received_amount: Coin::new(TEN.into(), DENOM_UKUJI),
                     },
                 ),
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
@@ -241,10 +235,7 @@ mod disburse_escrow_tests {
             .unwrap()
             .events;
 
-        let performance_fee = Coin::new(
-            (ONE * Decimal::percent(20) - Uint128::one()).into(),
-            vault.target_denom,
-        );
+        let performance_fee = Coin::new((ONE * Decimal::percent(20)).into(), vault.target_denom);
 
         assert!(events.contains(&Event {
             id: 1,
@@ -256,7 +247,7 @@ mod disburse_escrow_tests {
                     (subtract(&vault.escrowed_amount, &performance_fee).unwrap())
                         .amount
                         .into(),
-                    DENOM_STAKE
+                    DENOM_UKUJI
                 ),
                 performance_fee,
             }
@@ -276,14 +267,14 @@ mod disburse_escrow_tests {
             env.clone(),
             Vault {
                 status: VaultStatus::Inactive,
-                swapped_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                received_amount: Coin::new((TEN + ONE).into(), DENOM_STAKE),
-                deposited_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                escrowed_amount: Coin::new(((TEN + ONE) * Decimal::percent(5)).into(), DENOM_STAKE),
+                swapped_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                received_amount: Coin::new((TEN + ONE).into(), DENOM_UKUJI),
+                deposited_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                escrowed_amount: Coin::new(((TEN + ONE) * Decimal::percent(5)).into(), DENOM_UKUJI),
                 performance_assessment_strategy: Some(
                     PerformanceAssessmentStrategy::CompareToStandardDca {
-                        swapped_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                        received_amount: Coin::new(TEN.into(), DENOM_STAKE),
+                        swapped_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                        received_amount: Coin::new(TEN.into(), DENOM_UKUJI),
                     },
                 ),
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
@@ -311,14 +302,14 @@ mod disburse_escrow_tests {
             env.clone(),
             Vault {
                 status: VaultStatus::Inactive,
-                swapped_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                received_amount: Coin::new((TEN + ONE).into(), DENOM_STAKE),
-                deposited_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                escrowed_amount: Coin::new(((TEN + ONE) * Decimal::percent(5)).into(), DENOM_STAKE),
+                swapped_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                received_amount: Coin::new((TEN + ONE).into(), DENOM_UKUJI),
+                deposited_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                escrowed_amount: Coin::new(((TEN + ONE) * Decimal::percent(5)).into(), DENOM_UKUJI),
                 performance_assessment_strategy: Some(
                     PerformanceAssessmentStrategy::CompareToStandardDca {
-                        swapped_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                        received_amount: Coin::new(TEN.into(), DENOM_STAKE),
+                        swapped_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                        received_amount: Coin::new(TEN.into(), DENOM_UKUJI),
                     },
                 ),
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),

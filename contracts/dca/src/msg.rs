@@ -5,7 +5,6 @@ use crate::types::fee_collector::FeeCollector;
 use crate::types::pair::Pair;
 use crate::types::performance_assessment_strategy::PerformanceAssessmentStrategyParams;
 use crate::types::position_type::PositionType;
-use crate::types::post_execution_action::LockableDuration;
 use crate::types::swap_adjustment_strategy::{
     SwapAdjustmentStrategy, SwapAdjustmentStrategyParams,
 };
@@ -90,12 +89,6 @@ pub enum ExecuteMsg {
     ZDelegate {
         delegator_address: Addr,
         validator_address: Addr,
-    },
-    ZProvideLiquidity {
-        provider_address: Addr,
-        pool_id: u64,
-        duration: LockableDuration,
-        slippage_tolerance: Option<Decimal>,
     },
 }
 

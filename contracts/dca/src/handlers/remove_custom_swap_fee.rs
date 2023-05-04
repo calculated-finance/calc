@@ -28,7 +28,7 @@ mod remove_custom_swap_fee_tests {
         },
         tests::{
             helpers::instantiate_contract,
-            mocks::{ADMIN, DENOM_STAKE},
+            mocks::{ADMIN, DENOM_UKUJI},
         },
     };
     use cosmwasm_std::{
@@ -44,7 +44,7 @@ mod remove_custom_swap_fee_tests {
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
 
-        let denom = DENOM_STAKE.to_string();
+        let denom = DENOM_UKUJI.to_string();
 
         create_custom_swap_fee_handler(
             deps.as_mut(),

@@ -21,14 +21,37 @@ pub struct OldDestination {
     pub action: PostExecutionAction,
 }
 
-pub const DESTINATIONS: Map<u128, Binary> = Map::new("destinations_v20");
+const DESTINATIONS: Map<u128, Binary> = Map::new("destinations_v20");
 
-pub fn get_destinations(store: &dyn Storage, vault_id: Uint128) -> StdResult<Vec<OldDestination>> {
-    let destinations = DESTINATIONS.may_load(store, vault_id.into())?;
-    match destinations {
-        Some(destinations) => Ok(from_binary(&destinations)?),
-        None => Ok(vec![]),
-    }
+pub fn get_destinations(
+    store: &dyn Storage,
+    vault_id: Uint128,
+    owner: Addr,
+    contract_address: Addr,
+) -> StdResult<Vec<Destination>> {
+    let old_destinations = DESTINATIONS.may_load(store, vault_id.into())?;
+
+    Ok(if let Some(old_destinations) = old_destinations {
+        from_binary::<Vec<OldDestination>>(&old_destinations)?
+            .iter()
+            .map(|d| destination_from(d, owner.clone(), contract_address.clone()))
+            .collect::<Vec<Destination>>()
+    } else {
+        vec![]
+    })
+}
+
+pub fn save_destinations(
+    store: &mut dyn Storage,
+    vault_id: Uint128,
+    destinations: &Vec<Destination>,
+) -> StdResult<()> {
+    let old_destinations = destinations
+        .into_iter()
+        .map(|d| old_destination_from(d.clone()))
+        .collect::<Vec<OldDestination>>();
+    DESTINATIONS.save(store, vault_id.into(), &to_binary(&old_destinations)?)?;
+    Ok(())
 }
 
 pub fn destination_from(

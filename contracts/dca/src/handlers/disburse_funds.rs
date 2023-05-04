@@ -154,7 +154,7 @@ mod disburse_funds_tests {
                 instantiate_contract, instantiate_contract_with_multiple_fee_collectors,
                 setup_vault,
             },
-            mocks::{ADMIN, DENOM_STAKE, DENOM_UOSMO},
+            mocks::{ADMIN, DENOM_UDEMO, DENOM_UKUJI},
         },
         types::{
             destination::Destination,
@@ -856,7 +856,7 @@ mod disburse_funds_tests {
         let mut deps = mock_dependencies();
         let env = mock_env();
 
-        let balance = Coin::new(TWO_MICRONS.into(), DENOM_UOSMO);
+        let balance = Coin::new(TWO_MICRONS.into(), DENOM_UDEMO);
 
         let vault = setup_vault(
             deps.as_mut(),
@@ -1186,7 +1186,7 @@ mod disburse_funds_tests {
             deps.as_mut(),
             env.clone(),
             Vault {
-                balance: Coin::new(ONE.into(), DENOM_UOSMO),
+                balance: Coin::new(ONE.into(), DENOM_UDEMO),
                 swap_amount: ONE,
                 ..Vault::default()
             },
@@ -1234,7 +1234,7 @@ mod disburse_funds_tests {
             deps.as_mut(),
             env.clone(),
             Vault {
-                balance: Coin::new(ONE.into(), DENOM_UOSMO),
+                balance: Coin::new(ONE.into(), DENOM_UDEMO),
                 swap_amount: ONE,
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
                 performance_assessment_strategy: Some(PerformanceAssessmentStrategy::default()),
@@ -1292,7 +1292,7 @@ mod disburse_funds_tests {
             deps.as_mut(),
             env.clone(),
             Vault {
-                balance: Coin::new(49999, DENOM_UOSMO),
+                balance: Coin::new(49999, DENOM_UDEMO),
                 swap_amount: ONE,
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
                 performance_assessment_strategy: Some(PerformanceAssessmentStrategy::default()),
@@ -1342,14 +1342,14 @@ mod disburse_funds_tests {
             deps.as_mut(),
             env.clone(),
             Vault {
-                balance: Coin::new(0, DENOM_UOSMO),
+                balance: Coin::new(0, DENOM_UDEMO),
                 status: VaultStatus::Inactive,
-                deposited_amount: Coin::new(ONE.into(), DENOM_UOSMO),
-                escrowed_amount: Coin::new((ONE * Decimal::percent(5)).into(), DENOM_STAKE),
+                deposited_amount: Coin::new(ONE.into(), DENOM_UDEMO),
+                escrowed_amount: Coin::new((ONE * Decimal::percent(5)).into(), DENOM_UKUJI),
                 performance_assessment_strategy: Some(
                     PerformanceAssessmentStrategy::CompareToStandardDca {
-                        swapped_amount: Coin::new(ONE.into(), DENOM_UOSMO),
-                        received_amount: Coin::new(ONE.into(), DENOM_STAKE),
+                        swapped_amount: Coin::new(ONE.into(), DENOM_UDEMO),
+                        received_amount: Coin::new(ONE.into(), DENOM_UKUJI),
                     },
                 ),
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
@@ -1402,14 +1402,14 @@ mod disburse_funds_tests {
             deps.as_mut(),
             env.clone(),
             Vault {
-                balance: Coin::new(0, DENOM_UOSMO),
+                balance: Coin::new(0, DENOM_UDEMO),
                 status: VaultStatus::Inactive,
-                deposited_amount: Coin::new(ONE.into(), DENOM_UOSMO),
-                escrowed_amount: Coin::new((ONE * Decimal::percent(5)).into(), DENOM_STAKE),
+                deposited_amount: Coin::new(ONE.into(), DENOM_UDEMO),
+                escrowed_amount: Coin::new((ONE * Decimal::percent(5)).into(), DENOM_UKUJI),
                 performance_assessment_strategy: Some(
                     PerformanceAssessmentStrategy::CompareToStandardDca {
-                        swapped_amount: Coin::new(ONE.into(), DENOM_UOSMO),
-                        received_amount: Coin::new(ONE.into(), DENOM_STAKE),
+                        swapped_amount: Coin::new(ONE.into(), DENOM_UDEMO),
+                        received_amount: Coin::new(ONE.into(), DENOM_UKUJI),
                     },
                 ),
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
@@ -1459,17 +1459,17 @@ mod disburse_funds_tests {
             deps.as_mut(),
             env.clone(),
             Vault {
-                balance: Coin::new(0, DENOM_UOSMO),
+                balance: Coin::new(0, DENOM_UDEMO),
                 status: VaultStatus::Inactive,
-                deposited_amount: Coin::new(ONE.into(), DENOM_UOSMO),
+                deposited_amount: Coin::new(ONE.into(), DENOM_UDEMO),
                 escrowed_amount: Coin::new(
                     (ONE / TWO_MICRONS * Decimal::percent(5)).into(),
-                    DENOM_STAKE,
+                    DENOM_UKUJI,
                 ),
                 performance_assessment_strategy: Some(
                     PerformanceAssessmentStrategy::CompareToStandardDca {
-                        swapped_amount: Coin::new((ONE / TWO_MICRONS).into(), DENOM_UOSMO),
-                        received_amount: Coin::new((ONE / TWO_MICRONS).into(), DENOM_STAKE),
+                        swapped_amount: Coin::new((ONE / TWO_MICRONS).into(), DENOM_UDEMO),
+                        received_amount: Coin::new((ONE / TWO_MICRONS).into(), DENOM_UKUJI),
                     },
                 ),
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),

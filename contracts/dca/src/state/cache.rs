@@ -1,8 +1,6 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Coin, Uint128};
+use cosmwasm_std::{Coin, Uint128};
 use cw_storage_plus::Item;
-
-use crate::types::post_execution_action::LockableDuration;
 
 #[cw_serde]
 pub struct VaultCache {
@@ -18,13 +16,3 @@ pub struct SwapCache {
 }
 
 pub const SWAP_CACHE: Item<SwapCache> = Item::new("swap_cache_v8");
-
-#[cw_serde]
-pub struct ProvideLiquidityCache {
-    pub provider_address: Addr,
-    pub pool_id: u64,
-    pub duration: LockableDuration,
-}
-
-pub const PROVIDE_LIQUIDITY_CACHE: Item<ProvideLiquidityCache> =
-    Item::new("provide_liquidity_cache_v8");

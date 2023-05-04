@@ -40,14 +40,14 @@ mod get_vault_performance_tests {
         constants::{ONE, TEN},
         tests::{
             helpers::setup_vault,
-            mocks::{calc_mock_dependencies, DENOM_STAKE, DENOM_UOSMO},
+            mocks::{calc_mock_dependencies, DENOM_UDEMO, DENOM_UKUJI},
         },
         types::{
             performance_assessment_strategy::PerformanceAssessmentStrategy,
             swap_adjustment_strategy::SwapAdjustmentStrategy, vault::Vault,
         },
     };
-    use cosmwasm_std::{testing::mock_env, Coin, Decimal};
+    use cosmwasm_std::{testing::mock_env, Coin, Decimal, Uint128};
 
     #[test]
     fn if_vault_has_no_performance_assessment_strategy_fails() {
@@ -72,17 +72,17 @@ mod get_vault_performance_tests {
         let standard_received_amount = TEN - ONE;
 
         let performance_assessment_strategy = PerformanceAssessmentStrategy::CompareToStandardDca {
-            swapped_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-            received_amount: Coin::new(standard_received_amount.into(), DENOM_STAKE),
+            swapped_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+            received_amount: Coin::new(standard_received_amount.into(), DENOM_UKUJI),
         };
 
         let vault = setup_vault(
             deps.as_mut(),
             env,
             Vault {
-                swapped_amount: Coin::new(TEN.into(), DENOM_STAKE),
-                received_amount: Coin::new(TEN.into(), DENOM_STAKE),
-                escrowed_amount: Coin::new(TEN.into(), DENOM_STAKE),
+                swapped_amount: Coin::new(TEN.into(), DENOM_UKUJI),
+                received_amount: Coin::new(TEN.into(), DENOM_UKUJI),
+                escrowed_amount: Coin::new(TEN.into(), DENOM_UKUJI),
                 swap_adjustment_strategy: Some(SwapAdjustmentStrategy::default()),
                 performance_assessment_strategy: Some(performance_assessment_strategy.clone()),
                 escrow_level: Decimal::percent(5),
@@ -95,10 +95,11 @@ mod get_vault_performance_tests {
         assert_eq!(
             response.fee,
             Coin::new(
-                ((standard_received_amount * response.factor - standard_received_amount)
+                (((standard_received_amount * response.factor - standard_received_amount)
                     * Decimal::percent(20))
+                    + Uint128::one()) // rounding
                 .into(),
-                DENOM_STAKE
+                DENOM_UKUJI
             )
         );
     }

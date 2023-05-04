@@ -342,7 +342,7 @@ pub fn assert_validator_is_valid(
 }
 
 pub fn assert_denom_is_bond_denom(denom: String) -> Result<(), ContractError> {
-    if denom != *"uosmo" {
+    if denom != *"ukuji" {
         return Err(ContractError::CustomError {
             val: format!("{} is not the bond denomination", denom),
         });

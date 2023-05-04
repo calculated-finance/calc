@@ -39,7 +39,7 @@ mod create_pair_tests {
         state::pairs::find_pair,
         tests::{
             helpers::instantiate_contract,
-            mocks::{calc_mock_dependencies, ADMIN, DENOM_STAKE, DENOM_UOSMO},
+            mocks::{calc_mock_dependencies, ADMIN, DENOM_UDEMO, DENOM_UKUJI},
         },
     };
     use cosmwasm_std::{
@@ -57,16 +57,16 @@ mod create_pair_tests {
 
         let create_pair_execute_message = ExecuteMsg::CreatePair {
             address: Addr::unchecked("pair"),
-            base_denom: DENOM_UOSMO.to_string(),
-            quote_denom: DENOM_STAKE.to_string(),
+            base_denom: DENOM_UDEMO.to_string(),
+            quote_denom: DENOM_UKUJI.to_string(),
         };
 
         execute(deps.as_mut(), env, info, create_pair_execute_message).unwrap();
 
         let pair = &get_pairs_handler(deps.as_ref()).unwrap().pairs[0];
 
-        assert_eq!(pair.base_denom, DENOM_UOSMO.to_string());
-        assert_eq!(pair.quote_denom, DENOM_STAKE.to_string());
+        assert_eq!(pair.base_denom, DENOM_UDEMO.to_string());
+        assert_eq!(pair.quote_denom, DENOM_UKUJI.to_string());
         assert_eq!(pair.address, Addr::unchecked("pair"));
     }
 
@@ -79,14 +79,14 @@ mod create_pair_tests {
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
 
         let original_message = ExecuteMsg::CreatePair {
-            base_denom: DENOM_UOSMO.to_string(),
-            quote_denom: DENOM_STAKE.to_string(),
+            base_denom: DENOM_UDEMO.to_string(),
+            quote_denom: DENOM_UKUJI.to_string(),
             address: Addr::unchecked("pair-1"),
         };
 
         let message = ExecuteMsg::CreatePair {
-            base_denom: DENOM_UOSMO.to_string(),
-            quote_denom: DENOM_STAKE.to_string(),
+            base_denom: DENOM_UDEMO.to_string(),
+            quote_denom: DENOM_UKUJI.to_string(),
             address: Addr::unchecked("pair-2"),
         };
 
@@ -102,7 +102,7 @@ mod create_pair_tests {
 
         let original_pair = find_pair(
             deps.as_ref().storage,
-            &[DENOM_UOSMO.to_string(), DENOM_STAKE.to_string()],
+            &[DENOM_UDEMO.to_string(), DENOM_UKUJI.to_string()],
         )
         .unwrap();
 
@@ -110,11 +110,11 @@ mod create_pair_tests {
 
         let pair = find_pair(
             deps.as_ref().storage,
-            &[DENOM_UOSMO.to_string(), DENOM_STAKE.to_string()],
+            &[DENOM_UDEMO.to_string(), DENOM_UKUJI.to_string()],
         )
         .unwrap();
 
-        assert_eq!(original_pair.address, Addr::unchecked("pair-2"));
+        assert_eq!(original_pair.address, Addr::unchecked("pair-1"));
         assert_eq!(pair.address, Addr::unchecked("pair-2"));
     }
 

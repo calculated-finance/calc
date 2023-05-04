@@ -206,7 +206,7 @@ impl VaultBuilder {
 mod should_not_continue_tests {
     use crate::{
         constants::{ONE, TEN},
-        tests::mocks::DENOM_UOSMO,
+        tests::mocks::DENOM_UDEMO,
         types::{
             performance_assessment_strategy::PerformanceAssessmentStrategy,
             vault::{Vault, VaultStatus},
@@ -245,11 +245,11 @@ mod should_not_continue_tests {
     fn when_dca_vault_is_inactive_and_standard_dca_is_active_is_false() {
         let vault = Vault {
             status: VaultStatus::Inactive,
-            deposited_amount: Coin::new(TEN.into(), DENOM_UOSMO),
+            deposited_amount: Coin::new(TEN.into(), DENOM_UDEMO),
             performance_assessment_strategy: Some(
                 PerformanceAssessmentStrategy::CompareToStandardDca {
-                    swapped_amount: Coin::new((TEN - ONE).into(), DENOM_UOSMO),
-                    received_amount: Coin::new((TEN - ONE).into(), DENOM_UOSMO),
+                    swapped_amount: Coin::new((TEN - ONE).into(), DENOM_UDEMO),
+                    received_amount: Coin::new((TEN - ONE).into(), DENOM_UDEMO),
                 },
             ),
             ..Default::default()
@@ -262,11 +262,11 @@ mod should_not_continue_tests {
     fn when_dca_vault_is_inactive_and_standard_dca_is_inactive_is_true() {
         let vault = Vault {
             status: VaultStatus::Inactive,
-            deposited_amount: Coin::new(TEN.into(), DENOM_UOSMO),
+            deposited_amount: Coin::new(TEN.into(), DENOM_UDEMO),
             performance_assessment_strategy: Some(
                 PerformanceAssessmentStrategy::CompareToStandardDca {
-                    swapped_amount: Coin::new(TEN.into(), DENOM_UOSMO),
-                    received_amount: Coin::new(TEN.into(), DENOM_UOSMO),
+                    swapped_amount: Coin::new(TEN.into(), DENOM_UDEMO),
+                    received_amount: Coin::new(TEN.into(), DENOM_UDEMO),
                 },
             ),
             ..Default::default()
@@ -281,7 +281,7 @@ mod get_expected_execution_completed_date_tests {
     use super::Vault;
     use crate::{
         constants::{ONE, TEN},
-        tests::mocks::DENOM_UOSMO,
+        tests::mocks::DENOM_UDEMO,
         types::{
             performance_assessment_strategy::PerformanceAssessmentStrategy, vault::VaultStatus,
         },
@@ -292,7 +292,7 @@ mod get_expected_execution_completed_date_tests {
     fn expected_execution_end_date_is_now_when_vault_is_empty() {
         let env = mock_env();
         let vault = Vault {
-            balance: Coin::new(0, DENOM_UOSMO),
+            balance: Coin::new(0, DENOM_UDEMO),
             ..Vault::default()
         };
 
@@ -318,12 +318,12 @@ mod get_expected_execution_completed_date_tests {
         let env = mock_env();
         let vault = Vault {
             status: VaultStatus::Inactive,
-            balance: Coin::new(ONE.into(), DENOM_UOSMO),
+            balance: Coin::new(ONE.into(), DENOM_UDEMO),
             swap_amount: ONE,
             performance_assessment_strategy: Some(
                 PerformanceAssessmentStrategy::CompareToStandardDca {
-                    swapped_amount: Coin::new(ONE.into(), DENOM_UOSMO),
-                    received_amount: Coin::new(ONE.into(), DENOM_UOSMO),
+                    swapped_amount: Coin::new(ONE.into(), DENOM_UDEMO),
+                    received_amount: Coin::new(ONE.into(), DENOM_UDEMO),
                 },
             ),
             ..Vault::default()
@@ -339,12 +339,12 @@ mod get_expected_execution_completed_date_tests {
     fn expected_execution_end_date_is_at_end_of_performance_assessment() {
         let env = mock_env();
         let vault = Vault {
-            balance: Coin::new((TEN - ONE).into(), DENOM_UOSMO),
+            balance: Coin::new((TEN - ONE).into(), DENOM_UDEMO),
             swap_amount: ONE,
             performance_assessment_strategy: Some(
                 PerformanceAssessmentStrategy::CompareToStandardDca {
-                    swapped_amount: Coin::new((ONE + ONE + ONE).into(), DENOM_UOSMO),
-                    received_amount: Coin::new((ONE + ONE + ONE).into(), DENOM_UOSMO),
+                    swapped_amount: Coin::new((ONE + ONE + ONE).into(), DENOM_UDEMO),
+                    received_amount: Coin::new((ONE + ONE + ONE).into(), DENOM_UDEMO),
                 },
             ),
             ..Vault::default()

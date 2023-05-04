@@ -126,7 +126,7 @@ mod dposit_tests {
     use crate::msg::ExecuteMsg;
     use crate::state::config::{get_config, update_config};
     use crate::tests::helpers::{instantiate_contract, setup_vault};
-    use crate::tests::mocks::{ADMIN, DENOM_STAKE, DENOM_UOSMO, USER};
+    use crate::tests::mocks::{ADMIN, DENOM_UDEMO, DENOM_UKUJI, USER};
     use crate::types::config::Config;
     use crate::types::event::{EventBuilder, EventData};
     use crate::types::position_type::PositionType;
@@ -139,7 +139,7 @@ mod dposit_tests {
     fn updates_the_vault_balance() {
         let mut deps = mock_dependencies();
         let env = mock_env();
-        let deposit_amount = Coin::new(TEN.into(), DENOM_UOSMO);
+        let deposit_amount = Coin::new(TEN.into(), DENOM_UDEMO);
         let info = mock_info(ADMIN, &[deposit_amount.clone()]);
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
@@ -148,7 +148,7 @@ mod dposit_tests {
             deps.as_mut(),
             env.clone(),
             Vault {
-                balance: Coin::new(0, DENOM_UOSMO),
+                balance: Coin::new(0, DENOM_UDEMO),
                 ..Vault::default()
             },
         );
@@ -168,7 +168,7 @@ mod dposit_tests {
     fn publishes_deposit_event() {
         let mut deps = mock_dependencies();
         let env = mock_env();
-        let deposit_amount = Coin::new(TEN.into(), DENOM_UOSMO);
+        let deposit_amount = Coin::new(TEN.into(), DENOM_UDEMO);
         let info = mock_info(ADMIN, &[deposit_amount.clone()]);
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
@@ -197,7 +197,7 @@ mod dposit_tests {
     fn updates_inactive_vault_to_active() {
         let mut deps = mock_dependencies();
         let env = mock_env();
-        let deposit_amount = Coin::new(TEN.into(), DENOM_UOSMO);
+        let deposit_amount = Coin::new(TEN.into(), DENOM_UDEMO);
         let info = mock_info(ADMIN, &[deposit_amount.clone()]);
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
@@ -223,7 +223,7 @@ mod dposit_tests {
     fn leaves_scheduled_vault_scheduled() {
         let mut deps = mock_dependencies();
         let env = mock_env();
-        let deposit_amount = Coin::new(TEN.into(), DENOM_UOSMO);
+        let deposit_amount = Coin::new(TEN.into(), DENOM_UDEMO);
         let info = mock_info(ADMIN, &[deposit_amount.clone()]);
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
@@ -249,7 +249,7 @@ mod dposit_tests {
     fn leaves_active_vault_active() {
         let mut deps = mock_dependencies();
         let env = mock_env();
-        let deposit_amount = Coin::new(TEN.into(), DENOM_UOSMO);
+        let deposit_amount = Coin::new(TEN.into(), DENOM_UDEMO);
         let info = mock_info(ADMIN, &[deposit_amount.clone()]);
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
@@ -268,7 +268,7 @@ mod dposit_tests {
     fn executes_trigger_for_reactivated_vault() {
         let mut deps = mock_dependencies();
         let env = mock_env();
-        let deposit_amount = Coin::new(TEN.into(), DENOM_UOSMO);
+        let deposit_amount = Coin::new(TEN.into(), DENOM_UDEMO);
         let info = mock_info(ADMIN, &[deposit_amount.clone()]);
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
@@ -300,7 +300,7 @@ mod dposit_tests {
     fn does_not_execute_trigger_for_active_vault() {
         let mut deps = mock_dependencies();
         let env = mock_env();
-        let deposit_amount = Coin::new(TEN.into(), DENOM_UOSMO);
+        let deposit_amount = Coin::new(TEN.into(), DENOM_UDEMO);
         let info = mock_info(ADMIN, &[deposit_amount.clone()]);
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
@@ -323,7 +323,7 @@ mod dposit_tests {
     fn does_not_execute_trigger_for_scheduled_vault() {
         let mut deps = mock_dependencies();
         let env = mock_env();
-        let deposit_amount = Coin::new(TEN.into(), DENOM_UOSMO);
+        let deposit_amount = Coin::new(TEN.into(), DENOM_UDEMO);
         let info = mock_info(ADMIN, &[deposit_amount.clone()]);
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
@@ -353,7 +353,7 @@ mod dposit_tests {
     fn for_cancelled_vault_should_fail() {
         let mut deps = mock_dependencies();
         let env = mock_env();
-        let deposit_amount = Coin::new(TEN.into(), DENOM_UOSMO);
+        let deposit_amount = Coin::new(TEN.into(), DENOM_UDEMO);
         let info = mock_info(ADMIN, &[deposit_amount.clone()]);
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
@@ -377,7 +377,7 @@ mod dposit_tests {
     fn with_incorrect_owner_address_should_fail() {
         let mut deps = mock_dependencies();
         let env = mock_env();
-        let deposit_amount = Coin::new(TEN.into(), DENOM_UOSMO);
+        let deposit_amount = Coin::new(TEN.into(), DENOM_UDEMO);
         let info = mock_info(ADMIN, &[deposit_amount.clone()]);
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
@@ -410,7 +410,7 @@ mod dposit_tests {
     fn with_incorrect_denom_should_fail() {
         let mut deps = mock_dependencies();
         let env = mock_env();
-        let deposit_amount = Coin::new(TEN.into(), DENOM_STAKE);
+        let deposit_amount = Coin::new(TEN.into(), DENOM_UKUJI);
         let info = mock_info(ADMIN, &[deposit_amount.clone()]);
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
@@ -428,7 +428,7 @@ mod dposit_tests {
 
         assert_eq!(
             err.to_string(),
-            "Error: received asset with denom stake, but needed uosmo"
+            "Error: received asset with denom ukuji, but needed udemo"
         );
     }
 
@@ -436,10 +436,10 @@ mod dposit_tests {
     fn with_multiple_assets_should_fail() {
         let mut deps = mock_dependencies();
         let env = mock_env();
-        let deposit_amount = Coin::new(TEN.into(), DENOM_STAKE);
+        let deposit_amount = Coin::new(TEN.into(), DENOM_UKUJI);
         let info = mock_info(
             ADMIN,
-            &[deposit_amount.clone(), Coin::new(TEN.into(), DENOM_UOSMO)],
+            &[deposit_amount.clone(), Coin::new(TEN.into(), DENOM_UDEMO)],
         );
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
@@ -459,10 +459,10 @@ mod dposit_tests {
     fn when_contract_is_paused_should_fail() {
         let mut deps = mock_dependencies();
         let env = mock_env();
-        let deposit_amount = Coin::new(TEN.into(), DENOM_STAKE);
+        let deposit_amount = Coin::new(TEN.into(), DENOM_UKUJI);
         let info = mock_info(
             ADMIN,
-            &[deposit_amount.clone(), Coin::new(TEN.into(), DENOM_UOSMO)],
+            &[deposit_amount.clone(), Coin::new(TEN.into(), DENOM_UDEMO)],
         );
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
@@ -490,7 +490,7 @@ mod dposit_tests {
     fn with_risk_weighted_average_strategy_should_update_model_id() {
         let mut deps = mock_dependencies();
         let env = mock_env();
-        let deposit_amount = Coin::new(ONE_HUNDRED.into(), DENOM_UOSMO);
+        let deposit_amount = Coin::new(ONE_HUNDRED.into(), DENOM_UDEMO);
         let info = mock_info(ADMIN, &[deposit_amount.clone()]);
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
@@ -536,7 +536,7 @@ mod dposit_tests {
     fn should_update_total_deposit() {
         let mut deps = mock_dependencies();
         let env = mock_env();
-        let deposit_amount = Coin::new(ONE_HUNDRED.into(), DENOM_UOSMO);
+        let deposit_amount = Coin::new(ONE_HUNDRED.into(), DENOM_UDEMO);
         let info = mock_info(ADMIN, &[deposit_amount.clone()]);
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
