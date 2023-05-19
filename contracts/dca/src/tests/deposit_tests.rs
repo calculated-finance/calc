@@ -2,7 +2,7 @@ use crate::constants::{ONE, ONE_HUNDRED, ONE_THOUSAND, TEN};
 use crate::handlers::deposit::deposit_handler;
 use crate::msg::{ExecuteMsg, QueryMsg, VaultResponse};
 use crate::tests::mocks::{fin_contract_unfilled_limit_order, MockApp, ADMIN, DENOM_UKUJI, USER};
-use crate::types::vault::Vault;
+use crate::types::old_vault::Vault;
 use base::events::event::EventBuilder;
 use base::vaults::vault::VaultStatus;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};

@@ -18,7 +18,7 @@ use crate::state::pairs::PAIRS;
 use crate::state::triggers::save_trigger;
 use crate::state::vaults::{save_vault, update_vault};
 use crate::types::dca_plus_config::DcaPlusConfig;
-use crate::types::vault::Vault;
+use crate::types::old_vault::Vault;
 use crate::types::vault_builder::VaultBuilder;
 use base::events::event::{EventBuilder, EventData};
 use base::triggers::trigger::{TimeInterval, Trigger, TriggerConfiguration};

@@ -1,6 +1,6 @@
 use super::{pairs::PAIRS, state_helpers::fetch_and_increment_counter, triggers::get_trigger};
 use crate::types::{
-    dca_plus_config::DcaPlusConfig, price_delta_limit::PriceDeltaLimit, vault::Vault,
+    dca_plus_config::DcaPlusConfig, old_vault::Vault, price_delta_limit::PriceDeltaLimit,
     vault_builder::VaultBuilder,
 };
 use base::{

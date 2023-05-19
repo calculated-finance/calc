@@ -7,7 +7,7 @@ use crate::tests::mocks::{
     fin_contract_unfilled_limit_order, MockApp, ADMIN, DENOM_UKUJI, DENOM_UTEST, USER,
 };
 use crate::types::dca_plus_config::DcaPlusConfig;
-use crate::types::vault::Vault;
+use crate::types::old_vault::Vault;
 use base::events::event::{EventBuilder, EventData};
 use base::helpers::math_helpers::checked_mul;
 use base::helpers::message_helpers::get_flat_map_for_event_type;

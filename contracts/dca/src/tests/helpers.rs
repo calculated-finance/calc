@@ -11,7 +11,7 @@ use crate::{
         triggers::save_trigger,
         vaults::{save_vault, update_vault},
     },
-    types::{dca_plus_config::DcaPlusConfig, vault::Vault, vault_builder::VaultBuilder},
+    types::{dca_plus_config::DcaPlusConfig, old_vault::Vault, vault_builder::VaultBuilder},
 };
 use base::{
     events::event::Event,

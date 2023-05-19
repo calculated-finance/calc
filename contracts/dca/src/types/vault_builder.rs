@@ -1,4 +1,4 @@
-use super::{dca_plus_config::DcaPlusConfig, vault::Vault};
+use super::{dca_plus_config::DcaPlusConfig, old_vault::Vault};
 use base::{
     pair::Pair,
     triggers::trigger::TimeInterval,

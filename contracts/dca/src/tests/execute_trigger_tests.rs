@@ -4,7 +4,7 @@ use super::mocks::{
     fin_contract_high_swap_price, fin_contract_partially_filled_order,
 };
 use crate::constants::{
-    FIN_TAKER_FEE, ONE, ONE_DECIMAL, ONE_HUNDRED, ONE_THOUSAND, TEN, TEN_MICRONS, TWO_MICRONS,
+    ONE, ONE_DECIMAL, ONE_HUNDRED, ONE_THOUSAND, SWAP_FEE_RATE, TEN, TEN_MICRONS, TWO_MICRONS,
 };
 use crate::contract::AFTER_FIN_SWAP_REPLY_ID;
 use crate::handlers::execute_trigger::execute_trigger_handler;
@@ -21,7 +21,7 @@ use crate::tests::mocks::{
     fin_contract_unfilled_limit_order, MockApp, ADMIN, DENOM_UKUJI, DENOM_UTEST, USER,
 };
 use crate::types::dca_plus_config::DcaPlusConfig;
-use crate::types::vault::Vault;
+use crate::types::old_vault::Vault;
 use base::events::event::{Event, EventBuilder, EventData, ExecutionSkippedReason};
 use base::helpers::math_helpers::checked_mul;
 use base::helpers::time_helpers::get_next_target_time;
@@ -2421,7 +2421,7 @@ fn for_active_vault_with_dca_plus_updates_standard_performance_data() {
 
     let fee_rate = config.swap_fee_percent
         + config.delegation_fee_percent
-        + Decimal::from_str(FIN_TAKER_FEE).unwrap();
+        + Decimal::from_str(SWAP_FEE_RATE).unwrap();
 
     assert_eq!(
         updated_dca_plus_config.standard_dca_swapped_amount.amount,
@@ -2466,7 +2466,7 @@ fn for_active_vault_with_dca_plus_publishes_execution_simulated_event() {
 
     let fee_rate = config.swap_fee_percent
         + config.delegation_fee_percent
-        + Decimal::from_str(FIN_TAKER_FEE).unwrap();
+        + Decimal::from_str(SWAP_FEE_RATE).unwrap();
 
     let received_before_fee = dca_plus_config.standard_dca_received_amount.amount
         * (Decimal::one() / (Decimal::one() - fee_rate))
@@ -2916,7 +2916,7 @@ fn for_inactive_vault_with_dca_plus_updates_standard_performance_data() {
 
     let fee_rate = config.swap_fee_percent
         + config.delegation_fee_percent
-        + Decimal::from_str(FIN_TAKER_FEE).unwrap();
+        + Decimal::from_str(SWAP_FEE_RATE).unwrap();
 
     assert_eq!(
         updated_dca_plus_config.standard_dca_swapped_amount.amount,

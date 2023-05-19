@@ -1,7 +1,7 @@
 use crate::{
     contract::{AFTER_BANK_SWAP_REPLY_ID, AFTER_Z_DELEGATION_REPLY_ID},
     state::config::get_config,
-    types::vault::Vault,
+    types::old_vault::Vault,
 };
 use base::{helpers::math_helpers::checked_mul, vaults::vault::PostExecutionAction};
 use cosmwasm_std::{

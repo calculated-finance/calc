@@ -34,9 +34,9 @@ dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
- "cw-multi-test 0.15.1",
- "cw-storage-plus 0.15.1",
- "cw2 0.15.1",
+ "cw-multi-test",
+ "cw-storage-plus",
+ "cw2",
  "enum-as-inner",
  "schemars",
  "serde",
@@ -273,29 +273,10 @@ dependencies = [
  "anyhow",
  "cosmwasm-std",
  "cosmwasm-storage",
- "cw-storage-plus 0.15.1",
+ "cw-storage-plus",
  "cw-utils 0.15.1",
  "derivative",
  "itertools",
- "prost 0.9.0",
- "schemars",
- "serde",
- "thiserror",
-]
-
-[[package]]
-name = "cw-multi-test"
-version = "0.16.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c2eb84554bbfa6b66736abcd6a9bfdf237ee0ecb83910f746dff7f799093c80a"
-dependencies = [
- "anyhow",
- "cosmwasm-std",
- "cw-storage-plus 1.0.1",
- "cw-utils 1.0.1",
- "derivative",
- "itertools",
- "k256",
  "prost 0.9.0",
  "schemars",
  "serde",
@@ -307,17 +288,6 @@ name = "cw-storage-plus"
 version = "0.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dc6cf70ef7686e2da9ad7b067c5942cd3e88dd9453f7af42f54557f8af300fb0"
-dependencies = [
- "cosmwasm-std",
- "schemars",
- "serde",
-]
-
-[[package]]
-name = "cw-storage-plus"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "053a5083c258acd68386734f428a5a171b29f7d733151ae83090c6fcc9417ffa"
 dependencies = [
  "cosmwasm-std",
  "schemars",
@@ -344,22 +314,7 @@ checksum = "0ae0b69fa7679de78825b4edeeec045066aa2b2c4b6e063d80042e565bb4da5c"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
- "cw2 0.15.1",
- "schemars",
- "semver",
- "serde",
- "thiserror",
-]
-
-[[package]]
-name = "cw-utils"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c80e93d1deccb8588db03945016a292c3c631e6325d349ebb35d2db6f4f946f7"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw2 1.0.1",
+ "cw2",
  "schemars",
  "semver",
  "serde",
@@ -374,20 +329,7 @@ checksum = "5abb8ecea72e09afff830252963cb60faf945ce6cef2c20a43814516082653da"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
- "cw-storage-plus 0.15.1",
- "schemars",
- "serde",
-]
-
-[[package]]
-name = "cw2"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fb70cee2cf0b4a8ff7253e6bc6647107905e8eb37208f87d54f67810faa62f8"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus 1.0.1",
+ "cw-storage-plus",
  "schemars",
  "serde",
 ]
@@ -409,12 +351,13 @@ name = "dca"
 version = "1.5.2"
 dependencies = [
  "base",
+ "chrono",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
- "cw-multi-test 0.15.1",
- "cw-storage-plus 0.15.1",
- "cw2 0.15.1",
+ "cw-multi-test",
+ "cw-storage-plus",
+ "cw2",
  "cw20",
  "fin-helpers",
  "kujira",
@@ -555,20 +498,14 @@ dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
- "cw-multi-test 0.15.1",
- "cw-storage-plus 0.15.1",
- "cw2 0.15.1",
+ "cw-multi-test",
+ "cw-storage-plus",
+ "cw2",
  "kujira",
  "schemars",
  "serde",
  "thiserror",
 ]
-
-[[package]]
-name = "fixedbitset"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ce7134b9999ecaf8bcd65542e436736ef32ddca1b3e06094cb6ec5755203b80"
 
 [[package]]
 name = "flex-error"
@@ -584,60 +521,6 @@ name = "forward_ref"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c8cbd1169bd7b4a0a20d92b9af7a7e0422888bd38a6f5ec29c1fd8c1558a272e"
-
-[[package]]
-name = "fund-core"
-version = "0.1.0"
-dependencies = [
- "base",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-multi-test 0.16.2",
- "cw-storage-plus 1.0.1",
- "cw2 1.0.1",
- "schemars",
- "serde",
- "swap",
- "thiserror",
-]
-
-[[package]]
-name = "fund-factory"
-version = "0.1.0"
-dependencies = [
- "base",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-multi-test 0.16.2",
- "cw-storage-plus 1.0.1",
- "cw2 1.0.1",
- "fund-core",
- "fund-router",
- "schemars",
- "serde",
- "thiserror",
-]
-
-[[package]]
-name = "fund-router"
-version = "0.1.0"
-dependencies = [
- "base",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-multi-test 0.16.2",
- "cw-storage-plus 1.0.1",
- "cw2 1.0.1",
- "cw20",
- "fund-core",
- "kujira",
- "schemars",
- "serde",
- "thiserror",
-]
 
 [[package]]
 name = "generic-array"
@@ -699,16 +582,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c49c37c09c17a53d937dfbb742eb3a961d65a994e6bcdcf37e7399d0cc8ab5e"
 dependencies = [
  "digest 0.10.6",
-]
-
-[[package]]
-name = "indexmap"
-version = "1.9.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1885e79c1fc4b10f0e172c475f458b7f7b93061064d98c3293e98c5ba0c8b399"
-dependencies = [
- "autocfg",
- "hashbrown",
 ]
 
 [[package]]
@@ -816,18 +689,6 @@ name = "paste"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d01a5bd0424d00070b0098dd17ebca6f961a959dead1dbcbbbc1d1cd8d3deeba"
-
-[[package]]
-name = "petgraph"
-version = "0.6.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4dd7d28ee937e54fe3080c91faa1c3a46c06de6252988a7f4592ba2310ef22a4"
-dependencies = [
- "fixedbitset",
- "indexmap",
- "serde",
- "serde_derive",
-]
 
 [[package]]
 name = "pkcs8"
@@ -1128,9 +989,9 @@ dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
- "cw-multi-test 0.15.1",
- "cw-storage-plus 0.15.1",
- "cw2 0.15.1",
+ "cw-multi-test",
+ "cw-storage-plus",
+ "cw2",
  "schemars",
  "serde",
  "thiserror",
@@ -1155,25 +1016,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7dcb1ed7b8330c5eed5441052651dd7a12c75e2ed88f2ec024ae1fa3a5e59945"
 dependencies = [
  "zeroize",
-]
-
-[[package]]
-name = "swap"
-version = "0.1.0"
-dependencies = [
- "base",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-multi-test 0.16.2",
- "cw-storage-plus 1.0.1",
- "cw2 1.0.1",
- "fin-helpers",
- "kujira",
- "petgraph",
- "schemars",
- "serde",
- "thiserror",
 ]
 
 [[package]]

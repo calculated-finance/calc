@@ -1,6 +1,6 @@
 use crate::state::config::{Config, FeeCollector};
 use crate::state::data_fixes::DataFix;
-use crate::types::vault::Vault;
+use crate::types::old_vault::Vault;
 use base::events::event::Event;
 use base::pair::Pair;
 use base::triggers::trigger::TimeInterval;

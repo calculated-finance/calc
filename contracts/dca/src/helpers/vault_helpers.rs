@@ -1,8 +1,8 @@
 use super::fee_helpers::{get_delegation_fee_rate, get_swap_fee_rate};
 use crate::{
-    constants::FIN_TAKER_FEE,
+    constants::SWAP_FEE_RATE,
     state::{events::create_event, swap_adjustments::get_swap_adjustment, vaults::update_vault},
-    types::{dca_plus_config::DcaPlusConfig, vault::Vault},
+    types::{dca_plus_config::DcaPlusConfig, old_vault::Vault},
 };
 use base::{
     events::event::{EventBuilder, EventData, ExecutionSkippedReason},
@@ -175,7 +175,7 @@ pub fn simulate_standard_dca_execution(
 
             let fee_rate = get_swap_fee_rate(storage, &vault)?
                 + get_delegation_fee_rate(storage, &vault)?
-                + Decimal::from_str(FIN_TAKER_FEE)?; // fin taker fee - TODO: remove once we can get this from the pair contracts
+                + Decimal::from_str(SWAP_FEE_RATE)?; // fin taker fee - TODO: remove once we can get this from the pair contracts
 
             let received_amount_before_fee = swap_amount * (Decimal::one() / actual_price);
             let fee_amount = received_amount_before_fee * fee_rate;
@@ -641,7 +641,7 @@ mod get_dca_plus_model_id_tests {
 mod get_dca_plus_performance_factor_tests {
     use crate::{
         helpers::vault_helpers::get_dca_plus_performance_factor,
-        types::{dca_plus_config::DcaPlusConfig, vault::Vault},
+        types::{dca_plus_config::DcaPlusConfig, old_vault::Vault},
     };
     use base::{pair::Pair, triggers::trigger::TimeInterval, vaults::vault::VaultStatus};
     use cosmwasm_std::{Addr, Coin, Decimal, Timestamp, Uint128};
@@ -837,14 +837,14 @@ mod get_dca_plus_performance_factor_tests {
 mod simulate_standard_dca_execution_tests {
     use super::simulate_standard_dca_execution;
     use crate::{
-        constants::{FIN_TAKER_FEE, ONE, ONE_DECIMAL, TEN, TEN_MICRONS},
+        constants::{ONE, ONE_DECIMAL, SWAP_FEE_RATE, TEN, TEN_MICRONS},
         handlers::get_events_by_resource_id::get_events_by_resource_id,
         helpers::fee_helpers::{get_delegation_fee_rate, get_swap_fee_rate},
         tests::{
             helpers::{instantiate_contract, set_fin_price},
             mocks::{ADMIN, DENOM_UKUJI},
         },
-        types::{dca_plus_config::DcaPlusConfig, vault::Vault},
+        types::{dca_plus_config::DcaPlusConfig, old_vault::Vault},
     };
     use base::events::event::{Event, EventData, ExecutionSkippedReason};
     use cosmwasm_std::{
@@ -1035,7 +1035,7 @@ mod simulate_standard_dca_execution_tests {
 
         let fee_rate = get_swap_fee_rate(storage_deps.as_ref().storage, &vault).unwrap()
             + get_delegation_fee_rate(storage_deps.as_ref().storage, &vault).unwrap()
-            + Decimal::from_str(FIN_TAKER_FEE).unwrap();
+            + Decimal::from_str(SWAP_FEE_RATE).unwrap();
 
         let received_amount = vault.swap_amount * Decimal::one();
         let fee_amount = received_amount * fee_rate;
@@ -1080,7 +1080,7 @@ mod simulate_standard_dca_execution_tests {
 
         let fee_rate = get_swap_fee_rate(storage_deps.as_ref().storage, &vault).unwrap()
             + get_delegation_fee_rate(storage_deps.as_ref().storage, &vault).unwrap()
-            + Decimal::from_str(FIN_TAKER_FEE).unwrap();
+            + Decimal::from_str(SWAP_FEE_RATE).unwrap();
 
         let received_amount_before_fee = vault.swap_amount * Decimal::one();
         let fee_amount = received_amount_before_fee * fee_rate;

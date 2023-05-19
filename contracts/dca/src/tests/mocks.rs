@@ -3,7 +3,7 @@ use crate::contract::reply;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, VaultResponse};
 use crate::state::config::FeeCollector;
 
-use crate::types::vault::Vault;
+use crate::types::old_vault::Vault;
 use base::helpers::message_helpers::get_flat_map_for_event_type;
 use base::triggers::trigger::TimeInterval;
 use base::vaults::vault::Destination;
