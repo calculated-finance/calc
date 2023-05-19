@@ -2,41 +2,41 @@ use super::dca_plus_config::DcaPlusConfig;
 use base::{
     helpers::time_helpers::get_total_execution_duration,
     pair::Pair,
-    triggers::trigger::{TimeInterval, TriggerConfiguration},
-    vaults::vault::{Destination, VaultStatus},
+    triggers::trigger::{OldTimeInterval, OldTriggerConfiguration},
+    vaults::vault::{OldDestination, OldVaultStatus},
 };
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, StdError, StdResult, Timestamp, Uint128};
-use fin_helpers::position_type::PositionType;
+use fin_helpers::position_type::OldPositionType;
 use kujira::precision::{Precise, Precision};
 use std::{cmp::max, str::FromStr};
 
 #[cw_serde]
-pub struct Vault {
+pub struct OldVault {
     pub id: Uint128,
     pub created_at: Timestamp,
     pub owner: Addr,
     pub label: Option<String>,
-    pub destinations: Vec<Destination>,
-    pub status: VaultStatus,
+    pub destinations: Vec<OldDestination>,
+    pub status: OldVaultStatus,
     pub balance: Coin,
     pub pair: Pair,
     pub swap_amount: Uint128,
     pub slippage_tolerance: Option<Decimal>,
     pub minimum_receive_amount: Option<Uint128>,
-    pub time_interval: TimeInterval,
+    pub time_interval: OldTimeInterval,
     pub started_at: Option<Timestamp>,
     pub swapped_amount: Coin,
     pub received_amount: Coin,
-    pub trigger: Option<TriggerConfiguration>,
+    pub trigger: Option<OldTriggerConfiguration>,
     pub dca_plus_config: Option<DcaPlusConfig>,
 }
 
-impl Vault {
-    pub fn get_position_type(&self) -> PositionType {
+impl OldVault {
+    pub fn get_position_type(&self) -> OldPositionType {
         match self.balance.denom == self.pair.quote_denom {
-            true => PositionType::Enter,
-            false => PositionType::Exit,
+            true => OldPositionType::Enter,
+            false => OldPositionType::Exit,
         }
     }
 
@@ -92,8 +92,12 @@ impl Vault {
         }
 
         let exact_target_price = match self.get_position_type() {
-            PositionType::Enter => Decimal256::from_ratio(self.swap_amount, target_receive_amount),
-            PositionType::Exit => Decimal256::from_ratio(target_receive_amount, self.swap_amount),
+            OldPositionType::Enter => {
+                Decimal256::from_ratio(self.swap_amount, target_receive_amount)
+            }
+            OldPositionType::Exit => {
+                Decimal256::from_ratio(target_receive_amount, self.swap_amount)
+            }
         };
 
         if decimal_delta == 0 {
@@ -129,15 +133,15 @@ impl Vault {
     }
 
     pub fn is_active(&self) -> bool {
-        self.status == VaultStatus::Active
+        self.status == OldVaultStatus::Active
     }
 
     pub fn is_scheduled(&self) -> bool {
-        self.status == VaultStatus::Scheduled
+        self.status == OldVaultStatus::Scheduled
     }
 
     pub fn is_inactive(&self) -> bool {
-        self.status == VaultStatus::Inactive
+        self.status == OldVaultStatus::Inactive
     }
 
     pub fn is_finished_dca_plus_vault(&self) -> bool {
@@ -152,7 +156,7 @@ impl Vault {
     }
 
     pub fn is_cancelled(&self) -> bool {
-        self.status == VaultStatus::Cancelled
+        self.status == OldVaultStatus::Cancelled
     }
 }
 
@@ -201,7 +205,7 @@ mod has_sufficient_funds_tests {
             Addr::unchecked("owner"),
             None,
             vec![],
-            VaultStatus::Active,
+            OldVaultStatus::Active,
             coin(balance, "quote"),
             Pair {
                 address: Addr::unchecked("pair"),
@@ -212,7 +216,7 @@ mod has_sufficient_funds_tests {
             None,
             None,
             None,
-            TimeInterval::Daily,
+            OldTimeInterval::Daily,
             None,
             Coin {
                 denom: "quote".to_string(),
@@ -234,7 +238,7 @@ mod get_target_price_tests {
 
     #[test]
     fn should_be_correct_when_buying_on_fin() {
-        let vault = vault_with(Uint128::new(100), PositionType::Enter);
+        let vault = vault_with(Uint128::new(100), OldPositionType::Enter);
         assert_eq!(
             vault
                 .get_target_price(Uint128::new(20), 0, Precision::DecimalPlaces(3))
@@ -246,7 +250,7 @@ mod get_target_price_tests {
 
     #[test]
     fn should_be_correct_when_selling_on_fin() {
-        let vault = vault_with(Uint128::new(100), PositionType::Exit);
+        let vault = vault_with(Uint128::new(100), OldPositionType::Exit);
         assert_eq!(
             vault
                 .get_target_price(Uint128::new(20), 0, Precision::DecimalPlaces(3))
@@ -258,7 +262,7 @@ mod get_target_price_tests {
 
     #[test]
     fn should_truncate_price_to_three_decimal_places() {
-        let vault = vault_with(Uint128::new(30), PositionType::Exit);
+        let vault = vault_with(Uint128::new(30), OldPositionType::Exit);
         assert_eq!(
             vault
                 .get_target_price(Uint128::new(10), 0, Precision::DecimalPlaces(3))
@@ -270,7 +274,7 @@ mod get_target_price_tests {
 
     #[test]
     fn for_fin_buy_with_decimal_delta_should_truncate() {
-        let position_type = PositionType::Enter;
+        let position_type = OldPositionType::Enter;
         let swap_amount = Uint128::new(1000000);
         let target_receive_amount = Uint128::new(747943156999999);
         let decimal_delta = 12;
@@ -291,7 +295,7 @@ mod get_target_price_tests {
 
     #[test]
     fn for_fin_sell_with_decimal_delta_should_truncate() {
-        let position_type = PositionType::Exit;
+        let position_type = OldPositionType::Exit;
         let swap_amount = Uint128::new(747943156999999);
         let target_receive_amount = Uint128::new(1000000);
         let decimal_delta = 12;
@@ -310,19 +314,19 @@ mod get_target_price_tests {
         );
     }
 
-    fn vault_with(swap_amount: Uint128, position_type: PositionType) -> Vault {
-        Vault {
+    fn vault_with(swap_amount: Uint128, position_type: OldPositionType) -> OldVault {
+        OldVault {
             id: Uint128::new(1),
             created_at: Timestamp::from_seconds(0),
             owner: Addr::unchecked("owner"),
             label: None,
             destinations: vec![],
-            status: VaultStatus::Active,
+            status: OldVaultStatus::Active,
             balance: coin(
                 1000,
                 match position_type {
-                    PositionType::Enter => "quote",
-                    PositionType::Exit => "base",
+                    OldPositionType::Enter => "quote",
+                    OldPositionType::Exit => "base",
                 },
             ),
             pair: Pair {
@@ -333,20 +337,20 @@ mod get_target_price_tests {
             swap_amount,
             slippage_tolerance: None,
             minimum_receive_amount: None,
-            time_interval: TimeInterval::Daily,
+            time_interval: OldTimeInterval::Daily,
             started_at: None,
             swapped_amount: coin(
                 0,
                 match position_type {
-                    PositionType::Enter => "quote",
-                    PositionType::Exit => "base",
+                    OldPositionType::Enter => "quote",
+                    OldPositionType::Exit => "base",
                 },
             ),
             received_amount: coin(
                 0,
                 match position_type {
-                    PositionType::Enter => "base",
-                    PositionType::Exit => "quote",
+                    OldPositionType::Enter => "base",
+                    OldPositionType::Exit => "quote",
                 },
             ),
             trigger: None,
@@ -363,8 +367,8 @@ mod get_expected_execution_completed_date_tests {
         types::dca_plus_config::DcaPlusConfig,
     };
 
-    use super::Vault;
-    use base::{pair::Pair, triggers::trigger::TimeInterval, vaults::vault::VaultStatus};
+    use super::OldVault;
+    use base::{pair::Pair, triggers::trigger::OldTimeInterval, vaults::vault::OldVaultStatus};
     use cosmwasm_std::{coin, testing::mock_env, Addr, Coin, Decimal, Timestamp, Uint128};
 
     #[test]
@@ -375,7 +379,7 @@ mod get_expected_execution_completed_date_tests {
             created_at,
             Uint128::zero(),
             Uint128::new(100),
-            TimeInterval::Daily,
+            OldTimeInterval::Daily,
         );
         assert_eq!(
             vault.get_expected_execution_completed_date(env.block.time),
@@ -390,7 +394,7 @@ mod get_expected_execution_completed_date_tests {
             env.block.time,
             Uint128::new(1000),
             Uint128::new(100),
-            TimeInterval::Daily,
+            OldTimeInterval::Daily,
         );
         assert_eq!(
             vault.get_expected_execution_completed_date(env.block.time),
@@ -401,9 +405,9 @@ mod get_expected_execution_completed_date_tests {
     #[test]
     fn expected_execution_end_date_is_at_end_of_standard_dca_execution() {
         let env = mock_env();
-        let mut vault = vault_with(env.block.time, Uint128::zero(), ONE, TimeInterval::Daily);
+        let mut vault = vault_with(env.block.time, Uint128::zero(), ONE, OldTimeInterval::Daily);
 
-        vault.status = VaultStatus::Inactive;
+        vault.status = OldVaultStatus::Inactive;
 
         vault.dca_plus_config = Some(DcaPlusConfig {
             escrow_level: Decimal::percent(5),
@@ -423,7 +427,7 @@ mod get_expected_execution_completed_date_tests {
     #[test]
     fn expected_execution_end_date_is_at_end_of_dca_plus_execution() {
         let env = mock_env();
-        let mut vault = vault_with(env.block.time, TEN - ONE, ONE, TimeInterval::Daily);
+        let mut vault = vault_with(env.block.time, TEN - ONE, ONE, OldTimeInterval::Daily);
 
         vault.dca_plus_config = Some(DcaPlusConfig {
             escrow_level: Decimal::percent(5),
@@ -444,15 +448,15 @@ mod get_expected_execution_completed_date_tests {
         created_at: Timestamp,
         balance: Uint128,
         swap_amount: Uint128,
-        time_interval: TimeInterval,
-    ) -> Vault {
-        Vault {
+        time_interval: OldTimeInterval,
+    ) -> OldVault {
+        OldVault {
             id: Uint128::new(1),
             created_at,
             owner: Addr::unchecked("owner"),
             label: None,
             destinations: vec![],
-            status: VaultStatus::Active,
+            status: OldVaultStatus::Active,
             balance: Coin::new(balance.into(), "quote"),
             pair: Pair {
                 address: Addr::unchecked("pair"),
