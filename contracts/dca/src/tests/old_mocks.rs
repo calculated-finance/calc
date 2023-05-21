@@ -1,7 +1,6 @@
 use crate::constants::{ONE_THOUSAND, TWO_MICRONS};
 use crate::contract::reply;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, VaultResponse};
-
 use crate::types::fee_collector::FeeCollector;
 use crate::types::old_vault::OldVault;
 use base::helpers::message_helpers::get_flat_map_for_event_type;

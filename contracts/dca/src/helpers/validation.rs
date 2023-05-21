@@ -1,5 +1,6 @@
 use crate::error::ContractError;
 use crate::state::old_config::get_old_config;
+use crate::state::pairs::get_pairs;
 use crate::types::fee_collector::FeeCollector;
 use crate::types::old_vault::OldVault;
 use base::pair::OldPair;
@@ -385,6 +386,16 @@ pub fn assert_denom_is_bond_denom(denom: String) -> Result<(), ContractError> {
     if denom.clone() != "ukuji".to_string() {
         return Err(ContractError::CustomError {
             val: format!("{} is not the bond denomination", denom),
+        });
+    }
+    Ok(())
+}
+
+pub fn assert_denom_exists(storage: &dyn Storage, denom: String) -> Result<(), ContractError> {
+    let pairs = get_pairs(storage);
+    if !pairs.iter().any(|p| p.denoms().contains(&denom)) {
+        return Err(ContractError::CustomError {
+            val: format!("{} is not supported", denom),
         });
     }
     Ok(())

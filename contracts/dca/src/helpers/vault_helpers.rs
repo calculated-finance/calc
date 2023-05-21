@@ -840,7 +840,7 @@ mod simulate_standard_dca_execution_tests {
     use super::simulate_standard_dca_execution;
     use crate::{
         constants::{ONE, ONE_DECIMAL, SWAP_FEE_RATE, TEN, TEN_MICRONS},
-        handlers::get_events_by_resource_id::get_events_by_resource_id,
+        handlers::old_get_events_by_resource_id::get_events_by_resource_id,
         helpers::fee_helpers::{get_delegation_fee_rate, get_swap_fee_rate},
         tests::{
             old_helpers::{instantiate_contract, set_fin_price},

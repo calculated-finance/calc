@@ -2,7 +2,7 @@ use super::old_mocks::{MockApp, ADMIN, DENOM_UKUJI, DENOM_UTEST, FEE_COLLECTOR, 
 use crate::{
     constants::{ONE, TEN},
     contract::instantiate,
-    handlers::get_vault::get_old_vault_handler,
+    handlers::old_get_vault::get_old_vault_handler,
     msg::{EventsResponse, InstantiateMsg, QueryMsg, VaultResponse},
     state::{
         old_cache::{Cache, OLD_CACHE},

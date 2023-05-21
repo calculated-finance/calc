@@ -1,33 +1,33 @@
 use crate::error::ContractError;
-use crate::handlers::after_fin_limit_order_submitted::after_fin_limit_order_submitted;
-use crate::handlers::after_fin_swap::after_fin_swap;
-use crate::handlers::after_z_delegation::after_z_delegation;
-use crate::handlers::cancel_vault::cancel_vault;
-use crate::handlers::create_custom_swap_fee::create_custom_swap_fee;
-use crate::handlers::create_pair::create_pair;
-use crate::handlers::create_vault::create_vault;
-use crate::handlers::delete_pair::delete_pair;
-use crate::handlers::deposit::deposit_handler;
-use crate::handlers::disburse_escrow::disburse_escrow_handler;
-use crate::handlers::execute_trigger::execute_trigger_handler;
-use crate::handlers::get_custom_swap_fees::get_custom_swap_fees;
-use crate::handlers::get_data_fixes_by_resource_id::get_data_fixes_by_resource_id;
-use crate::handlers::get_dca_plus_performance::get_dca_plus_performance_handler;
-use crate::handlers::get_disburse_escrow_tasks_handler::get_disburse_escrow_tasks_handler;
-use crate::handlers::get_events::get_events;
-use crate::handlers::get_events_by_resource_id::get_events_by_resource_id;
-use crate::handlers::get_pairs::get_pairs;
-use crate::handlers::get_time_trigger_ids::get_time_trigger_ids;
-use crate::handlers::get_trigger_id_by_fin_limit_order_idx::get_trigger_id_by_fin_limit_order_idx;
-use crate::handlers::get_vault::get_old_vault_handler;
-use crate::handlers::get_vaults::get_vaults_handler;
-use crate::handlers::get_vaults_by_address::get_vaults_by_address;
+use crate::handlers::create_pair::create_pair_handler;
 use crate::handlers::migrate::migrate_handler;
-use crate::handlers::migrate_vaults::migrate_vaults_handler;
-use crate::handlers::remove_custom_swap_fee::remove_custom_swap_fee;
-use crate::handlers::update_config::update_config_handler;
-use crate::handlers::update_swap_adjustments_handler::update_swap_adjustments_handler;
-use crate::handlers::update_vault::update_vault_handler;
+use crate::handlers::old_after_fin_limit_order_submitted::after_fin_limit_order_submitted;
+use crate::handlers::old_after_fin_swap::after_fin_swap;
+use crate::handlers::old_after_z_delegation::after_z_delegation;
+use crate::handlers::old_cancel_vault::cancel_vault;
+use crate::handlers::old_create_custom_swap_fee::create_custom_swap_fee;
+use crate::handlers::old_create_vault::create_vault;
+use crate::handlers::old_delete_pair::delete_pair;
+use crate::handlers::old_deposit::deposit_handler;
+use crate::handlers::old_disburse_escrow::disburse_escrow_handler;
+use crate::handlers::old_execute_trigger::execute_trigger_handler;
+use crate::handlers::old_get_custom_swap_fees::get_custom_swap_fees;
+use crate::handlers::old_get_data_fixes_by_resource_id::get_data_fixes_by_resource_id;
+use crate::handlers::old_get_dca_plus_performance::get_dca_plus_performance_handler;
+use crate::handlers::old_get_disburse_escrow_tasks_handler::get_disburse_escrow_tasks_handler;
+use crate::handlers::old_get_events::get_events;
+use crate::handlers::old_get_events_by_resource_id::get_events_by_resource_id;
+use crate::handlers::old_get_pairs::get_pairs;
+use crate::handlers::old_get_time_trigger_ids::get_time_trigger_ids;
+use crate::handlers::old_get_trigger_id_by_fin_limit_order_idx::get_trigger_id_by_fin_limit_order_idx;
+use crate::handlers::old_get_vault::get_old_vault_handler;
+use crate::handlers::old_get_vaults::get_vaults_handler;
+use crate::handlers::old_get_vaults_by_address::get_vaults_by_address;
+use crate::handlers::old_migrate_vaults::migrate_vaults_handler;
+use crate::handlers::old_remove_custom_swap_fee::remove_custom_swap_fee;
+use crate::handlers::old_update_config::update_config_handler;
+use crate::handlers::old_update_swap_adjustments_handler::update_swap_adjustments_handler;
+use crate::handlers::old_update_vault::update_vault_handler;
 use crate::helpers::validation::{
     assert_dca_plus_escrow_level_is_less_than_100_percent,
     assert_fee_collector_addresses_are_valid, assert_fee_collector_allocations_add_up_to_one,
@@ -102,7 +102,7 @@ pub fn execute(
             address,
             base_denom,
             quote_denom,
-        } => create_pair(deps, env, info, address, base_denom, quote_denom),
+        } => create_pair_handler(deps, info, base_denom, quote_denom, address),
         ExecuteMsg::DeletePair { address } => delete_pair(deps, env, info, address),
         ExecuteMsg::CreateVault {
             owner,

@@ -8,4 +8,4 @@ pub mod old_helpers;
 pub mod helpers;
 
 #[cfg(test)]
-mod mocks;
+pub mod mocks;
