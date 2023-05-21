@@ -38,7 +38,7 @@ pub fn migrate_vaults_handler(
 #[cfg(test)]
 mod migrate_vaults_tests {
     use crate::{
-        handlers::migrate_vaults::migrate_vaults_handler,
+        handlers::old_migrate_vaults::migrate_vaults_handler,
         state::{old_vaults::get_old_vaults, vaults::get_vaults},
         tests::{
             helpers::instantiate_contract, helpers::setup_vault, mocks::ADMIN,
