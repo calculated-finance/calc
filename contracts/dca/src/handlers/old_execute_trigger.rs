@@ -1,7 +1,7 @@
 use crate::contract::AFTER_FIN_SWAP_REPLY_ID;
 use crate::error::ContractError;
 use crate::helpers::validation::{assert_contract_is_not_paused, assert_target_time_is_in_past};
-use crate::helpers::vault_helpers::{
+use crate::helpers::vault::{
     get_swap_amount, price_threshold_exceeded, simulate_standard_dca_execution,
 };
 use crate::msg::ExecuteMsg;
@@ -9,7 +9,7 @@ use crate::state::events::create_event;
 use crate::state::old_cache::{Cache, SwapCache, OLD_CACHE, OLD_SWAP_CACHE};
 use crate::state::old_triggers::{delete_old_trigger, save_old_trigger};
 use crate::state::old_vaults::{get_old_vault, update_old_vault};
-use base::events::event::{EventBuilder, EventData, ExecutionSkippedReason};
+use crate::types::event::{EventBuilder, EventData, ExecutionSkippedReason};
 use base::helpers::time_helpers::get_next_target_time;
 use base::triggers::trigger::{OldTrigger, OldTriggerConfiguration};
 use base::vaults::vault::OldVaultStatus;

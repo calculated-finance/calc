@@ -225,7 +225,7 @@ mod create_vault_tests {
     use crate::state::config::{get_config, update_config};
     use crate::tests::helpers::instantiate_contract;
     use crate::tests::mocks::{
-        calc_mock_dependencies, ADMIN, DENOM_STAKE, DENOM_UOSMO, USER, VALIDATOR,
+        calc_mock_dependencies, ADMIN, DENOM_UKUJI, DENOM_UUSK, USER, VALIDATOR,
     };
     use crate::types::config::Config;
     use crate::types::destination::Destination;
@@ -253,7 +253,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -277,7 +277,7 @@ mod create_vault_tests {
         let env = mock_env();
         let info = mock_info(
             USER,
-            &[Coin::new(10000, DENOM_UOSMO), Coin::new(10000, DENOM_STAKE)],
+            &[Coin::new(10000, DENOM_UKUJI), Coin::new(10000, DENOM_UUSK)],
         );
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
@@ -289,7 +289,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -311,7 +311,7 @@ mod create_vault_tests {
     fn with_non_existent_pair_fails() {
         let mut deps = calc_mock_dependencies();
         let env = mock_env();
-        let info = mock_info(USER, &[Coin::new(10000, DENOM_STAKE)]);
+        let info = mock_info(USER, &[Coin::new(10000, DENOM_UUSK)]);
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
 
@@ -322,7 +322,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -336,7 +336,10 @@ mod create_vault_tests {
 
         assert_eq!(
             err.to_string(),
-            "Error: swapping stake to uosmo not supported"
+            format!(
+                "Error: swapping {} to {} not supported",
+                DENOM_UUSK, DENOM_UKUJI
+            )
         );
     }
 
@@ -355,11 +358,11 @@ mod create_vault_tests {
             admin_info.clone(),
             pair.base_denom.clone(),
             pair.quote_denom.clone(),
-            pair.route.clone(),
+            pair.address,
         )
         .unwrap();
 
-        let user_info = mock_info(USER, &[Coin::new(10000, DENOM_STAKE)]);
+        let user_info = mock_info(USER, &[Coin::new(10000, DENOM_UUSK)]);
 
         let err = create_vault_handler(
             deps.as_mut(),
@@ -372,7 +375,7 @@ mod create_vault_tests {
                 address: Addr::unchecked(USER),
                 msg: None,
             }],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -405,11 +408,11 @@ mod create_vault_tests {
             admin_info.clone(),
             pair.base_denom.clone(),
             pair.quote_denom.clone(),
-            pair.route.clone(),
+            pair.address,
         )
         .unwrap();
 
-        let user_info = mock_info(USER, &[Coin::new(10000, DENOM_STAKE)]);
+        let user_info = mock_info(USER, &[Coin::new(10000, DENOM_UUSK)]);
 
         let err = create_vault_handler(
             deps.as_mut(),
@@ -429,7 +432,7 @@ mod create_vault_tests {
                     msg: None,
                 },
             ],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -451,7 +454,7 @@ mod create_vault_tests {
     fn with_more_than_10_destination_allocations_fails() {
         let mut deps = calc_mock_dependencies();
         let env = mock_env();
-        let info = mock_info(USER, &[Coin::new(10000, DENOM_STAKE)]);
+        let info = mock_info(USER, &[Coin::new(10000, DENOM_UUSK)]);
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
 
@@ -469,7 +472,7 @@ mod create_vault_tests {
                     msg: None,
                 })
                 .collect(),
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -491,7 +494,7 @@ mod create_vault_tests {
     fn with_swap_amount_less_than_50000_fails() {
         let mut deps = calc_mock_dependencies();
         let env = mock_env();
-        let info = mock_info(USER, &[Coin::new(10000, DENOM_STAKE)]);
+        let info = mock_info(USER, &[Coin::new(10000, DENOM_UUSK)]);
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
 
@@ -502,7 +505,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -535,11 +538,11 @@ mod create_vault_tests {
             admin_info.clone(),
             pair.base_denom.clone(),
             pair.quote_denom.clone(),
-            pair.route.clone(),
+            pair.address,
         )
         .unwrap();
 
-        let user_info = mock_info(USER, &[Coin::new(10000, DENOM_STAKE)]);
+        let user_info = mock_info(USER, &[Coin::new(10000, DENOM_UUSK)]);
 
         let err = create_vault_handler(
             deps.as_mut(),
@@ -548,7 +551,7 @@ mod create_vault_tests {
             user_info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -574,7 +577,7 @@ mod create_vault_tests {
     fn when_contract_is_paused_fails() {
         let mut deps = calc_mock_dependencies();
         let env = mock_env();
-        let info = mock_info(USER, &[Coin::new(10000, DENOM_STAKE)]);
+        let info = mock_info(USER, &[Coin::new(10000, DENOM_UUSK)]);
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
 
@@ -596,7 +599,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -626,11 +629,11 @@ mod create_vault_tests {
             admin_info.clone(),
             pair.base_denom.clone(),
             pair.quote_denom.clone(),
-            pair.route.clone(),
+            pair.address,
         )
         .unwrap();
 
-        let user_info = mock_info(USER, &[Coin::new(10000, DENOM_STAKE)]);
+        let user_info = mock_info(USER, &[Coin::new(10000, DENOM_UUSK)]);
 
         let err = create_vault_handler(
             deps.as_mut(),
@@ -639,7 +642,7 @@ mod create_vault_tests {
             user_info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -661,7 +664,7 @@ mod create_vault_tests {
     fn with_invalid_custom_time_interval_fails() {
         let mut deps = calc_mock_dependencies();
         let env = mock_env();
-        let info = mock_info(USER, &[Coin::new(10000, DENOM_STAKE)]);
+        let info = mock_info(USER, &[Coin::new(10000, DENOM_UUSK)]);
 
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
 
@@ -672,7 +675,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -705,12 +708,12 @@ mod create_vault_tests {
             info.clone(),
             pair.base_denom.clone(),
             pair.quote_denom.clone(),
-            pair.route.clone(),
+            pair.address,
         )
         .unwrap();
 
         let swap_amount = Uint128::new(100000);
-        info = mock_info(USER, &[Coin::new(100000, DENOM_STAKE)]);
+        info = mock_info(USER, &[Coin::new(100000, DENOM_UUSK)]);
 
         let err = create_vault_handler(
             deps.as_mut(),
@@ -719,7 +722,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -752,12 +755,12 @@ mod create_vault_tests {
             info.clone(),
             pair.base_denom.clone(),
             pair.quote_denom.clone(),
-            pair.route.clone(),
+            pair.address,
         )
         .unwrap();
 
         let swap_amount = Uint128::new(100000);
-        info = mock_info(USER, &[Coin::new(100000, DENOM_STAKE)]);
+        info = mock_info(USER, &[Coin::new(100000, DENOM_UUSK)]);
 
         let err = create_vault_handler(
             deps.as_mut(),
@@ -766,7 +769,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -799,12 +802,12 @@ mod create_vault_tests {
             info.clone(),
             pair.base_denom.clone(),
             pair.quote_denom.clone(),
-            pair.route.clone(),
+            pair.address,
         )
         .unwrap();
 
         let swap_amount = Uint128::new(100000);
-        info = mock_info(USER, &[Coin::new(100000, DENOM_STAKE)]);
+        info = mock_info(USER, &[Coin::new(100000, DENOM_UUSK)]);
 
         let err = create_vault_handler(
             deps.as_mut(),
@@ -813,7 +816,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             Some(Decimal::percent(150)),
             None,
@@ -846,12 +849,12 @@ mod create_vault_tests {
             info.clone(),
             pair.base_denom.clone(),
             pair.quote_denom.clone(),
-            pair.route.clone(),
+            pair.address,
         )
         .unwrap();
 
         let swap_amount = Uint128::new(100000);
-        info = mock_info(USER, &[Coin::new(100000, DENOM_STAKE)]);
+        info = mock_info(USER, &[Coin::new(100000, DENOM_UUSK)]);
 
         create_vault_handler(
             deps.as_mut(),
@@ -860,7 +863,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -892,13 +895,13 @@ mod create_vault_tests {
                 balance: info.funds[0].clone(),
                 slippage_tolerance: config.default_slippage_tolerance,
                 swap_amount,
-                target_denom: DENOM_UOSMO.to_string(),
+                target_denom: DENOM_UKUJI.to_string(),
                 started_at: None,
                 deposited_amount: info.funds[0].clone(),
                 escrow_level: Decimal::zero(),
-                swapped_amount: Coin::new(0, DENOM_STAKE.to_string()),
-                received_amount: Coin::new(0, DENOM_UOSMO.to_string()),
-                escrowed_amount: Coin::new(0, DENOM_UOSMO.to_string()),
+                swapped_amount: Coin::new(0, DENOM_UUSK.to_string()),
+                received_amount: Coin::new(0, DENOM_UKUJI.to_string()),
+                escrowed_amount: Coin::new(0, DENOM_UKUJI.to_string()),
                 swap_adjustment_strategy: None,
                 performance_assessment_strategy: None,
                 trigger: Some(TriggerConfiguration::Time {
@@ -923,11 +926,11 @@ mod create_vault_tests {
             info.clone(),
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
+            pair.address,
         )
         .unwrap();
 
-        info = mock_info(USER, &[Coin::new(100000, DENOM_STAKE)]);
+        info = mock_info(USER, &[Coin::new(100000, DENOM_UUSK)]);
 
         create_vault_handler(
             deps.as_mut(),
@@ -936,7 +939,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -980,12 +983,12 @@ mod create_vault_tests {
             info.clone(),
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
+            pair.address,
         )
         .unwrap();
 
         let owner = Addr::unchecked(USER);
-        info = mock_info(ADMIN, &[Coin::new(100000, DENOM_STAKE)]);
+        info = mock_info(ADMIN, &[Coin::new(100000, DENOM_UUSK)]);
 
         create_vault_handler(
             deps.as_mut(),
@@ -994,7 +997,7 @@ mod create_vault_tests {
             owner,
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -1028,11 +1031,11 @@ mod create_vault_tests {
             info.clone(),
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
+            pair.address,
         )
         .unwrap();
 
-        info = mock_info(USER, &[Coin::new(100000, DENOM_STAKE)]);
+        info = mock_info(USER, &[Coin::new(100000, DENOM_UUSK)]);
 
         let destinations = vec![
             Destination {
@@ -1066,7 +1069,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             destinations.clone(),
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -1100,11 +1103,11 @@ mod create_vault_tests {
             info.clone(),
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
+            pair.address,
         )
         .unwrap();
 
-        info = mock_info(USER, &[Coin::new(100000, DENOM_STAKE)]);
+        info = mock_info(USER, &[Coin::new(100000, DENOM_UUSK)]);
 
         create_vault_handler(
             deps.as_mut(),
@@ -1113,7 +1116,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -1150,11 +1153,11 @@ mod create_vault_tests {
             info.clone(),
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
+            pair.address,
         )
         .unwrap();
 
-        info = mock_info(USER, &[Coin::new(100000, DENOM_STAKE)]);
+        info = mock_info(USER, &[Coin::new(100000, DENOM_UUSK)]);
 
         create_vault_handler(
             deps.as_mut(),
@@ -1163,7 +1166,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -1201,11 +1204,11 @@ mod create_vault_tests {
             info.clone(),
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
+            pair.address,
         )
         .unwrap();
 
-        info = mock_info(USER, &[Coin::new(100000, DENOM_STAKE)]);
+        info = mock_info(USER, &[Coin::new(100000, DENOM_UUSK)]);
 
         create_vault_handler(
             deps.as_mut(),
@@ -1214,7 +1217,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -1234,7 +1237,7 @@ mod create_vault_tests {
             vault.performance_assessment_strategy,
             Some(PerformanceAssessmentStrategy::CompareToStandardDca {
                 swapped_amount: Coin::new(0, vault.balance.denom),
-                received_amount: Coin::new(0, DENOM_UOSMO),
+                received_amount: Coin::new(0, DENOM_UKUJI),
             })
         );
     }
@@ -1254,11 +1257,11 @@ mod create_vault_tests {
             info.clone(),
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
+            pair.address,
         )
         .unwrap();
 
-        info = mock_info(USER, &[Coin::new(1000000000, DENOM_STAKE)]);
+        info = mock_info(USER, &[Coin::new(1000000000, DENOM_UUSK)]);
 
         create_vault_handler(
             deps.as_mut(),
@@ -1267,7 +1270,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -1309,11 +1312,11 @@ mod create_vault_tests {
             info.clone(),
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
+            pair.address,
         )
         .unwrap();
 
-        info = mock_info(USER, &[Coin::new(100000, DENOM_STAKE)]);
+        info = mock_info(USER, &[Coin::new(100000, DENOM_UUSK)]);
 
         let response = create_vault_handler(
             deps.as_mut(),
@@ -1322,7 +1325,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -1359,11 +1362,11 @@ mod create_vault_tests {
             info.clone(),
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
+            pair.address,
         )
         .unwrap();
 
-        info = mock_info(USER, &[Coin::new(100000, DENOM_STAKE)]);
+        info = mock_info(USER, &[Coin::new(100000, DENOM_UUSK)]);
 
         create_vault_handler(
             deps.as_mut(),
@@ -1372,7 +1375,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -1411,11 +1414,11 @@ mod create_vault_tests {
             info.clone(),
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
+            pair.address,
         )
         .unwrap();
 
-        info = mock_info(USER, &[Coin::new(100000, DENOM_STAKE)]);
+        info = mock_info(USER, &[Coin::new(100000, DENOM_UUSK)]);
 
         create_vault_handler(
             deps.as_mut(),
@@ -1424,7 +1427,7 @@ mod create_vault_tests {
             info.sender.clone(),
             None,
             vec![],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -1458,11 +1461,11 @@ mod create_vault_tests {
             info.clone(),
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
+            pair.address,
         )
         .unwrap();
 
-        info = mock_info(USER, &[Coin::new(100000, DENOM_STAKE)]);
+        info = mock_info(USER, &[Coin::new(100000, DENOM_UUSK)]);
 
         let err = create_vault_handler(
             deps.as_mut(),
@@ -1480,7 +1483,7 @@ mod create_vault_tests {
                     .unwrap(),
                 ),
             }],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,
@@ -1513,11 +1516,11 @@ mod create_vault_tests {
             info.clone(),
             pair.base_denom,
             pair.quote_denom,
-            pair.route,
+            pair.address,
         )
         .unwrap();
 
-        info = mock_info(USER, &[Coin::new(100000, DENOM_STAKE)]);
+        info = mock_info(USER, &[Coin::new(100000, DENOM_UUSK)]);
 
         create_vault_handler(
             deps.as_mut(),
@@ -1536,7 +1539,7 @@ mod create_vault_tests {
                     .unwrap(),
                 ),
             }],
-            DENOM_UOSMO.to_string(),
+            DENOM_UKUJI.to_string(),
             None,
             None,
             None,

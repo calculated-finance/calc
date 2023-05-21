@@ -3,13 +3,13 @@ use crate::helpers::validation::{
     assert_contract_is_not_paused, assert_deposited_denom_matches_send_denom,
     assert_exactly_one_asset, assert_vault_is_not_cancelled,
 };
-use crate::helpers::vault_helpers::get_dca_plus_model_id;
+use crate::helpers::vault::get_risk_weighted_average_model_id;
 use crate::msg::ExecuteMsg;
 use crate::state::events::create_event;
 use crate::state::old_triggers::save_old_trigger;
 use crate::state::old_vaults::{get_old_vault, update_old_vault};
 use crate::types::dca_plus_config::DcaPlusConfig;
-use base::events::event::{EventBuilder, EventData};
+use crate::types::event::{EventBuilder, EventData};
 use base::helpers::coin_helpers::add_to_coin;
 use base::triggers::trigger::{OldTrigger, OldTriggerConfiguration};
 use base::vaults::vault::OldVaultStatus;

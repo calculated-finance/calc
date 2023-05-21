@@ -1,14 +1,14 @@
 use crate::error::ContractError;
-use crate::helpers::disbursement_helpers::get_disbursement_messages;
-use crate::helpers::fee_helpers::{get_delegation_fee_rate, get_fee_messages, get_swap_fee_rate};
-use crate::helpers::vault_helpers::get_swap_amount;
+use crate::helpers::disbursement::get_disbursement_messages;
+use crate::helpers::fees::{get_automation_fee_rate, get_fee_messages, get_swap_fee_rate};
+use crate::helpers::vault::get_swap_amount;
 use crate::msg::ExecuteMsg;
 use crate::state::events::create_event;
 use crate::state::old_cache::{OLD_CACHE, OLD_SWAP_CACHE};
 use crate::state::old_triggers::delete_old_trigger;
 use crate::state::old_vaults::{get_old_vault, update_old_vault};
 use crate::types::dca_plus_config::DcaPlusConfig;
-use base::events::event::{EventBuilder, EventData, ExecutionSkippedReason};
+use crate::types::event::{EventBuilder, EventData, ExecutionSkippedReason};
 use base::helpers::coin_helpers::add_to_coin;
 use base::helpers::math_helpers::checked_mul;
 use base::vaults::vault::OldVaultStatus;
@@ -52,7 +52,7 @@ pub fn after_fin_swap(deps: DepsMut, env: Env, reply: Reply) -> Result<Response,
 
             let automation_fee_rate = match vault.dca_plus_config {
                 Some(_) => Decimal::zero(),
-                None => get_delegation_fee_rate(deps.storage, &vault)?,
+                None => get_automation_fee_rate(deps.storage, &vault)?,
             };
 
             let swap_fee = checked_mul(coin_received.amount, swap_fee_rate)?;

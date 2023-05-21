@@ -31,7 +31,7 @@ mod create_custom_swap_fee_tests {
     use crate::{
         handlers::get_custom_swap_fees::get_custom_swap_fees_handler,
         state::pairs::save_pair,
-        tests::{old_helpers::instantiate_contract, old_mocks::ADMIN},
+        tests::{helpers::instantiate_contract, mocks::ADMIN},
         types::pair::Pair,
     };
     use cosmwasm_std::{

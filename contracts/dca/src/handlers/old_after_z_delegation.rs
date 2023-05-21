@@ -2,7 +2,7 @@ use crate::error::ContractError;
 use crate::state::events::create_event;
 use crate::state::old_cache::OLD_CACHE;
 use crate::state::old_vaults::get_old_vault;
-use base::events::event::{EventBuilder, EventData};
+use crate::types::event::{EventBuilder, EventData};
 use base::helpers::message_helpers::{
     get_attribute_in_event, get_coin_from_display_formatted_coin,
 };

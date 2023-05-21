@@ -1,6 +1,6 @@
 use crate::{
     error::ContractError, helpers::validation::assert_sender_is_executor,
-    state::swap_adjustments::update_swap_adjustments,
+    state::old_swap_adjustments::update_swap_adjustments,
 };
 use cosmwasm_std::{Decimal, DepsMut, Env, MessageInfo, Response};
 use fin_helpers::position_type::OldPositionType;

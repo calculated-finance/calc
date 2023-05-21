@@ -1,8 +1,8 @@
 use crate::{
     error::ContractError,
     helpers::{
-        disbursement_helpers::get_disbursement_messages,
-        fee_helpers::{get_dca_plus_performance_fee, get_fee_messages},
+        disbursement::get_disbursement_messages,
+        fees::{get_dca_plus_performance_fee, get_fee_messages},
         validation::assert_sender_is_executor,
     },
     state::{

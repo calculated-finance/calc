@@ -37,9 +37,9 @@ mod create_pair_tests {
         msg::ExecuteMsg,
         state::pairs::find_pair,
         tests::{
-            mocks::{DENOM_STAKE, DENOM_UOSMO},
-            old_helpers::instantiate_contract,
-            old_mocks::ADMIN,
+            helpers::instantiate_contract,
+            mocks::ADMIN,
+            mocks::{DENOM_UKUJI, DENOM_UUSK},
         },
     };
     use cosmwasm_std::{
@@ -56,20 +56,20 @@ mod create_pair_tests {
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
 
         let original_message = ExecuteMsg::CreatePair {
-            base_denom: DENOM_UOSMO.to_string(),
-            quote_denom: DENOM_STAKE.to_string(),
+            base_denom: DENOM_UKUJI.to_string(),
+            quote_denom: DENOM_UUSK.to_string(),
             address: Addr::unchecked("pair-1"),
         };
 
         let message = ExecuteMsg::CreatePair {
-            base_denom: DENOM_UOSMO.to_string(),
-            quote_denom: DENOM_STAKE.to_string(),
+            base_denom: DENOM_UKUJI.to_string(),
+            quote_denom: DENOM_UUSK.to_string(),
             address: Addr::unchecked("pair-2"),
         };
 
         execute(deps.as_mut(), env.clone(), info.clone(), original_message).unwrap();
 
-        let denoms = [DENOM_UOSMO.to_string(), DENOM_STAKE.to_string()];
+        let denoms = [DENOM_UKUJI.to_string(), DENOM_UUSK.to_string()];
 
         let original_pair = find_pair(deps.as_ref().storage, denoms.clone()).unwrap();
 
@@ -117,20 +117,20 @@ mod create_pair_tests {
         instantiate_contract(deps.as_mut(), env.clone(), info.clone());
 
         let original_message = ExecuteMsg::CreatePair {
-            base_denom: DENOM_UOSMO.to_string(),
-            quote_denom: DENOM_STAKE.to_string(),
+            base_denom: DENOM_UKUJI.to_string(),
+            quote_denom: DENOM_UUSK.to_string(),
             address: Addr::unchecked("pair-1"),
         };
 
         let message = ExecuteMsg::CreatePair {
-            quote_denom: DENOM_UOSMO.to_string(),
-            base_denom: DENOM_STAKE.to_string(),
+            quote_denom: DENOM_UKUJI.to_string(),
+            base_denom: DENOM_UUSK.to_string(),
             address: Addr::unchecked("pair-2"),
         };
 
         execute(deps.as_mut(), env.clone(), info.clone(), original_message).unwrap();
 
-        let denoms = [DENOM_UOSMO.to_string(), DENOM_STAKE.to_string()];
+        let denoms = [DENOM_UKUJI.to_string(), DENOM_UUSK.to_string()];
 
         let original_pair = find_pair(deps.as_ref().storage, denoms.clone()).unwrap();
 
