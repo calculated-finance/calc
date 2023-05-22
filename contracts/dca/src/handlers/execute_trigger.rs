@@ -68,23 +68,21 @@ pub fn execute_trigger_handler(
                     &QueryMsg::Order { order_idx },
                 )?;
 
-                if order.offer_amount != Uint256::zero() {
+                if order.offer_amount > Uint256::zero() {
                     return Err(ContractError::CustomError {
                         val: String::from("target price has not been met"),
                     });
                 }
 
-                if order.filled_amount > Uint256::zero() {
-                    response = response.add_submessage(SubMsg::new(WasmMsg::Execute {
-                        contract_addr: pair.address.to_string(),
-                        msg: to_binary(&FinExecuteMsg::WithdrawOrders {
-                            order_idxs: Some(vec![order_idx]),
-                            callback: None,
-                        })
-                        .unwrap(),
-                        funds: vec![],
-                    }));
-                }
+                response = response.add_submessage(SubMsg::new(WasmMsg::Execute {
+                    contract_addr: pair.address.to_string(),
+                    msg: to_binary(&FinExecuteMsg::WithdrawOrders {
+                        order_idxs: Some(vec![order_idx]),
+                        callback: None,
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                }));
             } else {
                 return Err(ContractError::CustomError {
                     val: String::from("price trigger has not been created"),
