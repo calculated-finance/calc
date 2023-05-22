@@ -447,7 +447,7 @@ mod migrate_tests {
             trigger,
             Some(Trigger {
                 vault_id: Uint128::new(10),
-                configuration: TriggerConfiguration::FinLimitOrder {
+                configuration: TriggerConfiguration::Price {
                     target_price: Decimal::percent(132),
                     order_idx: Some(Uint128::new(10)),
                 },
