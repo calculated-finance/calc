@@ -2,13 +2,13 @@ use base::triggers::trigger::{OldTrigger, OldTriggerConfiguration};
 use cosmwasm_std::{StdResult, Storage, Uint128};
 use cw_storage_plus::Map;
 
-pub const TRIGGERS: Map<u128, OldTrigger> = Map::new("triggers_v21");
+pub const TRIGGERS: Map<u128, OldTrigger> = Map::new("triggers_v26");
 
 pub const TRIGGER_ID_BY_FIN_LIMIT_ORDER_IDX: Map<u128, u128> =
-    Map::new("trigger_id_by_fin_limit_order_idx_v21");
+    Map::new("trigger_id_by_fin_limit_order_idx_v26");
 
 pub const TRIGGER_IDS_BY_TARGET_TIME: Map<u64, Vec<u128>> =
-    Map::new("trigger_ids_by_target_time_v21");
+    Map::new("trigger_ids_by_target_time_v26");
 
 pub fn save_old_trigger(store: &mut dyn Storage, trigger: OldTrigger) -> StdResult<Uint128> {
     TRIGGERS.save(store, trigger.vault_id.into(), &trigger)?;
