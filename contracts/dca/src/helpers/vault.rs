@@ -1,7 +1,7 @@
 use super::{
     coin::add_to,
     fees::{get_automation_fee_rate, get_swap_fee_rate},
-    price::{query_belief_price, query_price, simulate_swap},
+    price::{query_belief_price, query_price, query_slippage},
     time::get_total_execution_duration,
 };
 use crate::{
@@ -11,7 +11,6 @@ use crate::{
     },
     types::{
         event::{EventBuilder, EventData, ExecutionSkippedReason},
-        pair::Pair,
         performance_assessment_strategy::PerformanceAssessmentStrategy,
         position_type::PositionType,
         swap_adjustment_strategy::SwapAdjustmentStrategy,
@@ -68,15 +67,6 @@ pub fn get_swap_amount(deps: &Deps, env: &Env, vault: &Vault) -> StdResult<Coin>
     ))
 }
 
-fn get_slippage(querier: &QuerierWrapper, pair: &Pair, swap_amount: &Coin) -> StdResult<Decimal> {
-    let simulation = simulate_swap(querier, pair, swap_amount)?;
-
-    Ok(Decimal::from_ratio(
-        simulation.spread_amount,
-        simulation.return_amount,
-    ))
-}
-
 pub fn get_risk_weighted_average_model_id(
     block_time: &Timestamp,
     balance: &Coin,
@@ -92,8 +82,6 @@ pub fn get_risk_weighted_average_model_id(
         .into(),
         time_interval,
     );
-
-    
 
     match execution_duration.num_days() {
         0..=32 => 30,
@@ -187,7 +175,7 @@ pub fn simulate_standard_dca_execution(
                 return Ok((vault, response));
             }
 
-            let slippage = get_slippage(
+            let slippage = query_slippage(
                 querier,
                 &pair,
                 &Coin::new(swap_amount.into(), vault.get_swap_denom()),

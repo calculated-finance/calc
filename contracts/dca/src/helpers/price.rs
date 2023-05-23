@@ -84,6 +84,19 @@ pub fn simulate_swap(
     )
 }
 
+pub fn query_slippage(
+    querier: &QuerierWrapper,
+    pair: &Pair,
+    swap_amount: &Coin,
+) -> StdResult<Decimal> {
+    let simulation = simulate_swap(querier, pair, swap_amount)?;
+
+    Ok(Decimal::from_ratio(
+        simulation.spread_amount,
+        simulation.return_amount,
+    ))
+}
+
 pub fn query_price(
     querier: &QuerierWrapper,
     pair: &Pair,

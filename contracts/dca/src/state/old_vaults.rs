@@ -16,7 +16,7 @@ use cosmwasm_std::{
 };
 use cw_storage_plus::{Bound, Index, IndexList, IndexedMap, Item, Map, UniqueIndex};
 
-const VAULT_COUNTER: Item<u64> = Item::new("vault_counter_v20");
+const VAULT_COUNTER: Item<u64> = Item::new("vault_counter_v21");
 
 #[cw_serde]
 struct VaultDTO {
@@ -97,7 +97,7 @@ fn old_vault_from(
     }
 }
 
-const DESTINATIONS: Map<u128, Binary> = Map::new("destinations_v20");
+const DESTINATIONS: Map<u128, Binary> = Map::new("destinations_v21");
 
 fn get_destinations(store: &dyn Storage, vault_id: Uint128) -> StdResult<Vec<OldDestination>> {
     let destinations = DESTINATIONS.may_load(store, vault_id.into())?;
@@ -107,7 +107,7 @@ fn get_destinations(store: &dyn Storage, vault_id: Uint128) -> StdResult<Vec<Old
     }
 }
 
-const DCA_PLUS_CONFIGS: Map<u128, DcaPlusConfig> = Map::new("dca_plus_configs_v20");
+const DCA_PLUS_CONFIGS: Map<u128, DcaPlusConfig> = Map::new("dca_plus_configs_v21");
 
 fn get_dca_plus_config(store: &dyn Storage, vault_id: Uint128) -> Option<DcaPlusConfig> {
     DCA_PLUS_CONFIGS
@@ -129,13 +129,13 @@ impl<'a> IndexList<VaultDTO> for VaultIndexes<'a> {
 
 fn vault_store<'a>() -> IndexedMap<'a, u128, VaultDTO, VaultIndexes<'a>> {
     let indexes = VaultIndexes {
-        owner: UniqueIndex::new(|v| (v.owner.clone(), v.id.into()), "vaults_v20__owner"),
+        owner: UniqueIndex::new(|v| (v.owner.clone(), v.id.into()), "vaults_v21__owner"),
         owner_status: UniqueIndex::new(
             |v| (v.owner.clone(), v.status.clone() as u8, v.id.into()),
-            "vaults_v20__owner_status",
+            "vaults_v21__owner_status",
         ),
     };
-    IndexedMap::new("vaults_v20", indexes)
+    IndexedMap::new("vaults_v21", indexes)
 }
 
 pub fn save_old_vault(store: &mut dyn Storage, vault_builder: VaultBuilder) -> StdResult<OldVault> {
@@ -191,7 +191,11 @@ pub fn get_old_vaults_by_address(
                 result.unwrap_or_else(|_| panic!("a vault with id after {:?}", start_after));
             old_vault_from(
                 &vault_data,
-                PAIRS.load(store, vault_data.pair_address.clone()).unwrap_or_else(|_| panic!("a pair for pair address {:?}", vault_data.pair_address)),
+                PAIRS
+                    .load(store, vault_data.pair_address.clone())
+                    .unwrap_or_else(|_| {
+                        panic!("a pair for pair address {:?}", vault_data.pair_address)
+                    }),
                 get_old_trigger(store, vault_data.id)
                     .unwrap_or_else(|_| panic!("a trigger for vault id {}", vault_data.id))
                     .map(|trigger| trigger.configuration),
@@ -220,7 +224,11 @@ pub fn get_old_vaults(
                 result.unwrap_or_else(|_| panic!("a vault with id after {:?}", start_after));
             old_vault_from(
                 &vault_data,
-                PAIRS.load(store, vault_data.pair_address.clone()).unwrap_or_else(|_| panic!("a pair for pair address {:?}", vault_data.pair_address)),
+                PAIRS
+                    .load(store, vault_data.pair_address.clone())
+                    .unwrap_or_else(|_| {
+                        panic!("a pair for pair address {:?}", vault_data.pair_address)
+                    }),
                 get_old_trigger(store, vault_data.id)
                     .unwrap_or_else(|_| panic!("a trigger for vault id {}", vault_data.id))
                     .map(|trigger| trigger.configuration),
