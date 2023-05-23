@@ -44,7 +44,7 @@ pub fn vault_from(env: Env, old_vault: OldVault) -> Vault {
                 dca_plus_config.escrow_level
             }),
         escrowed_amount: old_vault.dca_plus_config.clone().map_or(
-            Coin::new(0, old_vault.get_receive_denom().clone()),
+            Coin::new(0, old_vault.get_receive_denom()),
             |dca_plus_config| dca_plus_config.escrowed_balance,
         ),
         swapped_amount: old_vault.swapped_amount.clone(),

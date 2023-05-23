@@ -20,7 +20,7 @@ pub fn migrate_vaults_handler(
     let old_vaults_to_be_migrated =
         get_old_vaults(deps.storage, Some(start_after_vault_id), Some(limit))?;
 
-    if old_vaults_to_be_migrated.len() == 0 {
+    if old_vaults_to_be_migrated.is_empty() {
         return Ok(Response::new().add_attribute("migrated_ids", "none"));
     }
 
