@@ -89,7 +89,7 @@ impl From<OldTimeInterval> for TimeInterval {
             OldTimeInterval::Daily => TimeInterval::Daily,
             OldTimeInterval::Weekly => TimeInterval::Weekly,
             OldTimeInterval::Monthly => TimeInterval::Monthly,
-            OldTimeInterval::EverySecond => TimeInterval::EverySecond,
+            OldTimeInterval::EverySecond => TimeInterval::EveryBlock,
             OldTimeInterval::EveryMinute => TimeInterval::EveryMinute,
             OldTimeInterval::HalfHourly => TimeInterval::HalfHourly,
             OldTimeInterval::Hourly => TimeInterval::Hourly,
