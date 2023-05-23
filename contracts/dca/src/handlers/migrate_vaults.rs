@@ -171,4 +171,42 @@ mod migrate_vaults_tests {
         assert_eq!(old_vaults_after.len(), 50);
         assert_eq!(vaults_after.len(), 30);
     }
+
+    #[test]
+    fn migrates_vaults_from_empty_until_full() {
+        let mut deps = mock_dependencies();
+        let env = mock_env();
+
+        instantiate_contract(deps.as_mut(), env.clone(), mock_info(ADMIN, &[]));
+
+        for i in 1u128..51u128 {
+            setup_old_vault(
+                deps.as_mut(),
+                env.clone(),
+                OldVault {
+                    id: Uint128::new(i),
+                    ..OldVault::default()
+                },
+            );
+        }
+
+        let limit = 10;
+
+        for i in 1..5 {
+            migrate_vaults_handler(deps.as_mut(), env.clone(), limit).unwrap();
+
+            let migrated_vaults = get_vaults(&deps.storage, None, Some(100), None).unwrap();
+            assert_eq!(migrated_vaults.len(), i * limit as usize);
+        }
+
+        migrate_vaults_handler(deps.as_mut(), env.clone(), limit).unwrap();
+
+        let migrated_vaults = get_vaults(&deps.storage, None, Some(100), None).unwrap();
+        assert_eq!(migrated_vaults.len(), 50);
+
+        migrate_vaults_handler(deps.as_mut(), env.clone(), limit).unwrap();
+
+        let migrated_vaults = get_vaults(&deps.storage, None, Some(100), None).unwrap();
+        assert_eq!(migrated_vaults.len(), 50);
+    }
 }
