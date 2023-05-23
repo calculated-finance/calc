@@ -175,7 +175,7 @@ pub fn simulate_standard_dca_execution(
                 return Ok((vault, response));
             }
 
-            let slippage = get_slippage(
+            let slippage = query_slippage(
                 querier,
                 &pair,
                 &Coin::new(swap_amount.into(), vault.get_swap_denom()),
