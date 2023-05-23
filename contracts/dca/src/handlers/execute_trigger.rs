@@ -1,6 +1,6 @@
 use crate::constants::AFTER_SWAP_REPLY_ID;
 use crate::error::ContractError;
-use crate::helpers::price::{query_belief_price, query_slippage};
+use crate::helpers::price::{get_belief_price, get_slippage};
 use crate::helpers::time::get_next_target_time;
 use crate::helpers::validation::{assert_contract_is_not_paused, assert_target_time_is_in_past};
 use crate::helpers::vault::{get_swap_amount, simulate_standard_dca_execution};
@@ -108,7 +108,7 @@ pub fn execute_trigger_handler(
         )?;
     }
 
-    let belief_price = query_belief_price(&deps.querier, &pair, vault.get_swap_denom())?;
+    let belief_price = get_belief_price(&deps.querier, &pair, vault.get_swap_denom())?;
 
     create_event(
         deps.storage,
@@ -209,7 +209,7 @@ pub fn execute_trigger_handler(
         return Ok(response.add_attribute("execution_skipped", "price_threshold_exceeded"));
     };
 
-    if query_slippage(&deps.querier, &pair, &adjusted_swap_amount)? > vault.slippage_tolerance {
+    if get_slippage(&deps.querier, &pair, &adjusted_swap_amount)? > vault.slippage_tolerance {
         create_event(
             deps.storage,
             EventBuilder::new(
@@ -735,13 +735,9 @@ mod execute_trigger_tests {
                     msg: to_binary(&FinExecuteMsg::Swap {
                         offer_asset: None,
                         belief_price: Some(
-                            query_belief_price(
-                                &deps.as_ref().querier,
-                                &pair,
-                                vault.get_swap_denom()
-                            )
-                            .unwrap()
-                            .into()
+                            get_belief_price(&deps.as_ref().querier, &pair, vault.get_swap_denom())
+                                .unwrap()
+                                .into()
                         ),
                         max_spread: Some(vault.slippage_tolerance.into()),
                         to: None,
@@ -1198,13 +1194,9 @@ mod execute_trigger_tests {
                     msg: to_binary(&FinExecuteMsg::Swap {
                         offer_asset: None,
                         belief_price: Some(
-                            query_belief_price(
-                                &deps.as_ref().querier,
-                                &pair,
-                                vault.get_swap_denom()
-                            )
-                            .unwrap()
-                            .into()
+                            get_belief_price(&deps.as_ref().querier, &pair, vault.get_swap_denom())
+                                .unwrap()
+                                .into()
                         ),
                         max_spread: Some(vault.slippage_tolerance.into()),
                         to: None,
@@ -1252,13 +1244,9 @@ mod execute_trigger_tests {
                     msg: to_binary(&FinExecuteMsg::Swap {
                         offer_asset: None,
                         belief_price: Some(
-                            query_belief_price(
-                                &deps.as_ref().querier,
-                                &pair,
-                                vault.get_swap_denom()
-                            )
-                            .unwrap()
-                            .into()
+                            get_belief_price(&deps.as_ref().querier, &pair, vault.get_swap_denom())
+                                .unwrap()
+                                .into()
                         ),
                         max_spread: Some(vault.slippage_tolerance.into()),
                         to: None,
@@ -1305,13 +1293,9 @@ mod execute_trigger_tests {
                     msg: to_binary(&FinExecuteMsg::Swap {
                         offer_asset: None,
                         belief_price: Some(
-                            query_belief_price(
-                                &deps.as_ref().querier,
-                                &pair,
-                                vault.get_swap_denom()
-                            )
-                            .unwrap()
-                            .into()
+                            get_belief_price(&deps.as_ref().querier, &pair, vault.get_swap_denom())
+                                .unwrap()
+                                .into()
                         ),
                         max_spread: Some(vault.slippage_tolerance.into()),
                         to: None,
@@ -1440,13 +1424,9 @@ mod execute_trigger_tests {
                     msg: to_binary(&FinExecuteMsg::Swap {
                         offer_asset: None,
                         belief_price: Some(
-                            query_belief_price(
-                                &deps.as_ref().querier,
-                                &pair,
-                                vault.get_swap_denom()
-                            )
-                            .unwrap()
-                            .into()
+                            get_belief_price(&deps.as_ref().querier, &pair, vault.get_swap_denom())
+                                .unwrap()
+                                .into()
                         ),
                         max_spread: Some(vault.slippage_tolerance.into()),
                         to: None,

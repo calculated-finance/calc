@@ -1,7 +1,7 @@
 use super::{
     coin::add_to,
     fees::{get_automation_fee_rate, get_swap_fee_rate},
-    price::{query_belief_price, query_price, query_slippage},
+    price::{get_belief_price, get_price, get_slippage},
     time::get_total_execution_duration,
 };
 use crate::{
@@ -37,7 +37,7 @@ pub fn get_swap_amount(deps: &Deps, env: &Env, vault: &Vault) -> StdResult<Coin>
             increase_only,
         }) => {
             let pair = find_pair(deps.storage, vault.denoms())?;
-            let belief_price = query_belief_price(&deps.querier, &pair, vault.get_swap_denom())?;
+            let belief_price = get_belief_price(&deps.querier, &pair, vault.get_swap_denom())?;
             let base_price = Decimal::from_ratio(vault.swap_amount, base_receive_amount);
             let scaled_price_delta = base_price.abs_diff(belief_price) / base_price * multiplier;
 
@@ -149,7 +149,7 @@ pub fn simulate_standard_dca_execution(
 
             let pair = find_pair(storage, vault.denoms())?;
 
-            let actual_price = query_price(
+            let actual_price = get_price(
                 querier,
                 &pair,
                 &Coin::new(swap_amount.into(), vault.get_swap_denom()),
@@ -175,7 +175,7 @@ pub fn simulate_standard_dca_execution(
                 return Ok((vault, response));
             }
 
-            let slippage = query_slippage(
+            let slippage = get_slippage(
                 querier,
                 &pair,
                 &Coin::new(swap_amount.into(), vault.get_swap_denom()),

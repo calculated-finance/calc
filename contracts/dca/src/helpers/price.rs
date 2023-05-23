@@ -33,7 +33,7 @@ pub struct FinSimulationResponse {
     pub spread_amount: Uint128,
 }
 
-pub fn query_belief_price(
+pub fn get_belief_price(
     querier: &QuerierWrapper,
     pair: &Pair,
     swap_denom: String,
@@ -84,7 +84,7 @@ pub fn simulate_swap(
     )
 }
 
-pub fn query_slippage(
+pub fn get_slippage(
     querier: &QuerierWrapper,
     pair: &Pair,
     swap_amount: &Coin,
@@ -97,11 +97,7 @@ pub fn query_slippage(
     ))
 }
 
-pub fn query_price(
-    querier: &QuerierWrapper,
-    pair: &Pair,
-    swap_amount: &Coin,
-) -> StdResult<Decimal> {
+pub fn get_price(querier: &QuerierWrapper, pair: &Pair, swap_amount: &Coin) -> StdResult<Decimal> {
     let simulation = simulate_swap(querier, pair, swap_amount)?;
 
     Ok(Decimal::from_ratio(
