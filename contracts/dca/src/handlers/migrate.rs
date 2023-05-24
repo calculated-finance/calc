@@ -114,7 +114,7 @@ pub fn migrate_handler(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     Ok(Response::new()
-        .add_attribute("method", "migrate")
+        .add_attribute("migrate", "true")
         .add_attribute("msg", format!("{:#?}", msg)))
 }
 
