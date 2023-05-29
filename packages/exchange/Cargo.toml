@@ -1,5 +1,5 @@
 [package]
-name = "dex"
+name = "exchange"
 version = "0.0.1"
 authors = ["james <james@calculated.fi>"]
 edition = "2021"

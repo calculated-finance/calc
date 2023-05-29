@@ -325,7 +325,7 @@ dependencies = [
  "cw-storage-plus",
  "cw2",
  "cw20",
- "dex",
+ "exchange",
  "kujira",
  "prost 0.11.9",
  "rand",
@@ -353,16 +353,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "dex"
-version = "0.0.1"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-storage-plus",
- "thiserror",
 ]
 
 [[package]]
@@ -445,6 +435,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "exchange"
+version = "0.0.1"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "thiserror",
+]
+
+[[package]]
 name = "ff"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -464,7 +464,7 @@ dependencies = [
  "cw-multi-test",
  "cw-storage-plus",
  "cw2",
- "dex",
+ "exchange",
  "schemars",
  "serde",
  "thiserror",

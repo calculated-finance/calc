@@ -18,7 +18,9 @@ use crate::types::vault::{Vault, VaultStatus};
 use cosmwasm_std::{to_binary, SubMsg, WasmMsg};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{DepsMut, Env, Response, Uint128};
-use dex::msg::{ExecuteMsg as LimitOrderExecuteMsg, OrderStatus, QueryMsg as LimitOrderQueryMsg};
+use exchange::msg::{
+    ExecuteMsg as LimitOrderExecuteMsg, OrderStatus, QueryMsg as LimitOrderQueryMsg,
+};
 use kujira::fin::ExecuteMsg as FinExecuteMsg;
 
 pub fn execute_trigger_handler(

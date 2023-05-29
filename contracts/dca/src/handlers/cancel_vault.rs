@@ -13,7 +13,7 @@ use crate::types::trigger::TriggerConfiguration;
 use crate::types::vault::{Vault, VaultStatus};
 use cosmwasm_std::{to_binary, BankMsg, DepsMut, Response, Uint128, WasmMsg};
 use cosmwasm_std::{Env, MessageInfo, SubMsg};
-use dex::msg::ExecuteMsg;
+use exchange::msg::ExecuteMsg;
 
 pub fn cancel_vault_handler(
     deps: DepsMut,

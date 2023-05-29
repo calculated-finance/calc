@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
-use dex::msg::{ExecuteMsg, QueryMsg};
+use exchange::msg::{ExecuteMsg, QueryMsg};
 // use cw2::set_contract_version;
 
 use crate::error::ContractError;

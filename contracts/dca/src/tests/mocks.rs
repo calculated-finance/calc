@@ -7,7 +7,7 @@ use cosmwasm_std::{
     SystemError, SystemResult, Timestamp, Uint256, WasmQuery,
 };
 use cw20::Denom;
-use dex::msg::{OrderStatus, QueryMsg as LimitOrderQueryMsg};
+use exchange::msg::{OrderStatus, QueryMsg as LimitOrderQueryMsg};
 use kujira::fin::{
     BookResponse, ConfigResponse, OrderResponse, PoolResponse, QueryMsg as FinQueryMsg,
     SimulationResponse,
