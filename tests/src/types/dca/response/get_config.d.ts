@@ -33,6 +33,7 @@ export interface Config {
   default_swap_fee_percent: Decimal;
   executors: Addr[];
   fee_collectors: FeeCollector[];
+  old_staking_router_address: Addr;
   paused: boolean;
   risk_weighted_average_escrow_level: Decimal;
   twap_period: number;

@@ -1,8 +1,6 @@
-import { Coin, coin } from '@cosmjs/proto-signing';
 import { Context } from 'mocha';
 import { map } from 'ramda';
 import { execute } from '../../shared/cosmwasm';
-import { EventData } from '../../types/dca/response/get_events';
 import { Vault } from '../../types/dca/response/get_vault';
 import { createVault, getBalances } from '../helpers';
 import { expect } from '../shared.test';
@@ -11,7 +9,6 @@ describe('when disbursing escrow', () => {
   describe('with risk weighted average swap adjustment strategy & no trigger', () => {
     let vaultBeforeExecution: Vault;
     let vaultAfterExecution: Vault;
-    let eventPayloads: EventData[];
     let balancesBeforeExecution: { [x: string]: { address: string } };
     let balancesAfterExecution: { [x: string]: { address: string } };
     let performanceFee: number;
@@ -61,15 +58,6 @@ describe('when disbursing escrow', () => {
           get_vault: { vault_id },
         })
       ).vault;
-
-      eventPayloads = map(
-        (event) => event.data,
-        (
-          await this.cosmWasmClient.queryContractSmart(this.dcaContractAddress, {
-            get_events_by_resource_id: { resource_id: vault_id },
-          })
-        ).events,
-      );
     });
 
     it('empties the escrowed balance', async function (this: Context) {

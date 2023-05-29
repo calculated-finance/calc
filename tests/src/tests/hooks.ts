@@ -116,6 +116,7 @@ const instantiateDCAContract = async (
       default_swap_fee_percent: `${calcSwapFee}`,
       weighted_scale_swap_fee_percent: '0.01',
       risk_weighted_average_escrow_level: '0.05',
+      old_staking_router_address: adminContractAddress,
     },
     'dca',
   );
