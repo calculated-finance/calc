@@ -1,4 +1,4 @@
-use crate::constants::{ONE, PAIR_CONTRACT_ADDRESS, SWAP_CONTRACT_ADDRESS, SWAP_FEE_RATE, TEN};
+use crate::constants::{DEX_CONTRACT_ADDRESS, ONE, PAIR_CONTRACT_ADDRESS, SWAP_FEE_RATE, TEN};
 use crate::helpers::price::{FinBookResponse, FinPoolResponse, FinSimulationResponse};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage};
 use cosmwasm_std::{
@@ -7,12 +7,12 @@ use cosmwasm_std::{
     SystemError, SystemResult, Timestamp, Uint256, WasmQuery,
 };
 use cw20::Denom;
+use dex::msg::{OrderStatus, QueryMsg as LimitOrderQueryMsg};
 use kujira::fin::{
     BookResponse, ConfigResponse, OrderResponse, PoolResponse, QueryMsg as FinQueryMsg,
     SimulationResponse,
 };
 use kujira::precision::Precision;
-use limit_orders::msg::{OrderStatus, QueryMsg as LimitOrderQueryMsg};
 use serde::de::DeserializeOwned;
 use std::marker::PhantomData;
 use std::str::FromStr;
@@ -91,13 +91,11 @@ impl<C: DeserializeOwned> CalcMockQuerier<C> {
                         .unwrap(),
                         _ => panic!("Unsupported fin query"),
                     },
-                    SWAP_CONTRACT_ADDRESS => {
-                        match from_binary::<LimitOrderQueryMsg>(msg).unwrap() {
-                            LimitOrderQueryMsg::GetOrderStatus { .. } => {
-                                to_binary(&OrderStatus::Filled).unwrap()
-                            }
+                    DEX_CONTRACT_ADDRESS => match from_binary::<LimitOrderQueryMsg>(msg).unwrap() {
+                        LimitOrderQueryMsg::GetOrderStatus { .. } => {
+                            to_binary(&OrderStatus::Filled).unwrap()
                         }
-                    }
+                    },
                     _ => panic!("Unsupported contract addr"),
                 },
                 _ => panic!("Unsupported contract addr"),

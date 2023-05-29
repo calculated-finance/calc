@@ -1,5 +1,5 @@
 [package]
-name = "limit-orders"
+name = "dex"
 version = "0.0.1"
 authors = ["james <james@calculated.fi>"]
 edition = "2021"

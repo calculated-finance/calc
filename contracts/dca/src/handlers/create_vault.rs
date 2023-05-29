@@ -34,7 +34,7 @@ use crate::types::trigger::{Trigger, TriggerConfiguration};
 use crate::types::vault::{Vault, VaultBuilder, VaultStatus};
 use cosmwasm_std::{to_binary, Addr, Coin, Decimal, SubMsg, WasmMsg};
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Timestamp, Uint128, Uint64};
-use limit_orders::msg::ExecuteMsg as LimitOrderExecuteMsg;
+use dex::msg::ExecuteMsg as LimitOrderExecuteMsg;
 
 pub fn create_vault_handler(
     deps: DepsMut,

@@ -18,10 +18,8 @@ use crate::types::vault::{Vault, VaultStatus};
 use cosmwasm_std::{to_binary, SubMsg, WasmMsg};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{DepsMut, Env, Response, Uint128};
+use dex::msg::{ExecuteMsg as LimitOrderExecuteMsg, OrderStatus, QueryMsg as LimitOrderQueryMsg};
 use kujira::fin::ExecuteMsg as FinExecuteMsg;
-use limit_orders::msg::{
-    ExecuteMsg as LimitOrderExecuteMsg, OrderStatus, QueryMsg as LimitOrderQueryMsg,
-};
 
 pub fn execute_trigger_handler(
     deps: DepsMut,
@@ -68,7 +66,7 @@ pub fn execute_trigger_handler(
                 let config = get_config(deps.storage)?;
 
                 let order_status = deps.querier.query_wasm_smart::<OrderStatus>(
-                    config.swap_contract_address.clone(),
+                    config.dex_contract_address.clone(),
                     &LimitOrderQueryMsg::GetOrderStatus { order_idx },
                 )?;
 
@@ -79,7 +77,7 @@ pub fn execute_trigger_handler(
                 }
 
                 response = response.add_submessage(SubMsg::new(WasmMsg::Execute {
-                    contract_addr: config.swap_contract_address.to_string(),
+                    contract_addr: config.dex_contract_address.to_string(),
                     msg: to_binary(&LimitOrderExecuteMsg::WithdrawOrder { order_idx }).unwrap(),
                     funds: vec![],
                 }));
@@ -517,7 +515,7 @@ mod execute_trigger_tests {
         assert_eq!(
             response.messages.first().unwrap(),
             &SubMsg::new(WasmMsg::Execute {
-                contract_addr: config.swap_contract_address.to_string(),
+                contract_addr: config.dex_contract_address.to_string(),
                 msg: to_binary(&LimitOrderExecuteMsg::WithdrawOrder {
                     order_idx: order_idx,
                 })
