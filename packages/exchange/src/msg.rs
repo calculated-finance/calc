@@ -8,9 +8,16 @@ pub struct InstantiateMsg {}
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    SubmitOrder { target_price: Decimal256 },
-    RetractOrder { order_idx: Uint128 },
-    WithdrawOrder { order_idx: Uint128 },
+    SubmitOrder {
+        target_price: Decimal256,
+        target_denom: String,
+    },
+    RetractOrder {
+        order_idx: Uint128,
+    },
+    WithdrawOrder {
+        order_idx: Uint128,
+    },
     InternalMsg(Binary),
 }
 
