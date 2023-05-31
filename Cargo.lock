@@ -464,6 +464,7 @@ dependencies = [
  "cw-multi-test",
  "cw-storage-plus",
  "cw2",
+ "cw20",
  "exchange",
  "kujira-fin",
  "kujira-std",

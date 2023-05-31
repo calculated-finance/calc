@@ -11,7 +11,7 @@ pub struct Pair {
 }
 
 impl Pair {
-    pub fn position_type(&self, swap_denom: String) -> PositionType {
+    pub fn position_type(&self, swap_denom: &str) -> PositionType {
         if self.quote_denom == swap_denom {
             PositionType::Enter
         } else {
