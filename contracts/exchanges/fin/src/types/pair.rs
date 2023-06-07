@@ -9,6 +9,8 @@ pub struct Pair {
     pub base_denom: String,
     pub quote_denom: String,
     pub address: Addr,
+    pub decimal_delta: i8,
+    pub price_precision: u8,
 }
 
 impl Pair {
@@ -37,6 +39,8 @@ impl Into<ExchangePair> for Pair {
     fn into(self) -> ExchangePair {
         ExchangePair {
             denoms: [self.base_denom, self.quote_denom],
+            decimal_delta: self.decimal_delta,
+            price_precision: self.price_precision,
         }
     }
 }
