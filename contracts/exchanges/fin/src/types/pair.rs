@@ -39,8 +39,6 @@ impl Into<ExchangePair> for Pair {
     fn into(self) -> ExchangePair {
         ExchangePair {
             denoms: [self.base_denom, self.quote_denom],
-            decimal_delta: self.decimal_delta,
-            price_precision: self.price_precision,
         }
     }
 }

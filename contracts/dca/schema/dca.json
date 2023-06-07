@@ -1177,15 +1177,9 @@
       "Pair": {
         "type": "object",
         "required": [
-          "decimal_delta",
-          "denoms",
-          "price_precision"
+          "denoms"
         ],
         "properties": {
-          "decimal_delta": {
-            "type": "integer",
-            "format": "int8"
-          },
           "denoms": {
             "type": "array",
             "items": {
@@ -1193,11 +1187,6 @@
             },
             "maxItems": 2,
             "minItems": 2
-          },
-          "price_precision": {
-            "type": "integer",
-            "format": "uint8",
-            "minimum": 0.0
           }
         },
         "additionalProperties": false
@@ -3582,15 +3571,9 @@
         "Pair": {
           "type": "object",
           "required": [
-            "decimal_delta",
-            "denoms",
-            "price_precision"
+            "denoms"
           ],
           "properties": {
-            "decimal_delta": {
-              "type": "integer",
-              "format": "int8"
-            },
             "denoms": {
               "type": "array",
               "items": {
@@ -3598,11 +3581,6 @@
               },
               "maxItems": 2,
               "minItems": 2
-            },
-            "price_precision": {
-              "type": "integer",
-              "format": "uint8",
-              "minimum": 0.0
             }
           },
           "additionalProperties": false
