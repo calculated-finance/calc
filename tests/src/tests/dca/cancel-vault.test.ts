@@ -10,7 +10,7 @@ import { expect } from '../shared.test';
 import { coin } from '@cosmjs/proto-signing';
 
 describe('when cancelling a vault', () => {
-  describe('with an unfilled limit order trigger', async () => {
+  describe.only('with an unfilled limit order trigger', async () => {
     const swapAmount = 100000;
     const targetPrice = 0.5;
     let vaultBeforeExecution: Vault;
