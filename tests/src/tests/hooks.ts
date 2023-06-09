@@ -236,5 +236,32 @@ export const instantiateFinPairContract = async (
     );
   }
 
+  const ordersResponse = await cosmWasmClient.queryContractSmart(finContractAddress, {
+    orders_by_user: {
+      address: adminWalletAddress,
+    },
+  });
+
+  console.log('Orders: ', ordersResponse);
+
+  const simulationResponse = await cosmWasmClient.queryContractSmart(finContractAddress, {
+    simulation: {
+      offer_asset: {
+        info: {
+          native_token: { denom: baseDenom },
+        },
+        amount: '100000',
+      },
+    },
+  });
+
+  console.log('Simulation: ', simulationResponse);
+
+  const bookResponse = await cosmWasmClient.queryContractSmart(finContractAddress, {
+    book: {},
+  });
+
+  console.log('Book: ', bookResponse);
+
   return finContractAddress;
 };
