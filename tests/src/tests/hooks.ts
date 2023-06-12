@@ -188,12 +188,6 @@ export const instantiateExchangeContract = async (
     });
   }
 
-  const pairsResponse = await cosmWasmClient.queryContractSmart(finExchangeAddress, {
-    get_pairs: {},
-  });
-
-  console.log('Pairs: ', pairsResponse);
-
   return finExchangeAddress;
 };
 
@@ -241,33 +235,6 @@ export const instantiateFinPairContract = async (
       [order.amount as Coin],
     );
   }
-
-  const ordersResponse = await cosmWasmClient.queryContractSmart(finContractAddress, {
-    orders_by_user: {
-      address: adminWalletAddress,
-    },
-  });
-
-  console.log('Orders: ', ordersResponse);
-
-  const simulationResponse = await cosmWasmClient.queryContractSmart(finContractAddress, {
-    simulation: {
-      offer_asset: {
-        info: {
-          native_token: { denom: baseDenom },
-        },
-        amount: '100000',
-      },
-    },
-  });
-
-  console.log('Simulation: ', simulationResponse);
-
-  const bookResponse = await cosmWasmClient.queryContractSmart(finContractAddress, {
-    book: {},
-  });
-
-  console.log('Book: ', bookResponse);
 
   return finContractAddress;
 };

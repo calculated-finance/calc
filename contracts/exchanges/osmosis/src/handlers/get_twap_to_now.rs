@@ -17,7 +17,7 @@ pub fn get_twap_to_now_handler(
     target_denom: String,
     period: u64,
 ) -> StdResult<Decimal256> {
-    let pair = find_pair(deps.storage, [swap_denom, target_denom])?;
+    let pair = find_pair(deps.storage, [swap_denom.clone(), target_denom])?;
 
     let route = match pair.position_type(&swap_denom) {
         PositionType::Enter => pair.route.clone(),

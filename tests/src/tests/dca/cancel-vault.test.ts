@@ -10,7 +10,7 @@ import { expect } from '../shared.test';
 import { coin } from '@cosmjs/proto-signing';
 
 describe('when cancelling a vault', () => {
-  describe.only('with an unfilled limit order trigger', async () => {
+  describe('with an unfilled limit order trigger', async () => {
     const swapAmount = 100000;
     const targetPrice = 0.5;
     let vaultBeforeExecution: Vault;
@@ -283,6 +283,7 @@ describe('when cancelling a vault', () => {
           swap_adjustment_strategy: {
             risk_weighted_average: {
               base_denom: 'bitcoin',
+              position_type: 'enter',
             },
           },
           time_interval: 'every_block',
