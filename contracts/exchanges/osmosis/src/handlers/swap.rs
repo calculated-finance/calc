@@ -64,12 +64,12 @@ pub fn swap_handler(
         .add_attribute("swap_amount", info.funds[0].to_string())
         .add_attribute("minimum_receive_amount", minimum_receive_amount.to_string())
         .add_submessage(SubMsg {
-            msg: (MsgSwapExactAmountIn {
+            msg: MsgSwapExactAmountIn {
                 sender: env.contract.address.to_string(),
                 token_in: Some(info.funds[0].clone().into()),
                 token_out_min_amount: minimum_receive_amount.amount.to_string(),
                 routes,
-            })
+            }
             .into(),
             id: AFTER_SWAP,
             reply_on: ReplyOn::Success,
