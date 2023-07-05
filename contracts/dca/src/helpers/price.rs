@@ -52,7 +52,7 @@ pub fn get_slippage(
     );
 
     if expected_receive_amount.is_err() {
-        return Ok(Decimal::percent(100));
+        return Ok(Decimal::percent(0));
     }
 
     let expected_price = Decimal::from_ratio(swap_amount.amount, expected_receive_amount?);
