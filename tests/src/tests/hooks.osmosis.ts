@@ -1,6 +1,6 @@
 import { fetchConfig } from '../shared/config';
 import {
-  createAdminCosmWasmClient,
+  createSigningCosmWasmClient,
   execute,
   getWallet,
   uploadAndInstantiate,
@@ -11,9 +11,9 @@ import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
 import { cosmos, osmosis } from 'osmojs';
 import { find, map } from 'ramda';
 import { PositionType } from '../types/dca/execute';
-import { Pool } from 'osmojs/types/codegen/osmosis/gamm/pool-models/balancer/balancerPool';
 import { coin } from '@cosmjs/proto-signing';
 import { Pair } from '../types/exchanges/osmosis/pair';
+import { Pool } from 'osmojs/dist/codegen/osmosis/gamm/pool-models/balancer/balancerPool';
 
 const dexSwapFee = 0.0005;
 const automationFee = 0.0075;
@@ -26,12 +26,11 @@ export const mochaHooks = async (): Promise<Mocha.RootHookObject> => {
 
   const config = await fetchConfig();
 
-  const queryClient = await osmosis.ClientFactory.createRPCQueryClient({ rpcEndpoint: config.netUrl });
-  const cosmWasmClient = await createAdminCosmWasmClient(config);
+  const queryClient = await osmosis.ClientFactory.createRPCQueryClient({ rpcEndpoint: config.rpcUrl });
+  const cosmWasmClient = await createSigningCosmWasmClient(config);
 
-  const adminWalletAddress = (
-    await (await getWallet(config.adminWalletMnemonic, config.bech32AddressPrefix)).getAccounts()
-  )[0].address;
+  const adminWalletAddress = (await (await getWallet(config.mnemonic, config.bech32AddressPrefix)).getAccounts())[0]
+    .address;
 
   const feeCollectorWallet = await createWallet(config);
   const feeCollectorAddress = (await feeCollectorWallet.getAccounts())[0].address;
@@ -53,7 +52,11 @@ export const mochaHooks = async (): Promise<Mocha.RootHookObject> => {
 
   const pools = map(
     (pool: any) => osmosis.gamm.v1beta1.Pool.decode(pool.value) as Pool,
-    (await queryClient.osmosis.gamm.v1beta1.pools({})).pools,
+    (
+      await queryClient.osmosis.gamm.v1beta1.pools({
+        pagination: null,
+      })
+    ).pools,
   );
 
   const pool = find((pool: Pool) => {
@@ -93,6 +96,7 @@ export const mochaHooks = async (): Promise<Mocha.RootHookObject> => {
   const validatorAddress = (
     await queryClient.cosmos.staking.v1beta1.validators({
       status: cosmos.staking.v1beta1.bondStatusToJSON(cosmos.staking.v1beta1.BondStatus.BOND_STATUS_BONDED),
+      pagination: null,
     })
   ).validators[0].operatorAddress;
 

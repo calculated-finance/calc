@@ -1,6 +1,6 @@
 import { fetchConfig } from '../shared/config';
 import {
-  createAdminCosmWasmClient,
+  createSigningCosmWasmClient,
   execute,
   getWallet,
   uploadAndInstantiate,
@@ -41,11 +41,11 @@ export const mochaHooks = async (): Promise<Mocha.RootHookObject> => {
 
   const config = await fetchConfig();
 
-  const queryClient = await dualitylabs.ClientFactory.createRPCQueryClient({ rpcEndpoint: config.netUrl });
-  const cosmWasmClient = await createAdminCosmWasmClient(config);
+  const queryClient = await dualitylabs.ClientFactory.createRPCQueryClient({ rpcEndpoint: config.rpcUrl });
+  const cosmWasmClient = await createSigningCosmWasmClient(config);
   const dClient = getSigningDualitylabsClient({
-    rpcEndpoint: config.netUrl,
-    signer: await getWallet(config.adminWalletMnemonic, config.bech32AddressPrefix),
+    rpcEndpoint: config.rpcUrl,
+    signer: await getWallet(config.mnemonic, config.bech32AddressPrefix),
   });
 
   //   const balances = await queryClient.dualitylabs.duality.dex.poolReservesAll({
@@ -53,9 +53,8 @@ export const mochaHooks = async (): Promise<Mocha.RootHookObject> => {
   //     tokenIn: '',
   //   });
 
-  const adminWalletAddress = (
-    await (await getWallet(config.adminWalletMnemonic, config.bech32AddressPrefix)).getAccounts()
-  )[0].address;
+  const adminWalletAddress = (await (await getWallet(config.mnemonic, config.bech32AddressPrefix)).getAccounts())[0]
+    .address;
 
   const feeCollectorWallet = await createWallet(config);
   const feeCollectorAddress = (await feeCollectorWallet.getAccounts())[0].address;
