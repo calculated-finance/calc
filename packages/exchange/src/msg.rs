@@ -7,6 +7,7 @@ pub struct InstantiateMsg {}
 #[cw_serde]
 pub enum ExecuteMsg {
     Swap {
+        route: Option<Binary>,
         minimum_receive_amount: Coin,
     },
     SubmitOrder {

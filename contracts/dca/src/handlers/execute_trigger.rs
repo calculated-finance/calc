@@ -291,6 +291,7 @@ pub fn execute_trigger_handler(
                         amount: adjusted_minimum_receive_amount,
                         denom: vault.target_denom,
                     },
+                    route: None,
                 })?,
                 funds: vec![adjusted_swap_amount],
             },
@@ -773,6 +774,7 @@ mod execute_trigger_tests {
                             amount: vault.minimum_receive_amount.unwrap_or(Uint128::zero()),
                             denom: vault.target_denom.clone(),
                         },
+                        route: None
                     })
                     .unwrap(),
                     funds: vec![Coin::new(
@@ -1224,6 +1226,7 @@ mod execute_trigger_tests {
                             amount: vault.minimum_receive_amount.unwrap_or(Uint128::zero()),
                             denom: vault.target_denom.clone(),
                         },
+                        route: None
                     })
                     .unwrap(),
                     funds: vec![Coin::new(vault.swap_amount.into(), vault.get_swap_denom())]
@@ -1265,6 +1268,7 @@ mod execute_trigger_tests {
                             amount: vault.minimum_receive_amount.unwrap_or(Uint128::zero()),
                             denom: vault.target_denom.clone(),
                         },
+                        route: None
                     })
                     .unwrap(),
                     funds: vec![vault.balance]
@@ -1305,6 +1309,7 @@ mod execute_trigger_tests {
                             amount: vault.minimum_receive_amount.unwrap_or(Uint128::zero()),
                             denom: vault.target_denom.clone(),
                         },
+                        route: None
                     })
                     .unwrap(),
                     funds: vec![get_swap_amount(&deps.as_ref(), &env, &vault).unwrap()]
@@ -1425,6 +1430,7 @@ mod execute_trigger_tests {
                             amount: vault.minimum_receive_amount.unwrap_or(Uint128::zero()),
                             denom: vault.target_denom.clone(),
                         },
+                        route: None
                     })
                     .unwrap(),
                     funds: vec![Coin::new(vault.swap_amount.into(), vault.get_swap_denom())]

@@ -62,6 +62,7 @@ pub fn execute(
     match msg {
         ExecuteMsg::Swap {
             minimum_receive_amount,
+            route: _,
         } => swap_handler(deps, env, info, minimum_receive_amount),
         ExecuteMsg::SubmitOrder {
             target_price,
