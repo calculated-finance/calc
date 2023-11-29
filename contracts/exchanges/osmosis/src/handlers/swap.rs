@@ -20,7 +20,7 @@ pub fn swap_handler(
     env: Env,
     info: MessageInfo,
     mut minimum_receive_amount: Coin,
-    route: Option<Binary>,
+    injected_route: Option<Binary>,
 ) -> Result<Response, ContractError> {
     if info.funds.len() != 1 {
         return Err(ContractError::InvalidFunds {
@@ -28,7 +28,9 @@ pub fn swap_handler(
         });
     }
 
-    if info.funds[0].amount.is_zero() {
+    let swap_amount = info.funds[0].clone();
+
+    if swap_amount.amount.is_zero() {
         return Err(ContractError::InvalidFunds {
             msg: "Must provide a non-zero amount to swap".to_string(),
         });
@@ -37,14 +39,6 @@ pub fn swap_handler(
     if minimum_receive_amount.amount.is_zero() {
         minimum_receive_amount = add_to(&minimum_receive_amount, Uint128::one())
     }
-
-    let pair = find_pair(
-        deps.storage,
-        [
-            info.funds[0].denom.clone(),
-            minimum_receive_amount.denom.clone(),
-        ],
-    )?;
 
     SWAP_CACHE.save(
         deps.storage,
@@ -58,15 +52,25 @@ pub fn swap_handler(
         },
     )?;
 
-    let routes = match route {
-        Some(route) => from_json::<Vec<SwapAmountInRoute>>(route),
-        None => calculate_route(&deps.querier, &pair, info.funds[0].denom.clone()),
-    }?;
+    let routes = injected_route.map_or_else(
+        || {
+            let pair = find_pair(
+                deps.storage,
+                [
+                    swap_amount.denom.clone(),
+                    minimum_receive_amount.denom.clone(),
+                ],
+            )?;
+
+            calculate_route(&deps.querier, &pair, swap_amount.denom.clone())
+        },
+        |r| from_json::<Vec<SwapAmountInRoute>>(r.as_slice()),
+    )?;
 
     Ok(Response::new()
         .add_attribute("swap", "true")
         .add_attribute("sender", info.sender)
-        .add_attribute("swap_amount", info.funds[0].to_string())
+        .add_attribute("swap_amount", swap_amount.to_string())
         .add_attribute("minimum_receive_amount", minimum_receive_amount.to_string())
         .add_submessage(SubMsg {
             msg: MsgSwapExactAmountIn {
