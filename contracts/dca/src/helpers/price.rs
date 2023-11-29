@@ -16,6 +16,7 @@ pub fn get_twap_to_now(
             swap_denom,
             target_denom,
             period,
+            route: None,
         },
     )
 }
@@ -32,6 +33,7 @@ pub fn get_expected_receive_amount(
             &QueryMsg::GetExpectedReceiveAmount {
                 swap_amount,
                 target_denom,
+                route: None,
             },
         )?
         .amount)

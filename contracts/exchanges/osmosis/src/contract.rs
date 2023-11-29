@@ -62,8 +62,8 @@ pub fn execute(
     match msg {
         ExecuteMsg::Swap {
             minimum_receive_amount,
-            route: _,
-        } => swap_handler(deps, env, info, minimum_receive_amount),
+            route,
+        } => swap_handler(deps, env, info, minimum_receive_amount, route),
         ExecuteMsg::SubmitOrder {
             target_price,
             target_denom,
@@ -93,20 +93,24 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             swap_denom,
             target_denom,
             period,
+            route,
         } => to_json_binary(&get_twap_to_now_handler(
             deps,
             env,
             swap_denom,
             target_denom,
             period,
+            route,
         )?),
         QueryMsg::GetExpectedReceiveAmount {
             swap_amount,
             target_denom,
+            route,
         } => to_json_binary(&get_expected_receive_amount_handler(
             deps,
             swap_amount,
             target_denom,
+            route,
         )?),
         QueryMsg::InternalQuery { msg } => match from_json(&msg).unwrap() {
             InternalQueryMsg::GetPairs { start_after, limit } => {

@@ -1,3 +1,3 @@
-449b7eb1052b16b6e238736832b6e56bc2c19ae34506ce682d6dc0f2c695a6f9  target/wasm32-unknown-unknown/release/dca.wasm
-b2fd5d9b5216d471f45669b375458d8c82f18021bc052d221019607421b749fe  target/wasm32-unknown-unknown/release/fin.wasm
-dabc148d37ccda83833b6e9776981cfa50515854089fee6b1d9a4a57358d4b56  target/wasm32-unknown-unknown/release/osmosis.wasm
+f147e2363fa29a9c7f730790c021064e1e337b65cc5970238d07d2fddfbb8698  target/wasm32-unknown-unknown/release/dca.wasm
+2222e729df70517bbae1a3fb06561c64754287d8d1b09e34e80f3e152a8e109e  target/wasm32-unknown-unknown/release/fin.wasm
+d2df5b7f7fe42c0389dc7a1915890b5688cac9c8b6d155f2e4c12229f622aece  target/wasm32-unknown-unknown/release/osmosis.wasm

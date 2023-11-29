@@ -342,6 +342,7 @@ pub fn assert_pair_exists_for_denoms(
             swap_denom: swap_denom.clone(),
             target_denom: target_denom.clone(),
             period: config.twap_period,
+            route: None,
         },
     );
     if twap_request.is_err() {

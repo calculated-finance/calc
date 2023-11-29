@@ -1,5 +1,8 @@
-use cosmwasm_std::{Decimal, Decimal256, Deps, Env, StdResult};
-use osmosis_std::{shim::Timestamp, types::osmosis::twap::v1beta1::TwapQuerier};
+use cosmwasm_std::{from_json, Binary, Decimal, Decimal256, Deps, Env, StdError, StdResult};
+use osmosis_std::{
+    shim::Timestamp,
+    types::osmosis::{poolmanager::v1beta1::SwapAmountInRoute, twap::v1beta1::TwapQuerier},
+};
 
 use crate::{
     helpers::routes::get_token_out_denom, state::pairs::find_pair,
@@ -12,13 +15,28 @@ pub fn get_twap_to_now_handler(
     mut swap_denom: String,
     target_denom: String,
     period: u64,
+    injected_route: Option<Binary>,
 ) -> StdResult<Decimal256> {
-    let pair = find_pair(deps.storage, [swap_denom.clone(), target_denom])?;
+    let route = injected_route.map_or_else(
+        || {
+            let pair = find_pair(deps.storage, [swap_denom.clone(), target_denom])?;
 
-    let route = match pair.position_type(swap_denom.clone()) {
-        PositionType::Enter => pair.route,
-        PositionType::Exit => pair.route.into_iter().rev().collect(),
-    };
+            Ok(match pair.position_type(swap_denom.clone()) {
+                PositionType::Enter => pair.route,
+                PositionType::Exit => pair.route.into_iter().rev().collect(),
+            })
+        },
+        |r| {
+            from_json::<Vec<SwapAmountInRoute>>(r.as_slice()).map_or_else(
+                |e| Err(StdError::generic_err(e.to_string())),
+                |r| {
+                    Ok(r.into_iter()
+                        .map(|r: SwapAmountInRoute| r.pool_id)
+                        .collect::<Vec<u64>>())
+                },
+            )
+        },
+    )?;
 
     let mut price = Decimal::one();
 
@@ -76,7 +94,8 @@ mod get_twap_to_now_tests {
                 mock_env(),
                 DENOM_UOSMO.to_string(),
                 DENOM_UATOM.to_string(),
-                0
+                0,
+                None
             )
             .unwrap_err(),
             StdError::NotFound {
@@ -111,9 +130,15 @@ mod get_twap_to_now_tests {
 
         save_pair(deps.as_mut().storage, &pair).unwrap();
 
-        let price =
-            get_twap_to_now_handler(deps.as_ref(), env, pair.quote_denom, pair.base_denom, 60)
-                .unwrap();
+        let price = get_twap_to_now_handler(
+            deps.as_ref(),
+            env,
+            pair.quote_denom,
+            pair.base_denom,
+            60,
+            None,
+        )
+        .unwrap();
 
         assert_eq!(price, Decimal256::percent(80));
     }
@@ -148,9 +173,15 @@ mod get_twap_to_now_tests {
 
         save_pair(deps.as_mut().storage, &pair).unwrap();
 
-        let price =
-            get_twap_to_now_handler(deps.as_ref(), env, pair.quote_denom, pair.base_denom, 60)
-                .unwrap();
+        let price = get_twap_to_now_handler(
+            deps.as_ref(),
+            env,
+            pair.quote_denom,
+            pair.base_denom,
+            60,
+            None,
+        )
+        .unwrap();
 
         assert_eq!(price, Decimal256::percent(20) * Decimal256::percent(120));
     }

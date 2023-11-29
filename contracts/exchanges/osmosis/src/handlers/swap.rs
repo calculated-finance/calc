@@ -1,7 +1,8 @@
 use cosmwasm_std::{
-    BankMsg, Coin, Deps, DepsMut, Env, MessageInfo, ReplyOn, Response, SubMsg, Uint128,
+    from_json, BankMsg, Binary, Coin, Deps, DepsMut, Env, MessageInfo, ReplyOn, Response, SubMsg,
+    Uint128,
 };
-use osmosis_std::types::osmosis::poolmanager::v1beta1::MsgSwapExactAmountIn;
+use osmosis_std::types::osmosis::poolmanager::v1beta1::{MsgSwapExactAmountIn, SwapAmountInRoute};
 use shared::coin::{add_to, subtract};
 
 use crate::{
@@ -19,6 +20,7 @@ pub fn swap_handler(
     env: Env,
     info: MessageInfo,
     mut minimum_receive_amount: Coin,
+    route: Option<Binary>,
 ) -> Result<Response, ContractError> {
     if info.funds.len() != 1 {
         return Err(ContractError::InvalidFunds {
@@ -56,7 +58,10 @@ pub fn swap_handler(
         },
     )?;
 
-    let routes = calculate_route(&deps.querier, &pair, info.funds[0].denom.clone())?;
+    let routes = match route {
+        Some(route) => from_json::<Vec<SwapAmountInRoute>>(route),
+        None => calculate_route(&deps.querier, &pair, info.funds[0].denom.clone()),
+    }?;
 
     Ok(Response::new()
         .add_attribute("swap", "true")
@@ -137,7 +142,8 @@ mod swap_tests {
                 mock_dependencies().as_mut(),
                 mock_env(),
                 mock_info(ADMIN, &[]),
-                Coin::new(12312, DENOM_UOSMO)
+                Coin::new(12312, DENOM_UOSMO),
+                None
             )
             .unwrap_err(),
             ContractError::InvalidFunds {
@@ -156,7 +162,8 @@ mod swap_tests {
                     ADMIN,
                     &[Coin::new(12312, DENOM_UATOM), Coin::new(12312, DENOM_UOSMO)]
                 ),
-                Coin::new(12312, DENOM_UOSMO)
+                Coin::new(12312, DENOM_UOSMO),
+                None
             )
             .unwrap_err(),
             ContractError::InvalidFunds {
@@ -172,7 +179,8 @@ mod swap_tests {
                 mock_dependencies().as_mut(),
                 mock_env(),
                 mock_info(ADMIN, &[Coin::new(0, DENOM_UOSMO)]),
-                Coin::new(12312, DENOM_UOSMO)
+                Coin::new(12312, DENOM_UOSMO),
+                None
             )
             .unwrap_err(),
             ContractError::InvalidFunds {
@@ -188,7 +196,8 @@ mod swap_tests {
                 mock_dependencies().as_mut(),
                 mock_env(),
                 mock_info(ADMIN, &[Coin::new(12312, DENOM_UOSMO)]),
-                Coin::new(12312, DENOM_UATOM)
+                Coin::new(12312, DENOM_UATOM),
+                None
             )
             .unwrap_err(),
             ContractError::Std(StdError::NotFound {
@@ -219,6 +228,7 @@ mod swap_tests {
             mock_env(),
             info,
             minimum_receive_amount.clone(),
+            None,
         )
         .unwrap();
 
@@ -252,6 +262,7 @@ mod swap_tests {
             mock_env(),
             info.clone(),
             minimum_receive_amount.clone(),
+            None,
         )
         .unwrap();
 
@@ -293,6 +304,7 @@ mod swap_tests {
             mock_env(),
             info.clone(),
             minimum_receive_amount.clone(),
+            None,
         )
         .unwrap();
 
