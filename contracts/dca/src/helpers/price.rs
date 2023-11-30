@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Coin, Decimal, QuerierWrapper, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, Binary, Coin, Decimal, QuerierWrapper, StdResult, Storage, Uint128};
 use exchange::msg::QueryMsg;
 
 use crate::state::config::get_config;
@@ -9,6 +9,7 @@ pub fn get_twap_to_now(
     swap_denom: String,
     target_denom: String,
     period: u64,
+    route: Option<Binary>,
 ) -> StdResult<Decimal> {
     querier.query_wasm_smart::<Decimal>(
         exchange_contract_address,
@@ -16,7 +17,7 @@ pub fn get_twap_to_now(
             swap_denom,
             target_denom,
             period,
-            route: None,
+            route,
         },
     )
 }
@@ -26,6 +27,7 @@ pub fn get_expected_receive_amount(
     exchange_contract_address: Addr,
     swap_amount: Coin,
     target_denom: String,
+    route: Option<Binary>,
 ) -> StdResult<Uint128> {
     Ok(querier
         .query_wasm_smart::<Coin>(
@@ -33,7 +35,7 @@ pub fn get_expected_receive_amount(
             &QueryMsg::GetExpectedReceiveAmount {
                 swap_amount,
                 target_denom,
-                route: None,
+                route,
             },
         )?
         .amount)
@@ -45,6 +47,7 @@ pub fn get_slippage(
     swap_amount: Coin,
     target_denom: String,
     belief_price: Decimal,
+    route: Option<Binary>,
 ) -> StdResult<Decimal> {
     if swap_amount.amount == Uint128::zero() {
         return Ok(Decimal::percent(0));
@@ -55,6 +58,7 @@ pub fn get_slippage(
         exchange_contract_address,
         swap_amount.clone(),
         target_denom,
+        route,
     );
 
     if expected_receive_amount.is_err() {
@@ -77,12 +81,14 @@ pub fn get_price(
     exchange_contract_address: Addr,
     swap_amount: Coin,
     target_denom: String,
+    route: Option<Binary>,
 ) -> StdResult<Decimal> {
     let expected_receive_amount = get_expected_receive_amount(
         querier,
         exchange_contract_address,
         swap_amount.clone(),
         target_denom.clone(),
+        route.clone(),
     );
 
     if expected_receive_amount.is_err() {
@@ -94,6 +100,7 @@ pub fn get_price(
             swap_amount.denom,
             target_denom,
             config.twap_period,
+            route,
         );
     }
 
