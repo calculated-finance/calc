@@ -8,7 +8,7 @@ use crate::helpers::validation::{
     assert_exactly_one_asset, assert_label_is_no_longer_than_100_characters,
     assert_no_destination_allocations_are_zero, assert_route_exists_for_denoms,
     assert_slippage_tolerance_is_less_than_or_equal_to_one,
-    assert_swap_adjusment_and_performance_assessment_strategies_are_compatible,
+    assert_swap_adjustment_and_performance_assessment_strategies_are_compatible,
     assert_swap_adjustment_strategy_params_are_valid, assert_swap_amount_is_greater_than_50000,
     assert_target_start_time_is_not_in_the_past, assert_time_interval_is_valid,
     assert_weighted_scale_multiplier_is_no_more_than_10,
@@ -67,7 +67,7 @@ pub fn create_vault_handler(
         route.clone(),
     )?;
 
-    assert_swap_adjusment_and_performance_assessment_strategies_are_compatible(
+    assert_swap_adjustment_and_performance_assessment_strategies_are_compatible(
         &swap_adjustment_strategy_params,
         &performance_assessment_strategy_params,
     )?;
@@ -108,8 +108,8 @@ pub fn create_vault_handler(
 
     let swap_denom = info.funds[0].denom.clone();
 
-    let swap_adjustment_strategy = if let Some(params) = swap_adjustment_strategy_params {
-        Some(match params {
+    let swap_adjustment_strategy = match swap_adjustment_strategy_params {
+        Some(params) => Some(match params {
             SwapAdjustmentStrategyParams::RiskWeightedAverage {
                 base_denom,
                 position_type,
@@ -135,9 +135,8 @@ pub fn create_vault_handler(
                     increase_only,
                 }
             }
-        })
-    } else {
-        None
+        }),
+        None => None,
     };
 
     let performance_assessment_strategy = match performance_assessment_strategy_params {
@@ -256,20 +255,18 @@ pub fn create_vault_handler(
 
             let target_price = Decimal::from_ratio(swap_amount, target_receive_amount);
 
-            Ok(response
-                .add_attribute("tp", target_price.to_string())
-                .add_submessage(SubMsg::reply_on_success(
-                    WasmMsg::Execute {
-                        contract_addr: config.exchange_contract_address.to_string(),
-                        msg: to_json_binary(&ExchangeExecuteMsg::SubmitOrder {
-                            target_price: target_price.into(),
-                            target_denom: vault.target_denom.clone(),
-                        })
-                        .unwrap(),
-                        funds: vec![Coin::new(TWO_MICRONS.into(), vault.get_swap_denom())],
-                    },
-                    AFTER_LIMIT_ORDER_PLACED_REPLY_ID,
-                )))
+            Ok(response.add_submessage(SubMsg::reply_on_success(
+                WasmMsg::Execute {
+                    contract_addr: config.exchange_contract_address.to_string(),
+                    msg: to_json_binary(&ExchangeExecuteMsg::SubmitOrder {
+                        target_price: target_price.into(),
+                        target_denom: vault.target_denom.clone(),
+                    })
+                    .unwrap(),
+                    funds: vec![Coin::new(TWO_MICRONS.into(), vault.get_swap_denom())],
+                },
+                AFTER_LIMIT_ORDER_PLACED_REPLY_ID,
+            )))
         }
         (Some(_), Some(_)) => Err(ContractError::CustomError {
             val: String::from(

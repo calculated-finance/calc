@@ -107,12 +107,7 @@ pub fn execute_trigger_handler(
     }
 
     let config = get_config(deps.storage)?;
-
-    let route = if let Some(route) = route {
-        Some(route)
-    } else {
-        vault.route.clone()
-    };
+    let route = route.map_or(vault.route.clone(), Some);
 
     let belief_price = get_twap_to_now(
         &deps.querier,
@@ -1129,7 +1124,7 @@ mod execute_trigger_tests {
     }
 
     #[test]
-    fn for_inactive_vault_with_active_performance_asssessment_should_create_a_new_trigger() {
+    fn for_inactive_vault_with_active_performance_assessment_should_create_a_new_trigger() {
         let mut deps = calc_mock_dependencies();
         let env = mock_env();
         let info = mock_info(ADMIN, &[]);

@@ -1,11 +1,9 @@
 use cosmwasm_std::{from_json, Binary, Decimal, Decimal256, Deps, Env, StdError, StdResult};
-use osmosis_std::{
-    shim::Timestamp,
-    types::osmosis::{poolmanager::v1beta1::SwapAmountInRoute, twap::v1beta1::TwapQuerier},
-};
+use osmosis_std::types::osmosis::poolmanager::v1beta1::SwapAmountInRoute;
 
 use crate::{
-    helpers::routes::get_token_out_denom, state::pairs::find_pair,
+    helpers::{price::get_arithmetic_twap_to_now, routes::get_token_out_denom},
+    state::pairs::find_pair,
     types::position_type::PositionType,
 };
 
@@ -19,7 +17,7 @@ pub fn get_twap_to_now_handler(
 ) -> StdResult<Decimal256> {
     let route = injected_route.map_or_else(
         || {
-            let pair = find_pair(deps.storage, [swap_denom.clone(), target_denom])?;
+            let pair = find_pair(deps.storage, [swap_denom.clone(), target_denom.clone()])?;
 
             Ok(match pair.position_type(swap_denom.clone()) {
                 PositionType::Enter => pair.route,
@@ -40,27 +38,38 @@ pub fn get_twap_to_now_handler(
 
     let mut price = Decimal::one();
 
-    for pool_id in route.into_iter() {
-        let target_denom = get_token_out_denom(&deps.querier, swap_denom.clone(), pool_id)?;
+    for adjacent_pools in route.windows(2).into_iter() {
+        let token_out_denom = get_token_out_denom(
+            &deps.querier,
+            swap_denom.clone(),
+            adjacent_pools[0],
+            adjacent_pools[1],
+        )?;
 
-        let pool_price = TwapQuerier::new(&deps.querier)
-            .arithmetic_twap_to_now(
-                pool_id,
-                target_denom.clone(),
-                swap_denom.clone(),
-                Some(Timestamp {
-                    seconds: (env.block.time.seconds() - period) as i64,
-                    nanos: 0,
-                }),
-            )
-            .unwrap()
-            .arithmetic_twap
-            .parse::<Decimal>()?;
+        let pool_price = get_arithmetic_twap_to_now(
+            &deps.querier,
+            env.clone(),
+            adjacent_pools[0],
+            swap_denom,
+            token_out_denom.clone(),
+            period,
+        )?;
 
         price = pool_price * price;
 
-        swap_denom = target_denom;
+        swap_denom = token_out_denom;
     }
+
+    let final_pool_price = get_arithmetic_twap_to_now(
+        &deps.querier,
+        env,
+        *route.last().unwrap(),
+        swap_denom,
+        target_denom,
+        period,
+    )?;
+
+    price = final_pool_price * price;
 
     Ok(price.into())
 }

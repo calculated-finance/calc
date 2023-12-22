@@ -356,7 +356,7 @@ pub fn assert_route_exists_for_denoms(
     Ok(())
 }
 
-pub fn assert_swap_adjusment_and_performance_assessment_strategies_are_compatible(
+pub fn assert_swap_adjustment_and_performance_assessment_strategies_are_compatible(
     swap_adjustment_strategy_params: &Option<SwapAdjustmentStrategyParams>,
     performance_assessment_strategy_params: &Option<PerformanceAssessmentStrategyParams>,
 ) -> Result<(), ContractError> {
@@ -454,8 +454,8 @@ pub fn assert_destination_allocations_add_up_to_one(
 ) -> Result<(), ContractError> {
     if destinations
         .iter()
-        .fold(Decimal::zero(), |acc, destintation| {
-            acc.checked_add(destintation.allocation).unwrap()
+        .fold(Decimal::zero(), |acc, destination| {
+            acc.checked_add(destination.allocation).unwrap()
         })
         != Decimal::percent(100)
     {
