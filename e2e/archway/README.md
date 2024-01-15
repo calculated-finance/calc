@@ -2,7 +2,7 @@
 
 Gas profiled integration tests hitting a real, local Stargaze chain.
 
-## Running Tests 
+## Running Tests
 
 Use `make e2etest-full` to run the tests or `ENABLE_MAX_COLLECTION=true make e2etest-full` to run all the tests, including the exhaustive minting tests.
 
@@ -15,6 +15,7 @@ Or if you only want to run one test: `make e2etest TEST_NAME=test_invalid_start_
 ## Adding New Integration Tests
 
 Add new tests in `src/tests`:
+
 ```rust
 #[test_context(Chain)]
 #[test]
@@ -48,8 +49,7 @@ fn test_mint(chain: &mut Chain) {
 }
 ```
 
-We are currentlying
-[ignoring](https://doc.rust-lang.org/book/ch11-02-running-tests.html#ignoring-some-tests-unless-specifically-requested)
+We are currently [ignoring](https://doc.rust-lang.org/book/ch11-02-running-tests.html#ignoring-some-tests-unless-specifically-requested)
 all integration tests by adding the `#[ignore]` annotation to them,
 because we want to skip them when people run `cargo test` from the
 workspace root.

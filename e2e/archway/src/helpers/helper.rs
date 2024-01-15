@@ -3,53 +3,52 @@ use std::str::FromStr;
 use super::chain::Chain;
 use astrovault::assets::asset::AssetInfo;
 use astrovault::ratio_pool_factory::handle_msg::RatioPoolSettings;
-use astrovault::stable_pool_factory::handle_msg::{StablePoolSettings, LockupConfig};
+use astrovault::stable_pool_factory::handle_msg::{LockupConfig, StablePoolSettings};
 use astrovault::staking_derivative::handle_msg::NetworkSettings;
-use astrovault::staking_derivative::init_msg::{BulkSettings, DxTokenSettings, CreateDxTokenSettings};
-use astrovault::standard_pool_factory::handle_msg::{PairSettings, BuybackburnSettings};
+use astrovault::staking_derivative::init_msg::{
+    BulkSettings, CreateDxTokenSettings, DxTokenSettings,
+};
+use astrovault::standard_pool_factory::handle_msg::{BuybackburnSettings, PairSettings};
 use cosm_orc::orchestrator::cosm_orc::tokio_block;
-use cosm_orc::orchestrator::error::{ProcessError, CosmwasmError};
-use cosm_orc::orchestrator::{Coin as OrcCoin, Address, ChainTxResponse, QueryResponse, ExecResponse};
+use cosm_orc::orchestrator::error::{CosmwasmError, ProcessError};
+use cosm_orc::orchestrator::{
+    Address, ChainTxResponse, Coin as OrcCoin, ExecResponse, QueryResponse,
+};
 use cosm_orc::orchestrator::{InstantiateResponse, SigningKey};
 use cosm_tome::chain::request::TxOptions;
 use cosm_tome::modules::bank::model::SendRequest;
-use cosmwasm_std::{Timestamp, from_binary, Addr, Decimal, Decimal256, Uint128};
+use cosmwasm_std::{from_json, Addr, Decimal, Decimal256, Timestamp, Uint128};
 
 use cw20::Cw20Coin;
 use dca::types::fee_collector::FeeCollector;
-use serde::Serialize;
 use serde::de::DeserializeOwned;
-
+use serde::Serialize;
 
 // contract names used by cosm-orc to register stored code ids / instantiated addresses:
-pub const DCA                       : &str = "dca";
-pub const CW20                      : &str = "cw20";
+pub const DCA: &str = "dca";
+pub const CW20: &str = "cw20";
 
-pub const ASTRO_STANDARD_PAIR       : &str = "standard_pool";
-pub const ASTRO_STABLE_PAIR         : &str = "a_sta_pair";
-pub const ASTRO_RATIO_PAIR          : &str = "a_rat_pair";
+pub const ASTRO_STANDARD_PAIR: &str = "standard_pool";
+pub const ASTRO_STABLE_PAIR: &str = "a_sta_pair";
+pub const ASTRO_RATIO_PAIR: &str = "a_rat_pair";
 
-pub const ASTRO_STANDARD_FACTORY    : &str = "standard_factory";
-pub const ASTRO_STABLE_FACTORY      : &str = "a_sta_fact";
-pub const ASTRO_RATIO_FACTORY       : &str = "a_rat_fact";
+pub const ASTRO_STANDARD_FACTORY: &str = "standard_factory";
+pub const ASTRO_STABLE_FACTORY: &str = "a_sta_fact";
+pub const ASTRO_RATIO_FACTORY: &str = "a_rat_fact";
 
-pub const BULK                      : &str = "bulk_settings";
-pub const DERIVATIVE                : &str = "derivative";
-pub const LP_STAKING                : &str = "lp_staking";
-pub const LOCKUPS                   : &str = "lockups";
-
+pub const BULK: &str = "bulk_settings";
+pub const DERIVATIVE: &str = "derivative";
+pub const LP_STAKING: &str = "lp_staking";
+pub const LOCKUPS: &str = "lockups";
 
 pub const CREATION_FEE: u128 = 1_000_000_000;
 pub const MINT_PRICE: u128 = 100_000_000;
-
-
 
 pub fn instantiate_dca(
     chain: &mut Chain,
     admin: String,
     key: &SigningKey,
 ) -> Result<InstantiateResponse, ProcessError> {
-    
     let addr = Addr::unchecked(admin.clone());
 
     chain.orc.instantiate(
@@ -60,7 +59,7 @@ pub fn instantiate_dca(
             executors: vec![addr.clone()],
             fee_collectors: vec![FeeCollector {
                 address: admin.clone(),
-                allocation: Decimal::percent(100)
+                allocation: Decimal::percent(100),
             }],
             default_swap_fee_percent: Decimal::percent(1),
             weighted_scale_swap_fee_percent: Decimal::percent(1),
@@ -78,13 +77,11 @@ pub fn instantiate_dca(
     )
 }
 
-
 pub fn instantiate_astro_standard_factory(
     chain: &mut Chain,
     admin: String,
     key: &SigningKey,
 ) -> Result<InstantiateResponse, ProcessError> {
-    
     let pair_code_id = chain.orc.contract_map.code_id(ASTRO_STANDARD_PAIR)?;
     let lp_staking_code_id = chain.orc.contract_map.code_id(LP_STAKING)?;
     let token_code_id = chain.orc.contract_map.code_id(CW20)?;
@@ -99,9 +96,9 @@ pub fn instantiate_astro_standard_factory(
             lp_staking_code_id,
             pair_settings: PairSettings {
                 swap_fee: None,
-                buybackburn_fee: Some(BuybackburnSettings { 
-                    fee: Decimal256::bps(20), 
-                    address: Addr::unchecked(admin.clone())
+                buybackburn_fee: Some(BuybackburnSettings {
+                    fee: Decimal256::bps(20),
+                    address: Addr::unchecked(admin.clone()),
                 }),
             },
             is_create_pair_enabled: None,
@@ -113,19 +110,15 @@ pub fn instantiate_astro_standard_factory(
     )
 }
 
-
-
 pub fn instantiate_astro_stable_factory(
     chain: &mut Chain,
     admin: String,
     key: &SigningKey,
 ) -> Result<InstantiateResponse, ProcessError> {
-
     let pool_code_id = chain.orc.contract_map.code_id(ASTRO_STABLE_PAIR)?;
     let lp_staking_code_id = chain.orc.contract_map.code_id(LP_STAKING)?;
     let token_code_id = chain.orc.contract_map.code_id(CW20)?;
     let lockups_code_id = chain.orc.contract_map.code_id(LOCKUPS)?;
-
 
     chain.orc.instantiate(
         ASTRO_STABLE_FACTORY,
@@ -152,19 +145,15 @@ pub fn instantiate_astro_stable_factory(
     )
 }
 
-
-
 pub fn instantiate_astro_ratio_factory(
     chain: &mut Chain,
     admin: String,
     key: &SigningKey,
 ) -> Result<InstantiateResponse, ProcessError> {
-
     let pool_code_id = chain.orc.contract_map.code_id(ASTRO_STABLE_PAIR)?;
     let lp_staking_code_id = chain.orc.contract_map.code_id(LP_STAKING)?;
     let token_code_id = chain.orc.contract_map.code_id(CW20)?;
     let lockups_code_id = chain.orc.contract_map.code_id(LOCKUPS)?;
-
 
     chain.orc.instantiate(
         ASTRO_RATIO_FACTORY,
@@ -178,10 +167,10 @@ pub fn instantiate_astro_ratio_factory(
             lockups_code_id,
             pool_settings: RatioPoolSettings {
                 collector_addr: Addr::unchecked(admin.clone()),
-                lockup: LockupConfig { 
-                    fee_decay_multiplier_nom: Uint128::one(), 
-                    fee_decay_multiplier_denom: Uint128::one(), 
-                    fee_decay_step_duration: 1 
+                lockup: LockupConfig {
+                    fee_decay_multiplier_nom: Uint128::one(),
+                    fee_decay_multiplier_denom: Uint128::one(),
+                    fee_decay_step_duration: 1,
                 },
                 max_deposit_unbalancing_threshold: Uint128::from(1000u128),
             },
@@ -196,7 +185,6 @@ pub fn instantiate_astro_ratio_factory(
     )
 }
 
-
 pub fn init_derivative(
     chain: &mut Chain,
     admin: String,
@@ -205,7 +193,6 @@ pub fn init_derivative(
     decimals: u8,
     key: &SigningKey,
 ) -> Result<InstantiateResponse, ProcessError> {
-
     let token_code_id = chain.orc.contract_map.code_id(CW20)?;
     let bulk_code_id = chain.orc.contract_map.code_id(BULK)?;
     let label = format!("{}-{}", name, symbol);
@@ -214,7 +201,6 @@ pub fn init_derivative(
         DERIVATIVE,
         "create_cw20_token",
         &astrovault::staking_derivative::init_msg::InstantiateMsg {
- 
             owner: Some(admin.clone()),
             bulk_distributor_settings: BulkSettings {
                 existing_address: None,
@@ -246,10 +232,6 @@ pub fn init_derivative(
     )
 }
 
-
-
-
-
 pub fn init_token(
     chain: &mut Chain,
     admin: String,
@@ -258,7 +240,6 @@ pub fn init_token(
     decimals: u8,
     key: &SigningKey,
 ) -> Result<InstantiateResponse, ProcessError> {
-
     chain.orc.instantiate(
         CW20,
         "create_cw20_token",
@@ -271,19 +252,17 @@ pub fn init_token(
                     address: admin.clone(),
                     amount: Uint128::from(1_000_000_000000000000000000u128),
                 },
-
                 Cw20Coin {
                     address: chain.cfg.users[1].account.address.clone(),
                     amount: Uint128::from(1_000_000_000000000000000000u128),
                 },
-
                 Cw20Coin {
                     address: chain.cfg.users[2].account.address.clone(),
                     amount: Uint128::from(1_000_000_000000000000000000u128),
                 },
             ],
             mint: None,
-            marketing: None
+            marketing: None,
         },
         key,
         Some(admin.parse().unwrap()),
@@ -291,30 +270,29 @@ pub fn init_token(
     )
 }
 
-
-
 pub fn create_astro_standard_pool(
     chain: &mut Chain,
     key: &SigningKey,
 ) -> Result<ExecResponse, ProcessError> {
-
     let token = chain.orc.contract_map.address(DERIVATIVE)?;
 
     chain.orc.execute(
         ASTRO_STANDARD_FACTORY,
         "create_astro_standard_pool",
-        &astrovault::standard_pool_factory::handle_msg::ExecuteMsg::CreatePair { 
+        &astrovault::standard_pool_factory::handle_msg::ExecuteMsg::CreatePair {
             asset_infos: [
-                AssetInfo::NativeToken { denom: "ustars".to_string() },
-                AssetInfo::Token { contract_addr: token },
+                AssetInfo::NativeToken {
+                    denom: "ustars".to_string(),
+                },
+                AssetInfo::Token {
+                    contract_addr: token,
+                },
             ],
         },
         key,
         vec![],
     )
 }
-
-
 
 /* pub fn full_setup(
     chain: &mut Chain,
@@ -327,66 +305,49 @@ pub fn create_astro_standard_pool(
 }
  */
 
-
-
-
-
-
-
-pub fn get_init_address(
-    res: ChainTxResponse
-) -> String {
-    res
-        .find_event_tags(
-            "instantiate".to_string(), 
-            "_contract_address".to_string()
-        )[0].value.clone()
+pub fn get_init_address(res: ChainTxResponse) -> String {
+    res.find_event_tags("instantiate".to_string(), "_contract_address".to_string())[0]
+        .value
+        .clone()
 }
-
-
 
 pub fn wasm_query<S: Serialize>(
     chain: &mut Chain,
     address: &String,
-    msg: &S
+    msg: &S,
 ) -> Result<QueryResponse, CosmwasmError> {
-
-    let res = tokio_block(async { 
-        chain.orc.client.wasm_query(
-            Address::from_str(&address)?,
-            msg
-        )
-        .await }
-    );
+    let res = tokio_block(async {
+        chain
+            .orc
+            .client
+            .wasm_query(Address::from_str(&address)?, msg)
+            .await
+    });
 
     res
 }
 
-pub fn wasm_query_typed<R, S> (
+pub fn wasm_query_typed<R, S>(
     chain: &mut Chain,
     address: &String,
-    msg: &S
-) -> Result<R, CosmwasmError> 
-where S: Serialize,
-      R: DeserializeOwned
+    msg: &S,
+) -> Result<R, CosmwasmError>
+where
+    S: Serialize,
+    R: DeserializeOwned,
 {
-    let res = tokio_block(async { 
-        chain.orc.client.wasm_query(
-            Address::from_str(&address)?,
-            msg
-        )
-        .await }
-    )?;
+    let res = tokio_block(async {
+        chain
+            .orc
+            .client
+            .wasm_query(Address::from_str(&address)?, msg)
+            .await
+    })?;
 
-
-    let res : R = from_binary(
-        &res.res.data.unwrap().into()
-    ).unwrap();
+    let res: R = from_json(&res.res.data.unwrap()).unwrap();
 
     Ok(res)
 }
-
-
 
 // gen_users will create `num_users` random SigningKeys
 // and then transfer `init_balance` of funds to each of them.
@@ -447,4 +408,3 @@ pub fn latest_block_time(chain: &Chain) -> Timestamp {
 
     Timestamp::from_seconds(now.seconds.try_into().unwrap())
 }
-
