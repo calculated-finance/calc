@@ -48,6 +48,7 @@ pub fn migrate_handler(deps: DepsMut, msg: MigrateMsg) -> Result<Response, Contr
             default_slippage_tolerance: msg.default_slippage_tolerance,
             exchange_contract_address: msg.admin.clone(),
             post_failure_downtime: msg.post_failure_downtime,
+            limit_orders_enabled: msg.limit_orders_enabled,
         },
     )?;
 

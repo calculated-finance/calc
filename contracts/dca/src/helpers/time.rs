@@ -38,16 +38,17 @@ pub fn get_next_target_time(
                 .expect("should be a valid timestamp")
                 + 1;
 
-            next_execution_time = started_at_time
-                + match minimum_wait {
-                    Some(minimum_wait) => max(
-                        interval_duration * increments_until_future_execution_date as i32,
-                        Duration::seconds(
-                            current_timestamp.seconds() as i64 + minimum_wait.num_seconds(),
-                        ),
-                    ),
-                    None => interval_duration * increments_until_future_execution_date as i32,
-                };
+            next_execution_time = match minimum_wait {
+                Some(minimum_wait) => max(
+                    started_at_time
+                        + interval_duration * increments_until_future_execution_date as i32,
+                    current_time + minimum_wait,
+                ),
+                None => {
+                    started_at_time
+                        + interval_duration * increments_until_future_execution_date as i32
+                }
+            };
         }
     }
 
@@ -142,7 +143,28 @@ mod tests {
     use super::*;
     use cosmwasm_std::Uint64;
 
-    pub fn assert_expected_next_execution_time(
+    #[test]
+    fn respects_minimum_wait_duration() {
+        let current_time_in_seconds = Utc
+            .with_ymd_and_hms(2022, 1, 1, 1, 0, 0)
+            .unwrap()
+            .timestamp() as u64;
+        let current_timestamp = Timestamp::from_seconds(current_time_in_seconds);
+        let started_at = Timestamp::from_seconds(current_time_in_seconds - 15);
+
+        let interval = TimeInterval::Custom { seconds: 10 };
+        let minimum_wait = Duration::seconds(100);
+
+        let result =
+            get_next_target_time(current_timestamp, started_at, interval, Some(minimum_wait));
+
+        assert_eq!(
+            result.seconds(),
+            (current_timestamp.seconds() + minimum_wait.num_seconds() as u64)
+        );
+    }
+
+    fn assert_expected_next_execution_time(
         last_execution_time: DateTime<Utc>,
         current_time: DateTime<Utc>,
         interval: TimeInterval,

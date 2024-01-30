@@ -48,6 +48,7 @@ pub fn instantiate_handler(deps: DepsMut, msg: InstantiateMsg) -> Result<Respons
             default_slippage_tolerance: msg.default_slippage_tolerance,
             exchange_contract_address: msg.admin.clone(),
             post_failure_downtime: msg.post_failure_downtime,
+            limit_orders_enabled: msg.limit_orders_enabled,
         },
     )?;
 
@@ -92,6 +93,7 @@ mod instantiate_tests {
             twap_period: 30,
             default_slippage_tolerance: Decimal::percent(2),
             post_failure_downtime: 10 * 60,
+            limit_orders_enabled: true,
         };
 
         let result = instantiate(deps.as_mut(), env, info, instantiate_message).unwrap();
@@ -127,6 +129,7 @@ mod instantiate_tests {
             twap_period: 30,
             default_slippage_tolerance: Decimal::percent(2),
             post_failure_downtime: 10 * 60,
+            limit_orders_enabled: true,
         };
 
         let result = instantiate(deps.as_mut(), env, info, instantiate_message).unwrap_err();
@@ -159,6 +162,7 @@ mod instantiate_tests {
             twap_period: 30,
             default_slippage_tolerance: Decimal::percent(2),
             post_failure_downtime: 10 * 60,
+            limit_orders_enabled: true,
         };
 
         let result = instantiate(deps.as_mut(), env, info, instantiate_message).unwrap_err();
@@ -188,6 +192,7 @@ mod instantiate_tests {
             twap_period: 30,
             default_slippage_tolerance: Decimal::percent(2),
             post_failure_downtime: 10 * 60,
+            limit_orders_enabled: true,
         };
 
         let result = instantiate(deps.as_mut(), env, info, instantiate_message).unwrap_err();

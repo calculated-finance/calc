@@ -364,6 +364,12 @@
                 "$ref": "#/definitions/FeeCollector"
               }
             },
+            "limit_orders_enabled": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
             "paused": {
               "type": [
                 "boolean",
@@ -475,60 +481,6 @@
             },
             "validator_address": {
               "$ref": "#/definitions/Addr"
-            }
-          },
-          "additionalProperties": false
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
-        "old_z_delegate"
-      ],
-      "properties": {
-        "old_z_delegate": {
-          "type": "object",
-          "required": [
-            "amount",
-            "delegator_address",
-            "denom",
-            "validator_address"
-          ],
-          "properties": {
-            "amount": {
-              "$ref": "#/definitions/Uint128"
-            },
-            "delegator_address": {
-              "$ref": "#/definitions/Addr"
-            },
-            "denom": {
-              "type": "string"
-            },
-            "validator_address": {
-              "$ref": "#/definitions/Addr"
-            }
-          },
-          "additionalProperties": false
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
-        "migrate_limit_order"
-      ],
-      "properties": {
-        "migrate_limit_order": {
-          "type": "object",
-          "required": [
-            "vault_id"
-          ],
-          "properties": {
-            "vault_id": {
-              "$ref": "#/definitions/Uint128"
             }
           },
           "additionalProperties": false

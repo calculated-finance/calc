@@ -110,7 +110,7 @@ pub fn execute_trigger_handler(
     let config = get_config(deps.storage)?;
     let route = route.map_or(vault.route.clone(), Some);
 
-    let belief_price = get_twap_to_now(
+    let twap_price = get_twap_to_now(
         &deps.querier,
         config.exchange_contract_address.clone(),
         vault.get_swap_denom(),
@@ -127,12 +127,12 @@ pub fn execute_trigger_handler(
             EventData::DcaVaultExecutionTriggered {
                 base_denom: vault.target_denom.clone(),
                 quote_denom: vault.get_swap_denom(),
-                asset_price: belief_price,
+                asset_price: twap_price,
             },
         ),
     )?;
 
-    response = response.add_attribute("belief_price", belief_price.to_string());
+    response = response.add_attribute("twap_price", twap_price.to_string());
 
     if let Some(SwapAdjustmentStrategy::RiskWeightedAverage { .. }) = vault.swap_adjustment_strategy
     {
@@ -142,7 +142,7 @@ pub fn execute_trigger_handler(
             deps.storage,
             &env,
             vault,
-            belief_price,
+            twap_price,
         )?;
     }
 
@@ -188,6 +188,8 @@ pub fn execute_trigger_handler(
     let adjusted_swap_amount = get_swap_amount(&deps.as_ref(), &env, &vault)?;
 
     if adjusted_swap_amount.amount.is_zero() {
+        delete_trigger(deps.storage, vault.id)?;
+
         save_trigger(
             deps.storage,
             Trigger {
@@ -214,10 +216,14 @@ pub fn execute_trigger_handler(
             ),
         )?;
 
-        return Ok(response.add_attribute("execution_skipped", "swap_amount_adjusted_to_zero"));
+        return Ok(response
+            .add_attribute("execution_skipped", "swap_amount_adjusted_to_zero")
+            .add_attribute("twap_price", twap_price.to_string()));
     }
 
-    if vault.price_threshold_exceeded(belief_price)? {
+    if vault.price_threshold_exceeded(twap_price)? {
+        delete_trigger(deps.storage, vault.id)?;
+
         save_trigger(
             deps.storage,
             Trigger {
@@ -227,7 +233,7 @@ pub fn execute_trigger_handler(
                         env.block.time,
                         vault.started_at.unwrap_or(env.block.time),
                         vault.time_interval.clone(),
-                        None,
+                        Some(Duration::seconds(config.post_failure_downtime)),
                     ),
                 },
             },
@@ -239,14 +245,14 @@ pub fn execute_trigger_handler(
                 vault.id,
                 env.block,
                 EventData::DcaVaultExecutionSkipped {
-                    reason: ExecutionSkippedReason::PriceThresholdExceeded {
-                        price: belief_price,
-                    },
+                    reason: ExecutionSkippedReason::PriceThresholdExceeded { price: twap_price },
                 },
             ),
         )?;
 
-        return Ok(response.add_attribute("execution_skipped", "price_threshold_exceeded"));
+        return Ok(response
+            .add_attribute("execution_skipped", "price_threshold_exceeded")
+            .add_attribute("twap_price", twap_price.to_string()));
     };
 
     let get_slippage_result = get_slippage(
@@ -254,13 +260,30 @@ pub fn execute_trigger_handler(
         config.exchange_contract_address.clone(),
         adjusted_swap_amount.clone(),
         vault.target_denom.clone(),
-        belief_price,
+        twap_price,
         route.clone(),
     );
 
     match get_slippage_result {
         Ok(slippage) => {
             if slippage > vault.slippage_tolerance {
+                delete_trigger(deps.storage, vault.id)?;
+
+                save_trigger(
+                    deps.storage,
+                    Trigger {
+                        vault_id: vault.id,
+                        configuration: TriggerConfiguration::Time {
+                            target_time: get_next_target_time(
+                                env.block.time,
+                                vault.started_at.unwrap_or(env.block.time),
+                                vault.time_interval.clone(),
+                                Some(Duration::seconds(config.post_failure_downtime)),
+                            ),
+                        },
+                    },
+                )?;
+
                 create_event(
                     deps.storage,
                     EventBuilder::new(
@@ -274,7 +297,7 @@ pub fn execute_trigger_handler(
 
                 return Ok(response
                     .add_attribute("execution_skipped", "slippage_tolerance_exceeded")
-                    .add_attribute("belief_price", belief_price.to_string())
+                    .add_attribute("twap_price", twap_price.to_string())
                     .add_attribute("slippage", slippage.to_string()));
             }
         }
@@ -316,23 +339,20 @@ pub fn execute_trigger_handler(
                     * minimum_receive_amount
             });
 
-    Ok(response
-        .add_attribute("min_rcv", adjusted_minimum_receive_amount.to_string())
-        .add_attribute("swap", adjusted_swap_amount.to_string())
-        .add_submessage(SubMsg::reply_always(
-            WasmMsg::Execute {
-                contract_addr: config.exchange_contract_address.to_string(),
-                msg: to_json_binary(&ExchangeExecuteMsg::Swap {
-                    minimum_receive_amount: Coin {
-                        amount: adjusted_minimum_receive_amount,
-                        denom: vault.target_denom,
-                    },
-                    route,
-                })?,
-                funds: vec![adjusted_swap_amount],
-            },
-            AFTER_SWAP_REPLY_ID,
-        )))
+    Ok(response.add_submessage(SubMsg::reply_always(
+        WasmMsg::Execute {
+            contract_addr: config.exchange_contract_address.to_string(),
+            msg: to_json_binary(&ExchangeExecuteMsg::Swap {
+                minimum_receive_amount: Coin {
+                    amount: adjusted_minimum_receive_amount,
+                    denom: vault.target_denom,
+                },
+                route,
+            })?,
+            funds: vec![adjusted_swap_amount],
+        },
+        AFTER_SWAP_REPLY_ID,
+    )))
 }
 
 #[cfg(test)]
