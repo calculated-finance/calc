@@ -77,6 +77,8 @@ export const mochaHooks = async (): Promise<Mocha.RootHookObject> => {
     },
   });
 
+  console.log('pairs created');
+
   const userWallet = await createWallet(config);
   const userWalletAddress = (await userWallet.getAccounts())[0].address;
   const userCosmWasmClient = await createCosmWasmClientForWallet(
@@ -85,6 +87,8 @@ export const mochaHooks = async (): Promise<Mocha.RootHookObject> => {
     adminWalletAddress,
     userWallet,
   );
+
+  console.log('user wallet created');
 
   await cosmWasmClient.sendTokens(
     adminWalletAddress,

@@ -27,6 +27,7 @@ pub fn update_config_handler(
     twap_period: Option<u64>,
     default_slippage_tolerance: Option<Decimal>,
     exchange_contract_address: Option<Addr>,
+    post_failure_downtime: Option<i64>,
 ) -> Result<Response, ContractError> {
     assert_sender_is_admin(deps.storage, info.sender)?;
     let existing_config = get_config(deps.storage)?;
@@ -50,6 +51,8 @@ pub fn update_config_handler(
             .unwrap_or(existing_config.default_slippage_tolerance),
         exchange_contract_address: exchange_contract_address
             .unwrap_or(existing_config.exchange_contract_address),
+        post_failure_downtime: post_failure_downtime
+            .unwrap_or(existing_config.post_failure_downtime),
     };
 
     assert_fee_level_is_valid(&config.default_swap_fee_percent)?;
@@ -109,6 +112,7 @@ mod update_config_tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
 
@@ -136,6 +140,7 @@ mod update_config_tests {
             deps.as_mut(),
             info,
             executors.clone(),
+            None,
             None,
             None,
             None,
@@ -175,6 +180,7 @@ mod update_config_tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
 
@@ -196,6 +202,7 @@ mod update_config_tests {
             None,
             None,
             Some(Decimal::percent(15)),
+            None,
             None,
             None,
             None,
@@ -231,6 +238,7 @@ mod update_config_tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
 
@@ -260,6 +268,7 @@ mod update_config_tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap_err();
 
@@ -278,6 +287,7 @@ mod update_config_tests {
         update_config_handler(
             deps.as_mut(),
             info,
+            None,
             None,
             None,
             None,
@@ -332,6 +342,7 @@ mod update_config_tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
 
@@ -361,6 +372,7 @@ mod update_config_tests {
                     allocation: Decimal::from_str("1").unwrap(),
                 },
             ]),
+            None,
             None,
             None,
             None,
@@ -400,6 +412,7 @@ mod update_config_tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
 
@@ -429,6 +442,7 @@ mod update_config_tests {
             None,
             None,
             Some(Decimal::percent(150)),
+            None,
             None,
             None,
             None,
@@ -462,6 +476,7 @@ mod update_config_tests {
             None,
             Some(Decimal::percent(150)),
             None,
+            None,
         )
         .unwrap_err();
 
@@ -489,6 +504,7 @@ mod update_config_tests {
                 };
                 20
             ]),
+            None,
             None,
             None,
             None,
