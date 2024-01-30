@@ -370,6 +370,13 @@
                 "null"
               ]
             },
+            "post_failure_downtime": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "int64"
+            },
             "risk_weighted_average_escrow_level": {
               "anyOf": [
                 {
