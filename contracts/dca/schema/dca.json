@@ -16,6 +16,7 @@
       "fee_collectors",
       "old_staking_router_address",
       "paused",
+      "post_failure_downtime",
       "risk_weighted_average_escrow_level",
       "twap_period",
       "weighted_scale_swap_fee_percent"
@@ -55,6 +56,10 @@
       },
       "paused": {
         "type": "boolean"
+      },
+      "post_failure_downtime": {
+        "type": "integer",
+        "format": "int64"
       },
       "risk_weighted_average_escrow_level": {
         "$ref": "#/definitions/Decimal"
@@ -467,6 +472,13 @@
                   "boolean",
                   "null"
                 ]
+              },
+              "post_failure_downtime": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "format": "int64"
               },
               "risk_weighted_average_escrow_level": {
                 "anyOf": [
@@ -1274,6 +1286,7 @@
             "fee_collectors",
             "old_staking_router_address",
             "paused",
+            "post_failure_downtime",
             "risk_weighted_average_escrow_level",
             "twap_period",
             "weighted_scale_swap_fee_percent"
@@ -1316,6 +1329,10 @@
             },
             "paused": {
               "type": "boolean"
+            },
+            "post_failure_downtime": {
+              "type": "integer",
+              "format": "int64"
             },
             "risk_weighted_average_escrow_level": {
               "$ref": "#/definitions/Decimal"

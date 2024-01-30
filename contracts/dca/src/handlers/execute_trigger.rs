@@ -188,17 +188,6 @@ pub fn execute_trigger_handler(
     let adjusted_swap_amount = get_swap_amount(&deps.as_ref(), &env, &vault)?;
 
     if adjusted_swap_amount.amount.is_zero() {
-        create_event(
-            deps.storage,
-            EventBuilder::new(
-                vault.id,
-                env.block.clone(),
-                EventData::DcaVaultExecutionSkipped {
-                    reason: ExecutionSkippedReason::SwapAmountAdjustedToZero,
-                },
-            ),
-        )?;
-
         save_trigger(
             deps.storage,
             Trigger {
@@ -214,10 +203,36 @@ pub fn execute_trigger_handler(
             },
         )?;
 
+        create_event(
+            deps.storage,
+            EventBuilder::new(
+                vault.id,
+                env.block.clone(),
+                EventData::DcaVaultExecutionSkipped {
+                    reason: ExecutionSkippedReason::SwapAmountAdjustedToZero,
+                },
+            ),
+        )?;
+
         return Ok(response.add_attribute("execution_skipped", "swap_amount_adjusted_to_zero"));
     }
 
     if vault.price_threshold_exceeded(belief_price)? {
+        save_trigger(
+            deps.storage,
+            Trigger {
+                vault_id: vault.id,
+                configuration: TriggerConfiguration::Time {
+                    target_time: get_next_target_time(
+                        env.block.time,
+                        vault.started_at.unwrap_or(env.block.time),
+                        vault.time_interval.clone(),
+                        None,
+                    ),
+                },
+            },
+        )?;
+
         create_event(
             deps.storage,
             EventBuilder::new(

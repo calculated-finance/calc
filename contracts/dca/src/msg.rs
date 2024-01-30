@@ -25,12 +25,24 @@ pub struct InstantiateMsg {
     pub risk_weighted_average_escrow_level: Decimal,
     pub twap_period: u64,
     pub default_slippage_tolerance: Decimal,
-    pub old_staking_router_address: Addr,
     pub post_failure_downtime: i64,
 }
 
 #[cw_serde]
-pub struct MigrateMsg {}
+pub struct MigrateMsg {
+    pub admin: Addr,
+    pub executors: Vec<Addr>,
+    pub fee_collectors: Vec<FeeCollector>,
+    pub default_swap_fee_percent: Decimal,
+    pub weighted_scale_swap_fee_percent: Decimal,
+    pub automation_fee_percent: Decimal,
+    pub default_page_limit: u16,
+    pub paused: bool,
+    pub risk_weighted_average_escrow_level: Decimal,
+    pub twap_period: u64,
+    pub default_slippage_tolerance: Decimal,
+    pub post_failure_downtime: i64,
+}
 
 #[cw_serde]
 pub enum ExecuteMsg {
@@ -94,15 +106,6 @@ pub enum ExecuteMsg {
     ZDelegate {
         delegator_address: Addr,
         validator_address: Addr,
-    },
-    OldZDelegate {
-        delegator_address: Addr,
-        validator_address: Addr,
-        amount: Uint128,
-        denom: String,
-    },
-    MigrateLimitOrder {
-        vault_id: Uint128,
     },
 }
 

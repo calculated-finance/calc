@@ -204,7 +204,7 @@ export const updateExchangeContractAddress = async (
 
   await execute(cosmWasmClient, adminWalletAddress, dcaContractAddress, {
     update_config: {
-      ...omit(['admin', 'old_staking_router_address'], configResponse.config),
+      ...omit(['admin'], configResponse.config),
       exchange_contract_address: exchangeContractAddress,
     },
   });
