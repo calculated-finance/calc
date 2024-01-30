@@ -102,6 +102,7 @@ pub fn deposit_handler(
                         env.block.time,
                         vault.started_at.unwrap_or(env.block.time),
                         vault.time_interval,
+                        None,
                     ),
                 },
             },
@@ -116,7 +117,7 @@ pub fn deposit_handler(
 }
 
 #[cfg(test)]
-mod dposit_tests {
+mod deposit_tests {
     use super::*;
     use crate::constants::{ONE, ONE_HUNDRED, TEN};
     use crate::handlers::get_events_by_resource_id::get_events_by_resource_id_handler;

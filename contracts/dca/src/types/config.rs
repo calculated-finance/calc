@@ -17,4 +17,5 @@ pub struct Config {
     pub default_slippage_tolerance: Decimal,
     pub old_staking_router_address: Addr,
     pub exchange_contract_address: Addr,
+    pub post_failure_downtime: i64,
 }

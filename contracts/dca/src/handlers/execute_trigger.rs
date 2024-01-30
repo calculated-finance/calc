@@ -14,6 +14,7 @@ use crate::types::event::{EventBuilder, EventData, ExecutionSkippedReason};
 use crate::types::swap_adjustment_strategy::SwapAdjustmentStrategy;
 use crate::types::trigger::{Trigger, TriggerConfiguration};
 use crate::types::vault::{Vault, VaultStatus};
+use chrono::Duration;
 use cosmwasm_std::{to_json_binary, Binary, Coin, Decimal, SubMsg, WasmMsg};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{DepsMut, Env, Response, Uint128};
@@ -163,6 +164,7 @@ pub fn execute_trigger_handler(
                         env.block.time,
                         vault.started_at.unwrap_or(env.block.time),
                         vault.time_interval.clone(),
+                        None,
                     ),
                 },
             },
@@ -190,11 +192,26 @@ pub fn execute_trigger_handler(
             deps.storage,
             EventBuilder::new(
                 vault.id,
-                env.block,
+                env.block.clone(),
                 EventData::DcaVaultExecutionSkipped {
                     reason: ExecutionSkippedReason::SwapAmountAdjustedToZero,
                 },
             ),
+        )?;
+
+        save_trigger(
+            deps.storage,
+            Trigger {
+                vault_id: vault.id,
+                configuration: TriggerConfiguration::Time {
+                    target_time: get_next_target_time(
+                        env.block.time,
+                        vault.started_at.unwrap_or(env.block.time),
+                        vault.time_interval.clone(),
+                        Some(Duration::seconds(config.post_failure_downtime)),
+                    ),
+                },
+            },
         )?;
 
         return Ok(response.add_attribute("execution_skipped", "swap_amount_adjusted_to_zero"));

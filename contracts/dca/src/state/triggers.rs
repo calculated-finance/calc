@@ -180,6 +180,37 @@ mod tests {
     }
 
     #[test]
+    fn overwrites_existing_trigger() {
+        let mut deps = mock_dependencies();
+        let env = mock_env();
+
+        let trigger_1 = Trigger {
+            vault_id: Uint128::from(1u128),
+            configuration: TriggerConfiguration::Time {
+                target_time: env.block.time,
+            },
+        };
+
+        let trigger_2 = Trigger {
+            vault_id: Uint128::from(1u128),
+            configuration: TriggerConfiguration::Time {
+                target_time: env.block.time.plus_seconds(10),
+            },
+        };
+
+        save_trigger(&mut deps.storage, trigger_1.clone()).unwrap();
+
+        let trigger_ids = get_time_triggers(&deps.storage, env.block.time, Some(100)).unwrap();
+        assert_eq!(trigger_ids, vec![trigger_1.vault_id]);
+
+        save_trigger(&mut deps.storage, trigger_2.clone()).unwrap();
+
+        let trigger_ids =
+            get_time_triggers(&deps.storage, env.block.time.plus_seconds(20), Some(100)).unwrap();
+        assert_eq!(trigger_ids, vec![trigger_2.vault_id]);
+    }
+
+    #[test]
     fn keeps_other_triggers_when_deleting_trigger_by_vault_id() {
         let mut deps = mock_dependencies();
         let env = mock_env();

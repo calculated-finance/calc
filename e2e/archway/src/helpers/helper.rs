@@ -70,6 +70,7 @@ pub fn instantiate_dca(
             twap_period: 0,
             default_slippage_tolerance: Decimal::percent(5),
             old_staking_router_address: addr.clone(),
+            post_failure_downtime: 10 * 60,
         },
         key,
         Some(admin.parse().unwrap()),

@@ -26,6 +26,7 @@ pub struct InstantiateMsg {
     pub twap_period: u64,
     pub default_slippage_tolerance: Decimal,
     pub old_staking_router_address: Addr,
+    pub post_failure_downtime: i64,
 }
 
 #[cw_serde]
@@ -81,6 +82,7 @@ pub enum ExecuteMsg {
         twap_period: Option<u64>,
         default_slippage_tolerance: Option<Decimal>,
         exchange_contract_address: Option<Addr>,
+        post_failure_downtime: Option<i64>,
     },
     UpdateSwapAdjustment {
         strategy: SwapAdjustmentStrategy,

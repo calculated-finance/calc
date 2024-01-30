@@ -30,6 +30,8 @@ export const mochaHooks = async (): Promise<Mocha.RootHookObject> => {
   const tmClient = (await Tendermint34Client.create(httpClient)) as any;
   const queryClient = kujiraQueryClient({ client: tmClient });
 
+  const validatorAddress = (await queryClient.staking.validators('BOND_STATUS_BONDED')).validators[0].operatorAddress;
+
   const cosmWasmClient = await createSigningCosmWasmClient(config);
 
   const adminWalletAddress = (await (await getWallet(config.mnemonic, config.bech32AddressPrefix)).getAccounts())[0]
@@ -77,6 +79,8 @@ export const mochaHooks = async (): Promise<Mocha.RootHookObject> => {
     },
   });
 
+  console.log('pairs created');
+
   const userWallet = await createWallet(config);
   const userWalletAddress = (await userWallet.getAccounts())[0].address;
   const userCosmWasmClient = await createCosmWasmClientForWallet(
@@ -86,6 +90,8 @@ export const mochaHooks = async (): Promise<Mocha.RootHookObject> => {
     userWallet,
   );
 
+  console.log('user wallet created');
+
   await cosmWasmClient.sendTokens(
     adminWalletAddress,
     userWalletAddress,
@@ -93,7 +99,11 @@ export const mochaHooks = async (): Promise<Mocha.RootHookObject> => {
     2,
   );
 
-  const validatorAddress = (await queryClient.staking.validators('')).validators[0].operatorAddress;
+  console.log('user wallet funded');
+
+  // const validatorAddress = (await queryClient.staking.validators('BOND_STATUS_BONDED')).validators[0].operatorAddress;
+
+  console.log('hooks initialized');
 
   return {
     beforeAll(this: Mocha.Context) {
@@ -129,7 +139,7 @@ export const mochaHooks = async (): Promise<Mocha.RootHookObject> => {
 const instantiateDCAContract = async (
   cosmWasmClient: SigningCosmWasmClient,
   adminWalletAddress: string,
-  feeCollectorAdress: string,
+  feeCollectorAddress: string,
 ): Promise<string> => {
   const dcaContractAddress = await uploadAndInstantiate(
     '../artifacts/dca.wasm',
@@ -139,7 +149,7 @@ const instantiateDCAContract = async (
       admin: adminWalletAddress,
       executors: [adminWalletAddress],
       automation_fee_percent: `${automationFee}`,
-      fee_collectors: [{ address: feeCollectorAdress, allocation: '1.0' }],
+      fee_collectors: [{ address: feeCollectorAddress, allocation: '1.0' }],
       default_page_limit: 30,
       paused: false,
       default_slippage_tolerance: '0.05',
@@ -181,6 +191,7 @@ export const migrateDCAContract = async (
       exchange_contract_address: exchangeContractAddress,
     },
   });
+  console.log('dca contract migrated');
 };
 
 export const instantiateExchangeContract = async (

@@ -135,6 +135,7 @@ pub fn execute(
             twap_period,
             default_slippage_tolerance,
             exchange_contract_address,
+            post_failure_downtime,
         } => update_config_handler(
             deps,
             info,
@@ -149,6 +150,7 @@ pub fn execute(
             twap_period,
             default_slippage_tolerance,
             exchange_contract_address,
+            post_failure_downtime,
         ),
         ExecuteMsg::UpdateSwapAdjustment { strategy, value } => {
             update_swap_adjustment_handler(deps, env, info, strategy, value)
