@@ -38,16 +38,17 @@ pub fn get_next_target_time(
                 .expect("should be a valid timestamp")
                 + 1;
 
-            next_execution_time = started_at_time
-                + match minimum_wait {
-                    Some(minimum_wait) => max(
-                        interval_duration * increments_until_future_execution_date as i32,
-                        Duration::seconds(
-                            current_timestamp.seconds() as i64 + minimum_wait.num_seconds(),
-                        ),
-                    ),
-                    None => interval_duration * increments_until_future_execution_date as i32,
-                };
+            next_execution_time = match minimum_wait {
+                Some(minimum_wait) => max(
+                    started_at_time
+                        + interval_duration * increments_until_future_execution_date as i32,
+                    current_time + minimum_wait,
+                ),
+                None => {
+                    started_at_time
+                        + interval_duration * increments_until_future_execution_date as i32
+                }
+            };
         }
     }
 

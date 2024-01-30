@@ -95,6 +95,7 @@ pub enum ExecuteMsg {
         default_slippage_tolerance: Option<Decimal>,
         exchange_contract_address: Option<Addr>,
         post_failure_downtime: Option<i64>,
+        limit_orders_enabled: Option<bool>,
     },
     UpdateSwapAdjustment {
         strategy: SwapAdjustmentStrategy,

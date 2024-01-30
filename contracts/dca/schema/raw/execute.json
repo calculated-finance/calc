@@ -364,6 +364,12 @@
                 "$ref": "#/definitions/FeeCollector"
               }
             },
+            "limit_orders_enabled": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
             "paused": {
               "type": [
                 "boolean",

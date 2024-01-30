@@ -188,6 +188,8 @@ pub fn execute_trigger_handler(
     let adjusted_swap_amount = get_swap_amount(&deps.as_ref(), &env, &vault)?;
 
     if adjusted_swap_amount.amount.is_zero() {
+        delete_trigger(deps.storage, vault.id)?;
+
         save_trigger(
             deps.storage,
             Trigger {
@@ -214,7 +216,9 @@ pub fn execute_trigger_handler(
             ),
         )?;
 
-        return Ok(response.add_attribute("execution_skipped", "swap_amount_adjusted_to_zero"));
+        return Ok(response
+            .add_attribute("execution_skipped", "swap_amount_adjusted_to_zero")
+            .add_attribute("twap_price", twap_price.to_string()));
     }
 
     if vault.price_threshold_exceeded(twap_price)? {
@@ -246,6 +250,23 @@ pub fn execute_trigger_handler(
     match get_slippage_result {
         Ok(slippage) => {
             if slippage > vault.slippage_tolerance {
+                delete_trigger(deps.storage, vault.id)?;
+
+                save_trigger(
+                    deps.storage,
+                    Trigger {
+                        vault_id: vault.id,
+                        configuration: TriggerConfiguration::Time {
+                            target_time: get_next_target_time(
+                                env.block.time,
+                                vault.started_at.unwrap_or(env.block.time),
+                                vault.time_interval.clone(),
+                                Some(Duration::seconds(config.post_failure_downtime)),
+                            ),
+                        },
+                    },
+                )?;
+
                 create_event(
                     deps.storage,
                     EventBuilder::new(
