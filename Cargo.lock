@@ -1564,9 +1564,9 @@ dependencies = [
 
 [[package]]
 name = "kujira-fin"
-version = "0.8.2"
+version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89b90d678a2bdf5a6245833cdda8ea669d36ff4a8311260d63b0118737d96837"
+checksum = "37b2d28c44fd548b2e2059a3dee0ba368d9a0b11172ead493fb554500d9de5c7"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -1576,9 +1576,9 @@ dependencies = [
 
 [[package]]
 name = "kujira-std"
-version = "0.8.3"
+version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1081f4f84da507e81b3456504a3776d2fe77252fd9812cdd397d4936c0af1f5"
+checksum = "ef5a3645c8dfdcd91c0fcf3ca86b240b51450ee54d150ce0e53d5ed9522d6adb"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
