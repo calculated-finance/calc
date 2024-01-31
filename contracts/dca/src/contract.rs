@@ -134,7 +134,6 @@ pub fn execute(
             default_slippage_tolerance,
             exchange_contract_address,
             post_failure_downtime,
-            limit_orders_enabled,
         } => update_config_handler(
             deps,
             info,
@@ -150,7 +149,6 @@ pub fn execute(
             default_slippage_tolerance,
             exchange_contract_address,
             post_failure_downtime,
-            limit_orders_enabled,
         ),
         ExecuteMsg::UpdateSwapAdjustment { strategy, value } => {
             update_swap_adjustment_handler(deps, env, info, strategy, value)

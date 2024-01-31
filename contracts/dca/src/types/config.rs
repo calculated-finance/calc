@@ -17,5 +17,4 @@ pub struct Config {
     pub default_slippage_tolerance: Decimal,
     pub exchange_contract_address: Addr,
     pub post_failure_downtime: i64,
-    pub limit_orders_enabled: bool,
 }

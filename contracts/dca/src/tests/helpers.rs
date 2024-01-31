@@ -45,7 +45,7 @@ pub fn instantiate_contract(deps: DepsMut, env: Env, info: MessageInfo) {
         twap_period: 30,
         default_slippage_tolerance: Decimal::percent(2),
         post_failure_downtime: 10 * 60,
-        limit_orders_enabled: true,
+        exchange_contract_address: Addr::unchecked(EXCHANGE_CONTRACT_ADDRESS),
     };
 
     instantiate(deps, env, info, instantiate_message).unwrap();
@@ -70,7 +70,7 @@ pub fn instantiate_contract_with_multiple_fee_collectors(
         twap_period: 30,
         default_slippage_tolerance: Decimal::percent(2),
         post_failure_downtime: 10 * 60,
-        limit_orders_enabled: true,
+        exchange_contract_address: Addr::unchecked(EXCHANGE_CONTRACT_ADDRESS),
     };
 
     instantiate(deps, env, info, instantiate_message).unwrap();
@@ -95,7 +95,6 @@ impl Default for Config {
             default_slippage_tolerance: Decimal::percent(2),
             exchange_contract_address: Addr::unchecked(EXCHANGE_CONTRACT_ADDRESS),
             post_failure_downtime: 10 * 60,
-            limit_orders_enabled: true,
         }
     }
 }

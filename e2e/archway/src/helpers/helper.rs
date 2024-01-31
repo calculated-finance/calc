@@ -70,7 +70,7 @@ pub fn instantiate_dca(
             twap_period: 0,
             default_slippage_tolerance: Decimal::percent(5),
             post_failure_downtime: 10 * 60,
-            limit_orders_enabled: false,
+            exchange_contract_address: Addr::unchecked("exchange"),
         },
         key,
         Some(admin.parse().unwrap()),

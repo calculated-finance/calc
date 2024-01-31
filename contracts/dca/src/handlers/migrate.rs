@@ -46,9 +46,8 @@ pub fn migrate_handler(deps: DepsMut, msg: MigrateMsg) -> Result<Response, Contr
             risk_weighted_average_escrow_level: msg.risk_weighted_average_escrow_level,
             twap_period: msg.twap_period,
             default_slippage_tolerance: msg.default_slippage_tolerance,
-            exchange_contract_address: msg.admin.clone(),
+            exchange_contract_address: msg.exchange_contract_address.clone(),
             post_failure_downtime: msg.post_failure_downtime,
-            limit_orders_enabled: msg.limit_orders_enabled,
         },
     )?;
 

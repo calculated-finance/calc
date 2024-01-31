@@ -26,7 +26,7 @@ pub struct InstantiateMsg {
     pub twap_period: u64,
     pub default_slippage_tolerance: Decimal,
     pub post_failure_downtime: i64,
-    pub limit_orders_enabled: bool,
+    pub exchange_contract_address: Addr,
 }
 
 #[cw_serde]
@@ -43,7 +43,7 @@ pub struct MigrateMsg {
     pub twap_period: u64,
     pub default_slippage_tolerance: Decimal,
     pub post_failure_downtime: i64,
-    pub limit_orders_enabled: bool,
+    pub exchange_contract_address: Addr,
 }
 
 #[cw_serde]
@@ -97,7 +97,6 @@ pub enum ExecuteMsg {
         default_slippage_tolerance: Option<Decimal>,
         exchange_contract_address: Option<Addr>,
         post_failure_downtime: Option<i64>,
-        limit_orders_enabled: Option<bool>,
     },
     UpdateSwapAdjustment {
         strategy: SwapAdjustmentStrategy,
