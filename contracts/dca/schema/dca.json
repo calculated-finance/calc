@@ -12,9 +12,9 @@
       "default_page_limit",
       "default_slippage_tolerance",
       "default_swap_fee_percent",
+      "exchange_contract_address",
       "executors",
       "fee_collectors",
-      "limit_orders_enabled",
       "paused",
       "post_failure_downtime",
       "risk_weighted_average_escrow_level",
@@ -39,6 +39,9 @@
       "default_swap_fee_percent": {
         "$ref": "#/definitions/Decimal"
       },
+      "exchange_contract_address": {
+        "$ref": "#/definitions/Addr"
+      },
       "executors": {
         "type": "array",
         "items": {
@@ -50,9 +53,6 @@
         "items": {
           "$ref": "#/definitions/FeeCollector"
         }
-      },
-      "limit_orders_enabled": {
-        "type": "boolean"
       },
       "paused": {
         "type": "boolean"
@@ -466,12 +466,6 @@
                 "items": {
                   "$ref": "#/definitions/FeeCollector"
                 }
-              },
-              "limit_orders_enabled": {
-                "type": [
-                  "boolean",
-                  "null"
-                ]
               },
               "paused": {
                 "type": [
@@ -1236,7 +1230,6 @@
             "exchange_contract_address",
             "executors",
             "fee_collectors",
-            "limit_orders_enabled",
             "paused",
             "post_failure_downtime",
             "risk_weighted_average_escrow_level",
@@ -1275,9 +1268,6 @@
               "items": {
                 "$ref": "#/definitions/FeeCollector"
               }
-            },
-            "limit_orders_enabled": {
-              "type": "boolean"
             },
             "paused": {
               "type": "boolean"

@@ -27,7 +27,6 @@
         "exchange_contract_address",
         "executors",
         "fee_collectors",
-        "limit_orders_enabled",
         "paused",
         "post_failure_downtime",
         "risk_weighted_average_escrow_level",
@@ -66,9 +65,6 @@
           "items": {
             "$ref": "#/definitions/FeeCollector"
           }
-        },
-        "limit_orders_enabled": {
-          "type": "boolean"
         },
         "paused": {
           "type": "boolean"
