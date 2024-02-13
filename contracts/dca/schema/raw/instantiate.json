@@ -11,10 +11,6 @@
     "exchange_contract_address",
     "executors",
     "fee_collectors",
-<<<<<<< HEAD
-=======
-    "limit_orders_enabled",
->>>>>>> f2bea013 (set triggers with delay after failures)
     "paused",
     "post_failure_downtime",
     "risk_weighted_average_escrow_level",
@@ -54,12 +50,6 @@
         "$ref": "#/definitions/FeeCollector"
       }
     },
-<<<<<<< HEAD
-=======
-    "limit_orders_enabled": {
-      "type": "boolean"
-    },
->>>>>>> f2bea013 (set triggers with delay after failures)
     "paused": {
       "type": "boolean"
     },
