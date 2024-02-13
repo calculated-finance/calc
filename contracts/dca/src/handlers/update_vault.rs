@@ -203,7 +203,6 @@ pub fn update_vault_handler(
                     env.block.time,
                     vault.started_at.unwrap_or(env.block.time),
                     vault.time_interval.clone(),
-                    None,
                 ),
             };
 
@@ -1211,17 +1210,13 @@ mod update_vault_tests {
         match updated_vault.trigger {
             Some(TriggerConfiguration::Time { target_time }) => {
                 assert_eq!(
-                                    target_time,
-                                    get_next_target_time(
-                                        env.block.time,
-                                        vault.started_at.unwrap_or(env.block.time),
-                                        time_interval,
-                <<<<<<< HEAD
-                =======
-                                        None
-                >>>>>>> 54761498 (add post failure delay config + logic)
-                                    )
-                                )
+                    target_time,
+                    get_next_target_time(
+                        env.block.time,
+                        vault.started_at.unwrap_or(env.block.time),
+                        time_interval,
+                    )
+                )
             }
             _ => panic!("expected trigger to be of type Time"),
         }
