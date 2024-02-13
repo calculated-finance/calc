@@ -16,5 +16,4 @@ pub struct Config {
     pub twap_period: u64,
     pub default_slippage_tolerance: Decimal,
     pub exchange_contract_address: Addr,
-    pub post_failure_downtime: i64,
 }

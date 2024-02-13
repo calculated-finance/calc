@@ -47,7 +47,6 @@ pub fn instantiate_handler(deps: DepsMut, msg: InstantiateMsg) -> Result<Respons
             twap_period: msg.twap_period,
             default_slippage_tolerance: msg.default_slippage_tolerance,
             exchange_contract_address: msg.exchange_contract_address,
-            post_failure_downtime: msg.post_failure_downtime,
         },
     )?;
 
@@ -92,7 +91,6 @@ mod instantiate_tests {
             risk_weighted_average_escrow_level: Decimal::from_str("0.05").unwrap(),
             twap_period: 30,
             default_slippage_tolerance: Decimal::percent(2),
-            post_failure_downtime: 10 * 60,
             exchange_contract_address: Addr::unchecked(EXCHANGE_CONTRACT_ADDRESS),
         };
 
@@ -128,7 +126,6 @@ mod instantiate_tests {
             risk_weighted_average_escrow_level: Decimal::from_str("0.05").unwrap(),
             twap_period: 30,
             default_slippage_tolerance: Decimal::percent(2),
-            post_failure_downtime: 10 * 60,
             exchange_contract_address: Addr::unchecked(EXCHANGE_CONTRACT_ADDRESS),
         };
 
@@ -161,7 +158,6 @@ mod instantiate_tests {
             risk_weighted_average_escrow_level: Decimal::from_str("0.05").unwrap(),
             twap_period: 30,
             default_slippage_tolerance: Decimal::percent(2),
-            post_failure_downtime: 10 * 60,
             exchange_contract_address: Addr::unchecked(EXCHANGE_CONTRACT_ADDRESS),
         };
 
@@ -191,7 +187,6 @@ mod instantiate_tests {
             risk_weighted_average_escrow_level: Decimal::from_str("0.05").unwrap(),
             twap_period: 30,
             default_slippage_tolerance: Decimal::percent(2),
-            post_failure_downtime: 10 * 60,
             exchange_contract_address: Addr::unchecked(EXCHANGE_CONTRACT_ADDRESS),
         };
 

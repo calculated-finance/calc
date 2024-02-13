@@ -44,7 +44,6 @@ pub fn instantiate_contract(deps: DepsMut, env: Env, info: MessageInfo) {
         risk_weighted_average_escrow_level: Decimal::percent(5),
         twap_period: 30,
         default_slippage_tolerance: Decimal::percent(2),
-        post_failure_downtime: 10 * 60,
         exchange_contract_address: Addr::unchecked(EXCHANGE_CONTRACT_ADDRESS),
     };
 
@@ -69,7 +68,6 @@ pub fn instantiate_contract_with_multiple_fee_collectors(
         risk_weighted_average_escrow_level: Decimal::from_str("0.0075").unwrap(),
         twap_period: 30,
         default_slippage_tolerance: Decimal::percent(2),
-        post_failure_downtime: 10 * 60,
         exchange_contract_address: Addr::unchecked(EXCHANGE_CONTRACT_ADDRESS),
     };
 
@@ -94,7 +92,6 @@ impl Default for Config {
             twap_period: 30,
             default_slippage_tolerance: Decimal::percent(2),
             exchange_contract_address: Addr::unchecked(EXCHANGE_CONTRACT_ADDRESS),
-            post_failure_downtime: 10 * 60,
         }
     }
 }

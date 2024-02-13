@@ -25,7 +25,6 @@ pub struct InstantiateMsg {
     pub risk_weighted_average_escrow_level: Decimal,
     pub twap_period: u64,
     pub default_slippage_tolerance: Decimal,
-    pub post_failure_downtime: i64,
     pub exchange_contract_address: Addr,
 }
 
@@ -42,7 +41,6 @@ pub struct MigrateMsg {
     pub risk_weighted_average_escrow_level: Decimal,
     pub twap_period: u64,
     pub default_slippage_tolerance: Decimal,
-    pub post_failure_downtime: i64,
     pub exchange_contract_address: Addr,
 }
 
@@ -96,7 +94,6 @@ pub enum ExecuteMsg {
         twap_period: Option<u64>,
         default_slippage_tolerance: Option<Decimal>,
         exchange_contract_address: Option<Addr>,
-        post_failure_downtime: Option<i64>,
     },
     UpdateSwapAdjustment {
         strategy: SwapAdjustmentStrategy,

@@ -30,8 +30,6 @@ export const mochaHooks = async (): Promise<Mocha.RootHookObject> => {
   const tmClient = (await Tendermint34Client.create(httpClient)) as any;
   const queryClient = kujiraQueryClient({ client: tmClient });
 
-  const validatorAddress = (await queryClient.staking.validators('BOND_STATUS_BONDED')).validators[0].operatorAddress;
-
   const cosmWasmClient = await createSigningCosmWasmClient(config);
 
   const adminWalletAddress = (await (await getWallet(config.mnemonic, config.bech32AddressPrefix)).getAccounts())[0]
@@ -99,11 +97,7 @@ export const mochaHooks = async (): Promise<Mocha.RootHookObject> => {
     2,
   );
 
-  console.log('user wallet funded');
-
-  // const validatorAddress = (await queryClient.staking.validators('BOND_STATUS_BONDED')).validators[0].operatorAddress;
-
-  console.log('hooks initialized');
+  const validatorAddress = (await queryClient.staking.validators('BOND_STATUS_BONDED')).validators[0].operatorAddress;
 
   return {
     beforeAll(this: Mocha.Context) {
@@ -184,21 +178,19 @@ export const migrateDCAContract = async (
   adminWalletAddress: string,
   dcaContractAddress: string,
   exchangeContractAddress: string,
-) => {
-  await execute(cosmWasmClient, adminWalletAddress, dcaContractAddress, {
+) =>
+  execute(cosmWasmClient, adminWalletAddress, dcaContractAddress, {
     update_config: {
       exchange_contract_address: exchangeContractAddress,
     },
   });
-  console.log('dca contract migrated');
-};
 
 export const instantiateExchangeContract = async (
   cosmWasmClient: SigningCosmWasmClient,
   adminWalletAddress: string,
   dcaContractAddress: string,
 ): Promise<string> =>
-  await uploadAndInstantiate(
+  uploadAndInstantiate(
     '../artifacts/fin.wasm',
     cosmWasmClient,
     adminWalletAddress,
