@@ -1,7 +1,7 @@
 use crate::types::time_interval::TimeInterval;
 use chrono::{DateTime, Datelike, Duration, TimeZone, Utc};
 use cosmwasm_std::Timestamp;
-use std::{cmp::max, convert::TryInto};
+use std::convert::TryInto;
 
 pub fn target_time_elapsed(current_time: Timestamp, target_execution_time: Timestamp) -> bool {
     current_time.seconds().ge(&target_execution_time.seconds())
@@ -11,7 +11,6 @@ pub fn get_next_target_time(
     current_timestamp: Timestamp,
     started_at: Timestamp,
     interval: TimeInterval,
-    minimum_wait: Option<Duration>,
 ) -> Timestamp {
     let current_time = Utc
         .timestamp_opt(current_timestamp.seconds().try_into().unwrap(), 0)
@@ -38,17 +37,8 @@ pub fn get_next_target_time(
                 .expect("should be a valid timestamp")
                 + 1;
 
-            next_execution_time = match minimum_wait {
-                Some(minimum_wait) => max(
-                    started_at_time
-                        + interval_duration * increments_until_future_execution_date as i32,
-                    current_time + minimum_wait,
-                ),
-                None => {
-                    started_at_time
-                        + interval_duration * increments_until_future_execution_date as i32
-                }
-            };
+            next_execution_time =
+                started_at_time + interval_duration * increments_until_future_execution_date as i32;
         }
     }
 
@@ -143,27 +133,6 @@ mod tests {
     use super::*;
     use cosmwasm_std::Uint64;
 
-    #[test]
-    fn respects_minimum_wait_duration() {
-        let current_time_in_seconds = Utc
-            .with_ymd_and_hms(2022, 1, 1, 1, 0, 0)
-            .unwrap()
-            .timestamp() as u64;
-        let current_timestamp = Timestamp::from_seconds(current_time_in_seconds);
-        let started_at = Timestamp::from_seconds(current_time_in_seconds - 15);
-
-        let interval = TimeInterval::Custom { seconds: 10 };
-        let minimum_wait = Duration::seconds(100);
-
-        let result =
-            get_next_target_time(current_timestamp, started_at, interval, Some(minimum_wait));
-
-        assert_eq!(
-            result.seconds(),
-            (current_timestamp.seconds() + minimum_wait.num_seconds() as u64)
-        );
-    }
-
     fn assert_expected_next_execution_time(
         last_execution_time: DateTime<Utc>,
         current_time: DateTime<Utc>,
@@ -176,7 +145,7 @@ mod tests {
             Timestamp::from_seconds(last_execution_time.timestamp().try_into().unwrap());
 
         let next_execution_time =
-            get_next_target_time(current_timestamp, last_execution_timestamp, interval, None);
+            get_next_target_time(current_timestamp, last_execution_timestamp, interval);
 
         assert_eq!(
             next_execution_time.seconds(),

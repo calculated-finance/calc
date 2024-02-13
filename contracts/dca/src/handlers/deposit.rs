@@ -102,7 +102,6 @@ pub fn deposit_handler(
                         env.block.time,
                         vault.started_at.unwrap_or(env.block.time),
                         vault.time_interval,
-                        None,
                     ),
                 },
             },

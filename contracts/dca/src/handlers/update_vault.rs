@@ -203,7 +203,6 @@ pub fn update_vault_handler(
                     env.block.time,
                     vault.started_at.unwrap_or(env.block.time),
                     vault.time_interval.clone(),
-                    None,
                 ),
             };
 
@@ -1216,7 +1215,6 @@ mod update_vault_tests {
                         env.block.time,
                         vault.started_at.unwrap_or(env.block.time),
                         time_interval,
-                        None
                     )
                 )
             }
@@ -1314,7 +1312,6 @@ mod update_vault_tests {
                                         env.block.time,
                                         vault.started_at.unwrap_or(env.block.time),
                                         new_time_interval,
-                                        None
                                     )
                                 }
                             )
