@@ -92,7 +92,6 @@ impl Default for Config {
             twap_period: 30,
             default_slippage_tolerance: Decimal::percent(2),
             exchange_contract_address: Addr::unchecked(EXCHANGE_CONTRACT_ADDRESS),
-            post_failure_downtime: 10 * 60,
         }
     }
 }
