@@ -1,0 +1,4 @@
+4b6144f8f5bcc0bc6d28a470e468920f56dd98c52a64b8b895acf232564cd411  target/wasm32-unknown-unknown/release/astrovault_calc.wasm
+7927531fe896c95a7ab6351376f544323535b9f671dfd177b183c353477acef0  target/wasm32-unknown-unknown/release/fin.wasm
+3472c64db66716b959665b7a4835fbada3027332ae7bce19c2f07e9179116a04  target/wasm32-unknown-unknown/release/osmosis.wasm
+f329361a305bb0a47ecf2109196eb448c9ecef1f5b786379bbd1a2a4dca18e09  target/wasm32-unknown-unknown/release/dca.wasm
