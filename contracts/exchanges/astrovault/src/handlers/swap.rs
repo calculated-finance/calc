@@ -393,7 +393,11 @@ mod return_swapped_funds_tests {
             return_swapped_funds(deps.as_ref(), mock_env()).unwrap_err(),
             ContractError::FailedSwap {
                 msg: format!(
+<<<<<<< HEAD
                     "{} is less than the minimum return amount of {}",
+=======
+                    "{} is less than the minumum return amount of {}",
+>>>>>>> 5b53446d (refactor exchange macros into all contracts)
                     Uint128::zero(),
                     minimum_receive_amount
                 )
