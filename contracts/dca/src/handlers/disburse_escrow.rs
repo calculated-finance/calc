@@ -284,6 +284,8 @@ mod disburse_escrow_tests {
 
         let response = disburse_escrow_handler(deps.as_mut(), env, info, vault.id).unwrap();
 
+        println!("{:#?}", response);
+
         assert!(response.messages.contains(&SubMsg::reply_always(
             BankMsg::Send {
                 to_address: vault.destinations[0].address.to_string(),
