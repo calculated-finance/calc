@@ -409,7 +409,7 @@ mod return_swapped_funds_tests {
             return_swapped_funds(deps.as_ref(), mock_env()).unwrap_err(),
             ContractError::FailedSwap {
                 msg: format!(
-                    "{} is less than the minumum return amount of {}",
+                    "{} is less than the minimum return amount of {}",
                     Uint128::zero(),
                     minimum_receive_amount
                 )

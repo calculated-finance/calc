@@ -98,6 +98,7 @@ pub fn disburse_escrow_handler(
 
     Ok(response
         .add_submessages(get_disbursement_messages(
+            deps.api,
             deps.storage,
             &vault,
             amount_to_disburse.amount,
@@ -282,6 +283,8 @@ mod disburse_escrow_tests {
         );
 
         let response = disburse_escrow_handler(deps.as_mut(), env, info, vault.id).unwrap();
+
+        println!("{:#?}", response);
 
         assert!(response.messages.contains(&SubMsg::reply_always(
             BankMsg::Send {

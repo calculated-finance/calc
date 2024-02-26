@@ -57,7 +57,7 @@ pub fn get_route(
     let first = route.first().unwrap().clone();
     let mut last = route.last().unwrap().clone();
 
-    let fist_pool = match get_pool(storage, key_from(&[base.clone(), first.clone()])) {
+    let first_pool = match get_pool(storage, key_from(&[base.clone(), first.clone()])) {
         Ok(pool) => pool,
         Err(_) => {
             let key = key_from(&[base.clone(), last.clone()]);
@@ -67,7 +67,7 @@ pub fn get_route(
         }
     };
 
-    hop_pools.push(fist_pool);
+    hop_pools.push(first_pool);
 
     for (index, denom) in route.iter().enumerate().skip(1) {
         let prev = route.get(index - 1).unwrap().clone();

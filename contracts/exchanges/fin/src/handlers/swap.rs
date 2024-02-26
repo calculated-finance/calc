@@ -85,7 +85,7 @@ pub fn return_swapped_funds(deps: Deps, env: Env) -> Result<Response, ContractEr
     if return_amount.amount < swap_cache.minimum_receive_amount.amount {
         return Err(ContractError::FailedSwap {
             msg: format!(
-                "{} is less than the minumum return amount of {}",
+                "{} is less than the minimum return amount of {}",
                 return_amount, swap_cache.minimum_receive_amount
             ),
         });
@@ -290,7 +290,7 @@ mod return_swapped_funds_tests {
             return_swapped_funds(deps.as_ref(), mock_env()).unwrap_err(),
             ContractError::FailedSwap {
                 msg: format!(
-                    "{} is less than the minumum return amount of {}",
+                    "{} is less than the minimum return amount of {}",
                     empty_of(minimum_receive_amount.clone()),
                     minimum_receive_amount
                 )
