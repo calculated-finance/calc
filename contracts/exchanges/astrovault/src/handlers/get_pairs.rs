@@ -29,7 +29,6 @@ mod get_pairs_handler {
         let pairs = routed_pairs_real_implicit();
 
         let ex_pairs = get_pairs_handler(deps, None, None).unwrap();
-        println!("Exp {:?}", ex_pairs);
 
         assert_eq!(pairs.len(), 2);
     }

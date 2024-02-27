@@ -32,14 +32,13 @@ pub fn get_disbursement_messages(
                     SubMsg::reply_always(
                         into_bank_msg(
                             api,
-                            destination.address.clone(),
+                            destination.address.as_ref(),
                             vec![allocation_amount.clone()],
                         )
                         .expect("valid bank msg"),
                         AFTER_FAILED_AUTOMATION_REPLY_ID,
                     ),
                     |msg| {
-                        println!("Execute msg wrapper");
                         SubMsg::reply_always(
                             into_execute_msg(
                                 api,

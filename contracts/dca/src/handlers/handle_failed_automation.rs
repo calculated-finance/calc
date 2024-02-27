@@ -44,7 +44,7 @@ pub fn handle_failed_automation_handler(
                 .add_attribute(format!("destination_msg_{}", destination_num), "failed")
                 .add_submessage(SubMsg::new(into_bank_msg(
                     deps.api,
-                    vault.owner,
+                    vault.owner.as_ref(),
                     entry.funds,
                 )?))
         }

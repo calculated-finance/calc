@@ -287,12 +287,6 @@ mod saving_routed_pairs_tests {
 
         let pairs = get_pairs(deps.storage, None, None);
 
-        println!("\n\n");
-        for pair in pairs.iter() {
-            println!("{:?}\n", pair);
-        }
-        println!("\n\n");
-
         let direct_pool_count = route.len();
 
         // at least 0 by definition

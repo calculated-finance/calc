@@ -1,6 +1,6 @@
 use cosmwasm_std::{BankMsg, Coin, Deps, DepsMut, Env, MessageInfo, Response, SubMsg};
 use kujira_fin::ExecuteMsg;
-use shared::coin::subtract;
+use shared::{balance::query_balance, coin::subtract};
 
 use crate::{
     contract::AFTER_SWAP,
@@ -43,9 +43,12 @@ pub fn swap_handler(
         &SwapCache {
             sender: info.sender.clone(),
             minimum_receive_amount: minimum_receive_amount.clone(),
-            target_denom_balance: deps
-                .querier
-                .query_balance(env.contract.address, minimum_receive_amount.denom.clone())?,
+            target_denom_balance: query_balance(
+                deps.api,
+                &deps.querier,
+                &minimum_receive_amount.denom,
+                &env.contract.address,
+            )?,
         },
     )?;
 

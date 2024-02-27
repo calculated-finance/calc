@@ -169,7 +169,6 @@ pub fn execute(
         ExecuteMsg::Receive(receive_msg) => {
             let info = from_cw20(&deps.as_ref(), info, receive_msg.clone())?;
             let msg = from_json(receive_msg.msg)?;
-
             match msg {
                 ExecuteMsg::Receive(_) => {
                     Err(ContractError::Std(cosmwasm_std::StdError::GenericErr {

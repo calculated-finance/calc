@@ -4,6 +4,7 @@ use cosmwasm_std::{
     SubMsg, Uint128,
 };
 use cw_utils::one_coin;
+use shared::cw20::is_cw20_token;
 
 use crate::{
     contract::AFTER_SWAP,
@@ -23,10 +24,20 @@ pub fn swap_native_handler(
     route: Option<Binary>,
 ) -> Result<Response, ContractError> {
     let coin = one_coin(&info)?;
-    let asset = Asset {
-        info: AssetInfo::NativeToken { denom: coin.denom },
-        amount: coin.amount,
+
+    let asset = match is_cw20_token(deps.api, &coin.denom) {
+        Ok(token_address) => Asset {
+            info: AssetInfo::Token {
+                contract_addr: token_address.to_string(),
+            },
+            amount: coin.amount,
+        },
+        Err(_) => Asset {
+            info: AssetInfo::NativeToken { denom: coin.denom },
+            amount: coin.amount,
+        },
     };
+
     swap_handler(
         deps,
         env,
@@ -37,33 +48,6 @@ pub fn swap_native_handler(
         route,
     )
 }
-
-// pub fn swap_cw20_handler(
-//     deps: DepsMut,
-//     env: Env,
-//     contract_addr: Addr,
-//     amount: Uint128,
-//     sender: String,
-//     minimum_receive_amount: Asset,
-//     route: Option<Binary>,
-// ) -> Result<Response, ContractError> {
-//     let sender = deps.api.addr_validate(sender.as_ref())?;
-//     let asset = Asset {
-//         info: AssetInfo::Token {
-//             contract_addr: contract_addr.into_string(),
-//         },
-//         amount,
-//     };
-//     swap_handler(
-//         deps,
-//         env,
-//         sender,
-//         asset,
-//         minimum_receive_amount,
-//         vec![],
-//         route,
-//     )
-// }
 
 pub fn swap_msg(
     deps: Deps,

@@ -30,7 +30,7 @@ pub fn z_delegate_handler(
         .add_submessages(vec![
             SubMsg::new(into_bank_msg(
                 deps.api,
-                delegator_address.clone(),
+                delegator_address.as_ref(),
                 vec![amount_to_delegate.clone()],
             )?),
             SubMsg::reply_always(
