@@ -3,6 +3,7 @@ use cosmwasm_std::{Coin, Decimal256, Deps, StdError, StdResult};
 use super::get_expected_receive_amount::get_expected_receive_amount_handler;
 
 pub const AMOUNT_TO_SIMULATE_TWAP: u128 = 1_000_000u128;
+pub const FALLBACK_AMOUNT_TO_SIMULATE_TWAP: u128 = 1_000_000_000_000_000_000u128;
 
 pub fn get_twap_to_now_handler(
     deps: Deps,
@@ -20,11 +21,27 @@ pub fn get_twap_to_now_handler(
     let coin = get_expected_receive_amount_handler(
         deps,
         Coin {
-            denom: swap_denom,
+            denom: swap_denom.clone(),
             amount: AMOUNT_TO_SIMULATE_TWAP.into(),
         },
-        target_denom,
+        target_denom.clone(),
     )?;
+
+    if coin.amount.is_zero() {
+        let coin = get_expected_receive_amount_handler(
+            deps,
+            Coin {
+                denom: swap_denom,
+                amount: FALLBACK_AMOUNT_TO_SIMULATE_TWAP.into(),
+            },
+            target_denom,
+        )?;
+
+        return Ok(Decimal256::from_ratio(
+            FALLBACK_AMOUNT_TO_SIMULATE_TWAP,
+            coin.amount.u128(),
+        ));
+    }
 
     Ok(Decimal256::from_ratio(
         AMOUNT_TO_SIMULATE_TWAP,
