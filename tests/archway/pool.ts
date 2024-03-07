@@ -17,6 +17,7 @@ import {
   PLQ,
   ROCK,
   USDC,
+  ampARCH,
   axlBTC,
   axlUSDC,
   bnUSD,
@@ -155,6 +156,14 @@ export const POOLS = {
   },
   [keyFromAssets(AXV, xJKL)]: {
     address: 'archway1m43xf7zm7p6h8tlagzm82e4tg9zlyah8x3wjha5tf7vsftyysy5qcz4c3l',
+    pool_type: 'standard',
+  },
+  [keyFromAssets(xARCH, sARCH)]: {
+    address: 'archway1352tn8gyl6df9azwznldg5ths0xst720xgc82q2as3c5kz0tx64qm0dq3j',
+    pool_type: 'standard',
+  },
+  [keyFromAssets(xARCH, ampARCH)]: {
+    address: 'archway188c99g248n72xxgy9eexd735pzk6qvp93aq3wgavkuj83w8azteqw4ahn5',
     pool_type: 'standard',
   },
 };

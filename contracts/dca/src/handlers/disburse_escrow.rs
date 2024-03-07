@@ -53,7 +53,11 @@ pub fn disburse_escrow_handler(
     if let Some(due_date) = due_date {
         if env.block.time < due_date {
             return Err(ContractError::CustomError {
-                val: "Escrow is not available to be disbursed yet".to_string(),
+                val: format!(
+                    "Escrow is not available to be disbursed until {:?}",
+                    due_date
+                )
+                .to_string(),
             });
         }
     }
@@ -169,10 +173,9 @@ mod disburse_escrow_tests {
 
         let err = disburse_escrow_handler(deps.as_mut(), env, info, vault.id).unwrap_err();
 
-        assert_eq!(
-            err.to_string(),
-            "Error: Escrow is not available to be disbursed yet"
-        );
+        assert!(err
+            .to_string()
+            .contains("Error: Escrow is not available to be disbursed"));
     }
 
     #[test]

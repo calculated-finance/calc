@@ -31,6 +31,12 @@ export const xARCH = {
   },
 };
 
+export const ampARCH = {
+  token: {
+    contract_addr: 'archway1fwurjg7ah4v7hhs6xsc3wutqpvmahrfhns285s0lt34tgfdhplxq6m8xg5',
+  },
+};
+
 export const AKT = {
   native_token: {
     denom: 'ibc/C2CFB1C37C146CF95B0784FD518F8030FEFC76C5800105B1742FB65FFE65F873',

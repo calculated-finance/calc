@@ -180,14 +180,23 @@ fn get_pairs_full_implicit(
     let mut pairs = PAIRS
         .range(storage, pair_start_after, None, Order::Ascending)
         .take(limit)
+        .filter(|res| {
+            res.as_ref()
+                .map(|(key, _pair)| {
+                    let denoms = denoms_from(&key);
+                    denoms[0] != denoms[1]
+                })
+                .unwrap()
+        })
         .flat_map(|result| {
             result.map(|(key, pair)| match pair {
-                StoredPairType::Direct {} => find_pool_pair(storage, denoms_from(&key)),
-                StoredPairType::Routed {} => find_route_pair(storage, denoms_from(&key)),
+                StoredPairType::Direct {} => find_pool_pair(storage, denoms_from(&key))
+                    .expect(format!("Pair not found: {:?}", denoms_from(&key)).as_str()),
+                StoredPairType::Routed {} => find_route_pair(storage, denoms_from(&key))
+                    .expect(format!("Pair not found: {:?}", denoms_from(&key)).as_str()),
             })
         })
-        .collect::<StdResult<Vec<PopulatedPair>>>()
-        .unwrap();
+        .collect::<Vec<PopulatedPair>>();
 
     limit = original_limit.checked_sub(pairs.len()).unwrap_or(0);
 
@@ -223,7 +232,10 @@ fn get_pairs_full_implicit(
                 if let Ok((key, _)) = route_res {
                     let denoms = denoms_from(&key);
                     if !pair_exists(storage, &denoms) {
-                        Some(get_routed_pair(storage, denoms, false).unwrap())
+                        Some(
+                            get_routed_pair(storage, denoms.clone(), false)
+                                .expect(format!("Pair not found: {:?}", denoms).as_str()),
+                        )
                     } else {
                         None
                     }
