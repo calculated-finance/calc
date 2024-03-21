@@ -22,6 +22,8 @@ import {
   axlUSDC,
   bnUSD,
   denomFromAsset,
+  gravUSDC,
+  gravUSDT,
   sARCH,
   xAKT,
   xARCH,
@@ -165,5 +167,17 @@ export const POOLS = {
   [keyFromAssets(xARCH, ampARCH)]: {
     address: 'archway188c99g248n72xxgy9eexd735pzk6qvp93aq3wgavkuj83w8azteqw4ahn5',
     pool_type: 'standard',
+  },
+  [keyFromAssets(USDC, axlBTC)]: {
+    address: 'archway1alukarfvkx5m2uzazlye7yu0vmyre76rvm63znytjl996thwjtzst5mjx0',
+    pool_type: 'standard',
+  },
+  [keyFromAssets(USDC, gravUSDT)]: {
+    address: 'archway1sm79zcrt6a0fmcuvw265lvysjkwk369hqf2xmeljpx6vc40f6ugswfr55l',
+    pool_type: 'stable',
+  },
+  [keyFromAssets(USDC, gravUSDC)]: {
+    address: 'archway1sm79zcrt6a0fmcuvw265lvysjkwk369hqf2xmeljpx6vc40f6ugswfr55l',
+    pool_type: 'stable',
   },
 };

@@ -192,3 +192,15 @@ export const bnUSD = {
     contract_addr: 'archway1l3m84nf7xagkdrcced2y0g367xphnea5uqc3mww3f83eh6h38nqqxnsxz7',
   },
 };
+
+export const gravUSDT = {
+  native_token: {
+    denom: 'ibc/7F6928F9DB35D5A420330B9470EA4419B5F305EEB668D3274FC1ACDAC325ED17',
+  },
+};
+
+export const gravUSDC = {
+  native_token: {
+    denom: 'ibc/6F681B32B47E765AE278844A8A97C8B7AD5A3FB591E37CFDFA0E208EFEBEF97D',
+  },
+};

@@ -9,9 +9,8 @@ use crate::helpers::validation::{
     assert_no_destination_allocations_are_zero, assert_route_exists_for_denoms,
     assert_slippage_tolerance_is_less_than_or_equal_to_one,
     assert_swap_adjustment_and_performance_assessment_strategies_are_compatible,
-    assert_swap_adjustment_strategy_params_are_valid, assert_swap_amount_is_greater_than_50000,
-    assert_target_start_time_is_not_in_the_past, assert_time_interval_is_valid,
-    assert_weighted_scale_multiplier_is_no_more_than_10,
+    assert_swap_adjustment_strategy_params_are_valid, assert_target_start_time_is_not_in_the_past,
+    assert_time_interval_is_valid, assert_weighted_scale_multiplier_is_no_more_than_10,
 };
 use crate::helpers::vault::get_risk_weighted_average_model_id;
 use crate::msg::ExecuteMsg;
@@ -56,7 +55,6 @@ pub fn create_vault_handler(
     assert_contract_is_not_paused(deps.storage)?;
     assert_address_is_valid(deps.as_ref(), &owner, "owner")?;
     assert_exactly_one_asset(info.funds.clone())?;
-    assert_swap_amount_is_greater_than_50000(swap_amount)?;
     assert_destinations_limit_is_not_breached(&destinations)?;
     assert_time_interval_is_valid(&time_interval)?;
 
@@ -570,40 +568,6 @@ mod create_vault_tests {
         assert_eq!(
             err.to_string(),
             "Error: no more than 10 destinations can be provided"
-        );
-    }
-
-    #[test]
-    fn with_swap_amount_less_than_50000_fails() {
-        let mut deps = calc_mock_dependencies();
-        let env = mock_env();
-        let info = mock_info(USER, &[Coin::new(10000, DENOM_UUSK)]);
-
-        instantiate_contract(deps.as_mut(), env.clone(), info.clone());
-
-        let err = create_vault_handler(
-            deps.as_mut(),
-            env,
-            &info,
-            info.sender.clone(),
-            None,
-            vec![],
-            DENOM_UKUJI.to_string(),
-            None,
-            None,
-            None,
-            Uint128::new(10000),
-            TimeInterval::Daily,
-            None,
-            None,
-            None,
-            None,
-        )
-        .unwrap_err();
-
-        assert_eq!(
-            err.to_string(),
-            "Error: swap amount must be greater than 50000"
         );
     }
 

@@ -4,7 +4,7 @@ use cosmwasm_std::{
 };
 use cw20::BalanceResponse as Cw20BalanceResponse;
 
-use crate::cw20::is_cw20_token;
+use crate::cw20::cw20_token_address;
 
 pub fn query_balance(
     api: &dyn Api,
@@ -12,7 +12,7 @@ pub fn query_balance(
     denom: &str,
     address: &Addr,
 ) -> StdResult<Coin> {
-    match is_cw20_token(api, denom) {
+    match cw20_token_address(api, denom) {
         Ok(token_address) => {
             let res =
                 querier.query::<Cw20BalanceResponse>(&QueryRequest::Wasm(WasmQuery::Smart {
