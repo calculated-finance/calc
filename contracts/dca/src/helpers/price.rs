@@ -28,17 +28,15 @@ pub fn get_expected_receive_amount(
     swap_amount: Coin,
     target_denom: String,
     route: Option<Binary>,
-) -> StdResult<Uint128> {
-    Ok(querier
-        .query_wasm_smart::<Coin>(
-            exchange_contract_address,
-            &QueryMsg::GetExpectedReceiveAmount {
-                swap_amount,
-                target_denom,
-                route,
-            },
-        )?
-        .amount)
+) -> StdResult<Coin> {
+    querier.query_wasm_smart::<Coin>(
+        exchange_contract_address,
+        &QueryMsg::GetExpectedReceiveAmount {
+            swap_amount,
+            target_denom,
+            route,
+        },
+    )
 }
 
 pub fn get_slippage(
@@ -66,7 +64,7 @@ pub fn get_slippage(
     }
 
     let expected_receive_amount = expected_receive_amount?;
-    let expected_price = Decimal::from_ratio(swap_amount.amount, expected_receive_amount);
+    let expected_price = Decimal::from_ratio(swap_amount.amount, expected_receive_amount.amount);
 
     if belief_price >= expected_price {
         return Ok(Decimal::percent(0));
@@ -104,7 +102,7 @@ pub fn get_price(
         );
     }
 
-    let expected_receive_amount = expected_receive_amount?;
+    let expected_receive_amount = expected_receive_amount?.amount;
 
     if expected_receive_amount.is_zero() {
         return Ok(Decimal::percent(0));

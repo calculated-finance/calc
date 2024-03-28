@@ -1,6 +1,6 @@
 use crate::constants::AFTER_SWAP_REPLY_ID;
 use crate::error::ContractError;
-use crate::helpers::price::{get_slippage, get_twap_to_now};
+use crate::helpers::price::{get_expected_receive_amount, get_slippage, get_twap_to_now};
 use crate::helpers::time::get_next_target_time;
 use crate::helpers::validation::{assert_contract_is_not_paused, assert_target_time_is_in_past};
 use crate::helpers::vault::{get_swap_amount, simulate_standard_dca_execution};
@@ -25,7 +25,7 @@ pub fn execute_trigger_handler(
     deps: DepsMut,
     env: Env,
     trigger_id: Uint128,
-    route: Option<Binary>,
+    mut route: Option<Binary>,
 ) -> Result<Response, ContractError> {
     assert_contract_is_not_paused(deps.storage)?;
 
@@ -109,7 +109,42 @@ pub fn execute_trigger_handler(
     }
 
     let config = get_config(deps.storage)?;
-    let route = route.map_or(vault.route.clone(), Some);
+
+    let adjusted_swap_amount = get_swap_amount(&deps.as_ref(), &env, &vault)?;
+
+    if route.is_some() {
+        let expected_receive_amount_new_route = get_expected_receive_amount(
+            &deps.querier,
+            config.exchange_contract_address.clone(),
+            adjusted_swap_amount.clone(),
+            vault.target_denom.clone(),
+            route.clone(),
+        )?;
+
+        if expected_receive_amount_new_route.denom != vault.target_denom {
+            return Err(ContractError::CustomError {
+                val: String::from("route target denom does not match vault target denom"),
+            });
+        }
+
+        let expected_receive_amount_old_route = get_expected_receive_amount(
+            &deps.querier,
+            config.exchange_contract_address.clone(),
+            adjusted_swap_amount.clone(),
+            vault.target_denom.clone(),
+            vault.route.clone(),
+        )?;
+
+        route = if expected_receive_amount_new_route.amount
+            < expected_receive_amount_old_route.amount
+        {
+            vault.route.clone()
+        } else {
+            route.clone()
+        };
+    } else {
+        route = vault.route.clone();
+    }
 
     let twap_price = get_twap_to_now(
         &deps.querier,
@@ -184,8 +219,6 @@ pub fn execute_trigger_handler(
     if vault.is_inactive() {
         return Ok(response.add_attribute("execution_skipped", "vault_is_inactive"));
     }
-
-    let adjusted_swap_amount = get_swap_amount(&deps.as_ref(), &env, &vault)?;
 
     if adjusted_swap_amount.amount.is_zero() {
         create_event(

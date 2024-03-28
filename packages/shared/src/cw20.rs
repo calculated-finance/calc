@@ -6,7 +6,7 @@ use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 
 use crate::coin::one_from;
 
-pub fn is_cw20_token(api: &dyn Api, denom: &str) -> StdResult<Addr> {
+pub fn cw20_token_address(api: &dyn Api, denom: &str) -> StdResult<Addr> {
     if denom.len() > 10 {
         api.addr_validate(denom)
     } else {
@@ -17,7 +17,7 @@ pub fn is_cw20_token(api: &dyn Api, denom: &str) -> StdResult<Addr> {
     }
 }
 
-pub fn from_cw20(
+pub fn from_cw20_receive_msg(
     deps: &Deps,
     info: MessageInfo,
     receive_msg: Cw20ReceiveMsg,
@@ -33,7 +33,7 @@ pub fn from_cw20(
 
 pub fn into_bank_msg(api: &dyn Api, recipient: &str, amount: Vec<Coin>) -> StdResult<CosmosMsg> {
     let token = one_from(amount.clone())?;
-    Ok(match is_cw20_token(api, token.denom.as_ref()) {
+    Ok(match cw20_token_address(api, token.denom.as_ref()) {
         Ok(token_address) => CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: token_address.to_string(),
             msg: to_json_binary(&Cw20ExecuteMsg::Transfer {
@@ -55,7 +55,7 @@ pub fn into_execute_msg(
     msg: Binary,
     amount: Coin,
 ) -> StdResult<CosmosMsg> {
-    Ok(match is_cw20_token(api, amount.denom.as_ref()) {
+    Ok(match cw20_token_address(api, amount.denom.as_ref()) {
         Ok(token_address) => CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: token_address.to_string(),
             msg: to_json_binary(&Cw20ExecuteMsg::Send {

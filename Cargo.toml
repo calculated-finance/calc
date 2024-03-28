@@ -1,5 +1,5 @@
 [workspace]
-members = ["packages/*", "contracts/dca", "contracts/exchanges/astrovault"]
+members = ["packages/*", "contracts/dca", "contracts/exchanges/astroport"]
 resolver = "1"
 
 [profile.release]
@@ -29,6 +29,3 @@ thiserror = "1.0.31"
 shared = { path = "packages/shared" }
 exchange = { path = "packages/exchange" }
 exchange-macros = { path = "packages/macros" }
-
-dca = { path = "contracts/dca" }
-astrovault-calc = { path = "contracts/exchanges/astrovault" }
