@@ -1,10 +1,8 @@
 [package]
-name = "astrovault-calc"
-version = "1.0.1"
-authors = ["Kromsten <kromsten@pm.me>"]
+name = "astrovault-calc-v2"
+version = "0.0.1"
+authors = ["James Gaddum"]
 edition = "2021"
-
-exclude = ["contract.wasm", "hash.txt"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]

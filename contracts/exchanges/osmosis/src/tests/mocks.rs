@@ -20,7 +20,7 @@ use serde::de::DeserializeOwned;
 use std::marker::PhantomData;
 
 use super::constants::{
-    DENOM_STAKE, DENOM_UATOM, DENOM_UION, DENOM_UOSMO, DENOM_USDC, ONE_DECIMAL, SWAP_FEE_RATE, TEN,
+    DENOM_STAKE, DENOM_UATOM, DENOM_UION, DENOM_UOSMO, DENOM_UUSDC, ONE_DECIMAL, SWAP_FEE_RATE, TEN,
 };
 
 pub type StargateHandler = dyn Fn(&str, &Binary) -> StdResult<Binary>;
@@ -114,7 +114,7 @@ impl<C: DeserializeOwned> CalcMockQuerier<C> {
                                 },
                                 PoolAsset {
                                     token: Some(Coin {
-                                        denom: DENOM_USDC.to_string(),
+                                        denom: DENOM_UUSDC.to_string(),
                                         amount: TEN.to_string(),
                                     }),
                                     weight: TEN.to_string(),
@@ -192,7 +192,7 @@ impl<C: DeserializeOwned> CalcMockQuerier<C> {
                         ConcentratedLiquidityPool {
                             id: 7,
                             token0: DENOM_UION.to_string(),
-                            token1: DENOM_USDC.to_string(),
+                            token1: DENOM_UUSDC.to_string(),
                             ..ConcentratedLiquidityPool::default()
                         },
                         ConcentratedLiquidityPool {
@@ -246,7 +246,7 @@ impl<C: DeserializeOwned> CalcMockQuerier<C> {
                                     amount: TEN.to_string(),
                                 },
                                 Coin {
-                                    denom: DENOM_USDC.to_string(),
+                                    denom: DENOM_UUSDC.to_string(),
                                     amount: TEN.to_string(),
                                 },
                             ],

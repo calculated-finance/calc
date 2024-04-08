@@ -211,7 +211,7 @@ mod calculate_route_tests {
     use super::calculate_route;
     use crate::{
         tests::{
-            constants::{DENOM_UATOM, DENOM_UION, DENOM_UOSMO, DENOM_USDC},
+            constants::{DENOM_UATOM, DENOM_UION, DENOM_UOSMO, DENOM_UUSDC},
             mocks::calc_mock_dependencies,
         },
         types::pair::Pair,
@@ -293,7 +293,7 @@ mod calculate_route_tests {
         let pair = Pair {
             route: vec![0, 1],
             quote_denom: DENOM_UATOM.to_string(),
-            base_denom: DENOM_USDC.to_string(),
+            base_denom: DENOM_UUSDC.to_string(),
         };
 
         let err =
@@ -381,12 +381,12 @@ mod calculate_route_tests {
 
         let pair = Pair {
             route: vec![2, 1, 0],
-            quote_denom: DENOM_USDC.to_string(),
+            quote_denom: DENOM_UUSDC.to_string(),
             base_denom: DENOM_UATOM.to_string(),
         };
 
         assert_eq!(
-            calculate_route(&deps.as_ref().querier, &pair, DENOM_USDC.to_string()).unwrap(),
+            calculate_route(&deps.as_ref().querier, &pair, DENOM_UUSDC.to_string()).unwrap(),
             vec![
                 SwapAmountInRoute {
                     pool_id: 2,
@@ -416,7 +416,7 @@ mod calculate_route_tests {
                 },
                 SwapAmountInRoute {
                     pool_id: 2,
-                    token_out_denom: DENOM_USDC.to_string(),
+                    token_out_denom: DENOM_UUSDC.to_string(),
                 },
             ]
         );
@@ -584,12 +584,12 @@ mod calculate_route_tests {
 
         let pair = Pair {
             route: vec![12, 11, 10],
-            quote_denom: DENOM_USDC.to_string(),
+            quote_denom: DENOM_UUSDC.to_string(),
             base_denom: DENOM_UATOM.to_string(),
         };
 
         assert_eq!(
-            calculate_route(&deps.as_ref().querier, &pair, DENOM_USDC.to_string()).unwrap(),
+            calculate_route(&deps.as_ref().querier, &pair, DENOM_UUSDC.to_string()).unwrap(),
             vec![
                 SwapAmountInRoute {
                     pool_id: 12,
@@ -619,7 +619,7 @@ mod calculate_route_tests {
                 },
                 SwapAmountInRoute {
                     pool_id: 12,
-                    token_out_denom: DENOM_USDC.to_string(),
+                    token_out_denom: DENOM_UUSDC.to_string(),
                 },
             ]
         );
@@ -787,12 +787,12 @@ mod calculate_route_tests {
 
         let pair = Pair {
             route: vec![12, 11, 10],
-            quote_denom: DENOM_USDC.to_string(),
+            quote_denom: DENOM_UUSDC.to_string(),
             base_denom: DENOM_UATOM.to_string(),
         };
 
         assert_eq!(
-            calculate_route(&deps.as_ref().querier, &pair, DENOM_USDC.to_string()).unwrap(),
+            calculate_route(&deps.as_ref().querier, &pair, DENOM_UUSDC.to_string()).unwrap(),
             vec![
                 SwapAmountInRoute {
                     pool_id: 12,
@@ -822,7 +822,7 @@ mod calculate_route_tests {
                 },
                 SwapAmountInRoute {
                     pool_id: 12,
-                    token_out_denom: DENOM_USDC.to_string(),
+                    token_out_denom: DENOM_UUSDC.to_string(),
                 },
             ]
         );

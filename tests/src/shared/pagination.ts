@@ -24,7 +24,7 @@ const fetchNextPaged = async function* <G, T>(
     getNextPageValue: (response: G | undefined) => unknown | undefined,
     previousPage: G | undefined = undefined,
   ): AsyncGenerator<T[]> {
-    const response = await requestFn(getNextPageValue(previousPage));
+    const response = await requestFn(previousPage && getNextPageValue(previousPage));
     yield getResponseItems(response);
 
     if (getNextPageValue(response) !== undefined) {

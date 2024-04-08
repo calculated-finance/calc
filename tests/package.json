@@ -39,5 +39,9 @@
     "ts-sinon": "^2.0.2",
     "typescript": "^5.0.4",
     "ws": "^8.14.1"
+  },
+  "dependencies": {
+    "@xchainjs/xchain-thorchain": "^1.0.4",
+    "bech32": "^2.0.0"
   }
 }
