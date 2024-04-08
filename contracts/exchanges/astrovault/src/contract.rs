@@ -3,22 +3,15 @@ use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     from_json, to_json_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };
-use shared::cw20::from_cw20;
+use shared::cw20::from_cw20_receive_msg;
 
 use crate::error::ContractError;
-use crate::handlers::create_pairs::create_pairs_handler;
 use crate::handlers::get_expected_receive_amount::get_expected_receive_amount_handler;
-use crate::handlers::get_pairs::get_pairs_handler;
-use crate::handlers::get_pairs_internal::{
-    get_pairs_internal_full_handler, get_pairs_internal_handler,
-};
 use crate::handlers::get_twap_to_now::get_twap_to_now_handler;
-use crate::handlers::swap::{return_swapped_funds, swap_msg, swap_native_handler};
-use crate::helpers::balance::coin_to_asset;
+use crate::handlers::swap::{return_swapped_funds, swap_handler};
 use crate::msg::{ExecuteMsg, QueryMsg};
 use crate::msg::{InstantiateMsg, MigrateMsg};
-use crate::state::common::update_allow_implicit;
-use crate::state::config::{get_config, update_config, update_router_config};
+use crate::state::config::{get_config, update_config};
 use crate::types::config::Config;
 
 /*
@@ -34,81 +27,35 @@ pub fn instantiate(
     _: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    deps.api.addr_validate(msg.admin.as_ref())?;
-    deps.api.addr_validate(msg.dca_contract_address.as_ref())?;
-    deps.api.addr_validate(msg.router_address.as_ref())?;
+    deps.api.addr_validate(msg.admin.as_str())?;
+    deps.api.addr_validate(msg.router_address.as_str())?;
 
     update_config(
         deps.storage,
         Config {
-            admin: msg.admin.clone(),
-            dca_contract_address: msg.dca_contract_address.clone(),
-            router_address: msg.router_address.clone(),
+            admin: msg.admin,
+            router_address: msg.router_address,
         },
     )?;
 
-    update_router_config(&deps.querier, deps.storage, msg.router_address.as_ref())?;
-    update_allow_implicit(deps.storage, msg.allow_implicit)?;
-
-    Ok(Response::new()
-        .add_attribute("instantiate", "true")
-        .add_attribute("admin", msg.admin)
-        .add_attribute("dca_contract_address", msg.dca_contract_address))
+    Ok(Response::new())
 }
 
 #[entry_point]
 pub fn migrate(deps: DepsMut, _: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
-    let mut attributes: Vec<(&str, String)> = Vec::with_capacity(5);
-    attributes.push(("migrate", String::from("true")));
-
     let config = get_config(deps.storage)?;
 
-    let dca_contract_address = if msg.dca_contract_address.is_some() {
-        let dca = msg.dca_contract_address.unwrap().clone();
-        deps.api.addr_validate(dca.as_ref())?;
-        attributes.push(("dca_contract_address", dca.to_string()));
-        dca
-    } else {
-        config.dca_contract_address
-    };
-
-    let admin = if msg.admin.is_some() {
-        let admin = msg.admin.unwrap();
-        deps.api.addr_validate(admin.as_ref())?;
-        attributes.push(("admin", admin.to_string()));
-        admin
-    } else {
-        config.admin
-    };
-
-    let router_address = if msg.router_address.is_some() {
-        let router_address = msg.router_address.unwrap();
-        deps.api.addr_validate(router_address.as_ref())?;
-        attributes.push(("router_address", router_address.to_string()));
-        update_router_config(&deps.querier, deps.storage, router_address.as_ref())?;
-        router_address
-    } else {
-        config.router_address
-    };
-
-    if msg.allow_implicit.is_some() {
-        attributes.push((
-            "allow_implicit_routes",
-            msg.allow_implicit.unwrap().to_string(),
-        ));
-        update_allow_implicit(deps.storage, msg.allow_implicit)?;
-    }
+    deps.api.addr_validate(msg.router_address.as_str())?;
 
     update_config(
         deps.storage,
         Config {
-            admin,
-            dca_contract_address,
-            router_address,
+            router_address: msg.router_address,
+            ..config
         },
     )?;
 
-    Ok(Response::new().add_attributes(attributes))
+    Ok(Response::new())
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -119,21 +66,17 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::SubmitOrder { .. } => not_implemented_handle(),
-        ExecuteMsg::RetractOrder { .. } => not_implemented_handle(),
-        ExecuteMsg::WithdrawOrder { .. } => not_implemented_handle(),
         ExecuteMsg::Swap {
             minimum_receive_amount,
             route,
-        } => swap_native_handler(
-            deps,
-            env,
-            info,
-            coin_to_asset(minimum_receive_amount),
-            route,
-        ),
+        } => {
+            if route.is_none() {
+                return Err(ContractError::Route {});
+            }
+            swap_handler(deps, env, info, minimum_receive_amount, route.unwrap())
+        }
         ExecuteMsg::Receive(receive_msg) => {
-            let info = from_cw20(&deps.as_ref(), info, receive_msg.clone())?;
+            let info = from_cw20_receive_msg(&deps.as_ref(), info, receive_msg.clone())?;
             let msg = from_json(receive_msg.msg)?;
 
             match msg {
@@ -145,56 +88,46 @@ pub fn execute(
                 _ => execute(deps, env, info, msg),
             }
         }
-        ExecuteMsg::CreatePairs { pairs } => create_pairs_handler(deps, info, pairs),
+        _ => not_implemented_handle(),
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetOrder { .. } => to_json_binary(&not_implemented_query()?),
-        QueryMsg::GetPairs { start_after, limit } => {
-            to_json_binary(&get_pairs_handler(deps, start_after, limit)?)
-        }
         QueryMsg::GetTwapToNow {
             swap_denom,
             target_denom,
             period,
-            route: _,
-        } => to_json_binary(&get_twap_to_now_handler(
-            deps,
-            swap_denom,
-            target_denom,
-            period,
-        )?),
+            route,
+        } => {
+            if route.is_none() {
+                return Err(ContractError::Route {}.into());
+            }
+            to_json_binary(&get_twap_to_now_handler(
+                deps,
+                swap_denom,
+                target_denom,
+                period,
+                &route.unwrap(),
+            )?)
+        }
         QueryMsg::GetExpectedReceiveAmount {
             swap_amount,
             target_denom,
-            route: _,
-        } => to_json_binary(&get_expected_receive_amount_handler(
-            deps,
-            swap_amount,
-            target_denom,
-        )?),
-        QueryMsg::Pairs { start_after, limit } => {
-            to_json_binary(&get_pairs_internal_handler(deps, start_after, limit)?)
-        }
-        QueryMsg::PopulatedPairs { start_after, limit } => {
-            to_json_binary(&get_pairs_internal_full_handler(deps, start_after, limit)?)
-        }
-        QueryMsg::SwapMsg {
-            offer_asset,
-            minimum_receive_amount,
-            funds,
             route,
-        } => to_json_binary(&swap_msg(
-            deps,
-            env,
-            offer_asset,
-            minimum_receive_amount,
-            funds,
-            route,
-        )?),
+        } => {
+            if route.is_none() {
+                return Err(ContractError::Route {}.into());
+            }
+            to_json_binary(&get_expected_receive_amount_handler(
+                deps,
+                swap_amount,
+                target_denom,
+                &route.unwrap(),
+            )?)
+        }
+        _ => to_json_binary(&not_implemented_query()?),
     }
 }
 

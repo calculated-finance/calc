@@ -15,5 +15,5 @@ pub const LIMIT_ORDER_ADDRESS: &str = "limit_order_address";
 pub const DENOM_UOSMO: &str = "uosmo";
 pub const DENOM_UATOM: &str = "uatom";
 pub const DENOM_UION: &str = "uion";
-pub const DENOM_USDC: &str = "usdc";
+pub const DENOM_UUSDC: &str = "usdc";
 pub const DENOM_STAKE: &str = "ustake";
