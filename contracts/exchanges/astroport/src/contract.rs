@@ -38,10 +38,6 @@ pub fn instantiate(
 pub fn migrate(deps: DepsMut, _: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
     let config = get_config(deps.storage)?;
 
-    if config.admin != msg.admin {
-        return Err(ContractError::Unauthorized {});
-    }
-
     deps.api.addr_validate(msg.router_address.as_str())?;
 
     update_config(
