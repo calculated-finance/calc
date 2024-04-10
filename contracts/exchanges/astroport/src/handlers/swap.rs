@@ -35,7 +35,7 @@ pub fn swap_handler(
 
     let config = get_config(deps.storage)?;
 
-    let swap_operations = from_json(&route)?;
+    let swap_operations = from_json(route)?;
 
     SWAP_CACHE.save(
         deps.storage,
@@ -91,7 +91,7 @@ pub fn return_swapped_funds(deps: Deps, env: Env) -> Result<Response, ContractEr
         .add_attribute("return_amount", return_amount.to_string())
         .add_submessage(SubMsg::new(into_bank_msg(
             deps.api,
-            &swap_cache.sender.to_string(),
+            swap_cache.sender.as_ref(),
             vec![return_amount],
         )?)))
 }
