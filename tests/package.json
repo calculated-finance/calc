@@ -11,10 +11,10 @@
     "test:osmosis": "env-cmd -e osmosis,shared mocha --recursive '**/*.test.ts' --timeout 90000 --exit"
   },
   "devDependencies": {
-    "@cosmjs/cosmwasm-stargate": "^0.31.1",
-    "@cosmjs/proto-signing": "^0.31.1",
-    "@cosmjs/stargate": "^0.31.1",
-    "@cosmjs/tendermint-rpc": "^0.31.1",
+    "@cosmjs/cosmwasm-stargate": "^0.32.3",
+    "@cosmjs/proto-signing": "^0.32.3",
+    "@cosmjs/stargate": "^0.32.3",
+    "@cosmjs/tendermint-rpc": "^0.32.3",
     "@types/chai-as-promised": "^7.1.5",
     "@types/mocha": "^10.0.0",
     "@types/ramda": "^0.28.18",
