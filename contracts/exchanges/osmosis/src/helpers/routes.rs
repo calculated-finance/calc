@@ -1,7 +1,9 @@
 use crate::types::{pair::Pair, position_type::PositionType};
-use cosmwasm_std::{from_json, QuerierWrapper, StdError, StdResult};
+use cosmwasm_std::{QuerierWrapper, StdError, StdResult};
 use osmosis_std::types::osmosis::concentratedliquidity::v1beta1::Pool as ConcentratedLiquidityPool;
-use osmosis_std::types::osmosis::cosmwasmpool::v1beta1::{CosmWasmPool, InstantiateMsg};
+use osmosis_std::types::osmosis::cosmwasmpool::v1beta1::{
+    CosmWasmPool, GetTotalPoolLiquidityQueryMsg, GetTotalPoolLiquidityQueryMsgResponse,
+};
 use osmosis_std::types::osmosis::gamm::poolmodels::stableswap::v1beta1::Pool as StableSwapPool;
 use osmosis_std::types::osmosis::gamm::v1beta1::Pool as GammPool;
 use osmosis_std::types::osmosis::poolmanager::v1beta1::{PoolmanagerQuerier, SwapAmountInRoute};
@@ -58,7 +60,7 @@ pub fn get_pool_assets(querier: &QuerierWrapper, pool_id: u64) -> Result<Vec<Str
             ConcentratedLiquidityPool::TYPE_URL => pool
                 .try_into()
                 .map(|pool: ConcentratedLiquidityPool| vec![pool.token0, pool.token1])
-                .map_err(|e: DecodeError| StdError::ParseErr {
+                .map_err(|e: prost::DecodeError| StdError::ParseErr {
                     target_type: ConcentratedLiquidityPool::TYPE_URL.to_string(),
                     msg: e.to_string(),
                 }),
@@ -77,14 +79,26 @@ pub fn get_pool_assets(querier: &QuerierWrapper, pool_id: u64) -> Result<Vec<Str
             CosmWasmPool::TYPE_URL => pool
                 .try_into()
                 .map(|pool: CosmWasmPool| {
-                    from_json(&pool.instantiate_msg)
-                        .map(|msg: InstantiateMsg| {
-                            msg.pool_asset_denoms.into_iter().collect::<Vec<String>>()
+                    querier
+                        .query_wasm_smart::<GetTotalPoolLiquidityQueryMsgResponse>(
+                            pool.contract_address,
+                            &GetTotalPoolLiquidityQueryMsg {
+                                get_total_pool_liquidity: None,
+                            },
+                        )
+                        .map_err(|e: StdError| {
+                            StdError::generic_err(format!(
+                                "error querying pool liquidity for cosmwasm pool id: {}. Error: {}",
+                                pool.pool_id, e
+                            ))
                         })
-                        .expect(&format!(
-                            "pool assets for cosmwasm pool id: {}",
-                            pool.pool_id
-                        ))
+                        .map(|res| {
+                            res.total_pool_liquidity
+                                .into_iter()
+                                .map(|asset| asset.denom)
+                                .collect::<Vec<String>>()
+                        })
+                        .expect(format!("denoms for pool {}", pool.pool_id).as_str())
                 })
                 .map_err(|e: DecodeError| StdError::ParseErr {
                     target_type: CosmWasmPool::TYPE_URL.to_string(),

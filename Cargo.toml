@@ -1,5 +1,10 @@
 [workspace]
-members = ["packages/*", "contracts/dca", "contracts/exchanges/astroport"]
+members = [
+    "packages/*",
+    "contracts/dca",
+    # "contracts/exchanges/osmosis",
+    # "contracts/exchanges/astrovault",
+]
 resolver = "1"
 
 [profile.release]
