@@ -1,8 +1,9 @@
 use crate::types::{pair::Pair, position_type::PositionType};
-use cosmwasm_std::{QuerierWrapper, StdError, StdResult};
+use cosmwasm_std::{from_json, QuerierWrapper, StdError, StdResult};
 use osmosis_std::types::osmosis::concentratedliquidity::v1beta1::Pool as ConcentratedLiquidityPool;
 use osmosis_std::types::osmosis::cosmwasmpool::v1beta1::{
     CosmWasmPool, GetTotalPoolLiquidityQueryMsg, GetTotalPoolLiquidityQueryMsgResponse,
+    InstantiateMsg,
 };
 use osmosis_std::types::osmosis::gamm::poolmodels::stableswap::v1beta1::Pool as StableSwapPool;
 use osmosis_std::types::osmosis::gamm::v1beta1::Pool as GammPool;
@@ -86,18 +87,20 @@ pub fn get_pool_assets(querier: &QuerierWrapper, pool_id: u64) -> Result<Vec<Str
                                 get_total_pool_liquidity: None,
                             },
                         )
-                        .map_err(|e: StdError| {
-                            StdError::generic_err(format!(
-                                "error querying pool liquidity for cosmwasm pool id: {}. Error: {}",
-                                pool.pool_id, e
-                            ))
-                        })
-                        .map(|res| {
-                            res.total_pool_liquidity
-                                .into_iter()
-                                .map(|asset| asset.denom)
-                                .collect::<Vec<String>>()
-                        })
+                        .map_or_else(
+                            |_: StdError| {
+                                from_json(pool.instantiate_msg)
+                                    .map(|msg: InstantiateMsg| msg.pool_asset_denoms)
+                                    .map_err(|e: StdError| e)
+                            },
+                            |res| {
+                                Ok(res
+                                    .total_pool_liquidity
+                                    .into_iter()
+                                    .map(|asset| asset.denom)
+                                    .collect::<Vec<String>>())
+                            },
+                        )
                         .expect(format!("denoms for pool {}", pool.pool_id).as_str())
                 })
                 .map_err(|e: DecodeError| StdError::ParseErr {
